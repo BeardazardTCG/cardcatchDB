@@ -1,13 +1,13 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
 import requests
-import time
+from datetime import datetime, timedelta
 
 app = FastAPI()
 
-# CORS setup
+# Allow cross-origin calls
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,102 +16,95 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Simple in-memory cache with TTL
-cache = {}
-CACHE_TTL = 300  # seconds
+# In-memory cache for the OAuth token
+token_cache = {"access_token": None, "expires_at": datetime.utcnow()}
+
+def get_sandbox_oauth_token():
+    global token_cache
+    # Return cached token if still valid
+    if token_cache["access_token"] and token_cache["expires_at"] > datetime.utcnow():
+        return token_cache["access_token"]
+
+    client_id = os.getenv("EBAY_SANDBOX_APP_ID")
+    client_secret = os.getenv("EBAY_SANDBOX_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=500, detail="Missing sandbox OAuth credentials")
+
+    # Request a new token
+    url = "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    data = {
+        "grant_type": "client_credentials",
+        "scope": "https://api.ebay.com/oauth/api_scope"
+    }
+    resp = requests.post(url, headers=headers, data=data, auth=(client_id, client_secret))
+    if resp.status_code != 200:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Sandbox OAuth failed: {resp.status_code} {resp.text}"
+        )
+
+    info = resp.json()
+    token_cache["access_token"] = info["access_token"]
+    # Subtract 60s to avoid edge-of-expiry
+    token_cache["expires_at"] = datetime.utcnow() + timedelta(seconds=info["expires_in"] - 60)
+    return token_cache["access_token"]
 
 @app.get("/")
 def root():
-    return {"message": "CardCatch is live — production mode active."}
+    return {"message": "CardCatch sandbox + OAuth is live."}
 
 @app.get("/price")
 def get_price(
-    card: str = Query(..., description="Card name to search"),
-    number: str = Query(default=None, description="Optional card number"),
-    set: str = Query(default=None, description="Optional card set name"),
-    lang: str = Query(default="en", description="Optional language code")
+    card: str = Query(..., description="Card name"),
+    number: str = Query(None, description="Card number"),
+    set: str = Query(None, description="Card set"),
+    lang: str = Query("en", description="Language code")
 ):
-    # Build a cache key
-    cache_key = f"{card}|{number}|{set}|{lang}"
-    # Check cache
-    entry = cache.get(cache_key)
-    if entry and time.time() - entry["timestamp"] < CACHE_TTL:
-        return entry["data"]
-
     # Build search query
-    query_parts = [card]
+    parts = [card]
     if number:
-        query_parts.append(number)
+        parts.append(number)
     if set:
-        query_parts.append(set)
-    query_parts.append(lang)
-    query = " ".join(query_parts)
+        parts.append(set)
+    parts.append(lang)
+    query = " ".join(parts)
 
-    # eBay FindingService production endpoint
-    url = "https://svcs.ebay.com/services/search/FindingService/v1"
+    # Fetch OAuth token
+    token = get_sandbox_oauth_token()
+
+    # Call sandbox Browse API for completed (fixed-price) items in GBP
+    url = "https://api.sandbox.ebay.com/buy/browse/v1/item_summary/search"
+    headers = {"Authorization": f"Bearer {token}"}
     params = {
-        "OPERATION-NAME": "findCompletedItems",
-        "SERVICE-VERSION": "1.13.0",
-        "SECURITY-APPNAME": os.getenv("EBAY_CLIENT_ID"),  # Production App ID
-        "RESPONSE-DATA-FORMAT": "JSON",
-        "REST-PAYLOAD": "",
-        "keywords": query,
-        "siteid": "3",  # eBay UK site
-        "paginationInput.entriesPerPage": 20,
-        "itemFilter(0).name": "SoldItemsOnly",
-        "itemFilter(0).value": "true"
+        "q": query,
+        "filter": "priceCurrency:GBP,conditions:{NEW|USED},buyingOptions:{FIXED_PRICE}",
+        "limit": "20",
+        "sort": "-price"
     }
-
-    response = requests.get(url, params=params)
-    # Handle rate limit specifically
-    if response.status_code == 200:
-        text = response.text
-        if 'RateLimiter' in text or 'exceeded the number of times' in text:
-            return JSONResponse(
-                status_code=429,
-                content={"error": "rate_limit_exceeded", "message": "eBay API rate limit reached. Please retry after a few minutes."}
-            )
-    if response.status_code != 200:
+    resp = requests.get(url, headers=headers, params=params)
+    if resp.status_code != 200:
         return JSONResponse(
             status_code=502,
-            content={"error": "Failed to contact eBay", "detail": response.text}
+            content={"error": "Browse API failed", "detail": resp.text}
         )
 
-    try:
-        data = response.json()
-        items = data.get("findCompletedItemsResponse", [])[0].get("searchResult", [])[0].get("item", [])
-        # Extract GBP prices
-        prices = [
-            float(item["sellingStatus"][0]["currentPrice"][0]["__value__"])
-            for item in items
-            if item["sellingStatus"][0]["currentPrice"][0]["@currencyId"] == "GBP"
-        ]
+    data = resp.json().get("itemSummaries", [])
+    prices = [float(item["price"]["value"]) for item in data if "price" in item]
 
-        if not prices:
-            result = {"message": "No UK sold data found for this card."}
-        else:
-            avg_price = round(sum(prices) / len(prices), 2)
-            min_price = round(min(prices), 2)
-            max_price = round(max(prices), 2)
-            suggested_resale = round(avg_price * 1.1, 2)
-            result = {
-                "card": card,
-                "number": number,
-                "set": set,
-                "lang": lang,
-                "sold_count": len(prices),
-                "average_price": avg_price,
-                "lowest_price": min_price,
-                "highest_price": max_price,
-                "suggested_resale": suggested_resale
-            }
+    if not prices:
+        return {"message": "No sandbox sold data for this query."}
 
-        # Cache the result
-        cache[cache_key] = {"timestamp": time.time(), "data": result}
-        return result
+    avg_p = round(sum(prices) / len(prices), 2)
+    low_p = round(min(prices), 2)
+    high_p = round(max(prices), 2)
+    suggested = round(avg_p * 1.1, 2)
 
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Failed to parse eBay response", "detail": str(e)}
-        )
+    return {
+        "card": card,
+        "sold_count": len(prices),
+        "average_price": avg_p,
+        "lowest_price": low_p,
+        "highest_price": high_p,
+        "suggested_resale": suggested
+    }
