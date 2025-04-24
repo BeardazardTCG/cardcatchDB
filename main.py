@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
-import os, requests, logging
+import os, requests, logging, numpy as np
 from datetime import datetime, timedelta
 import pandas as pd
 import io
@@ -19,7 +19,8 @@ app = FastAPI(
     version="3.0.0"
 )
 
-# Enable CORS\ napp.add_middleware(
+# Enable CORS
+app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -49,14 +50,9 @@ CACHE_BUFFER_SEC = 60
 # In-memory time-series store (mock)
 _ts_store: Dict[str, List[Dict[str, Any]]] = {}
 
-
 def record_sale(card: str, price: float):
-    """
-    Record a sale timestamp for time-series insights.
-    """
     now = datetime.utcnow().date()
     _ts_store.setdefault(card, []).append({"date": now, "price": price})
-
 
 def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     if sandbox:
@@ -101,10 +97,7 @@ def price_lookup(
     buying_options: Optional[str] = Query("FIXED_PRICE"), graded: Optional[bool] = Query(None),
     grade_agency: Optional[str] = Query(None), sandbox: bool = Query(True), limit: int = Query(20)
 ) -> Any:
-    # Build query and call Browse API
-    # ... existing code ...
-    # Mock recording for insights
-    # record_sale(card, avg_price)
+    # Implement Browse API logic here
     return {...}
 
 @app.get("/history", summary="Get price history trend")
@@ -117,7 +110,8 @@ def history(
     df = data.groupby("date").price.mean().reindex(
         pd.date_range(end=datetime.utcnow().date(), periods=days), fill_value=None
     ).ffill()
-    slope = ..., r2 = ...  # compute regression
+    # Compute regression slope and r2
+    slope, r2 = np.nan, np.nan
     if chart:
         fig, ax = plt.subplots()
         df.plot(ax=ax)
@@ -132,11 +126,6 @@ def distribution(card: str = Query(...), bins: int = Query(10, ge=1, le=50)) -> 
         raise HTTPException(status_code=404, detail="No data for distribution")
     prices = data.price
     hist, edges = np.histogram(prices, bins=bins)
-    return {"bins": edges.tolist(), "counts": hist.tolist(), "std": prices.std(), "cv": prices.std()/prices.mean()}
+    return {"bins": edges.tolist(), "counts": hist.tolist(), "std": float(prices.std()), "cv": float(prices.std()/prices.mean())}
 
-# ... compare and forecast endpoints similarly ...
-
-            limit=limit
-        )
-        results.append(stats)
-    return results
+# Compare and forecast endpoints to be implemented
