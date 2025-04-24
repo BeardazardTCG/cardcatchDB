@@ -1,12 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os
 import requests
-from datetime import datetime, timedelta
 
 app = FastAPI()
 
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,49 +15,38 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-token_cache = {
-    "access_token": None,
-    "expires_at": None
-}
-
 @app.get("/")
 def root():
-    return {"message": "CardCatch is live — token test only."}
+    return {"message": "CardCatch is live — sandbox mode active."}
 
-@app.get("/token")
-def get_token():
-    global token_cache
-    if token_cache["access_token"] and token_cache["expires_at"] > datetime.utcnow():
-        return {"token": token_cache["access_token"], "status": "cached"}
+@app.get("/price")
+def get_price(
+    card: str = Query(...),
+    number: str = Query(default=None),
+    set: str = Query(default=None),
+    lang: str = Query(default="en")
+):
+    query_parts = [card]
+    if number:
+        query_parts.append(number)
+    if set:
+        query_parts.append(set)
+    query_parts.append(lang)
+    query = " ".join(query_parts)
 
-    client_id = os.getenv("EBAY_CLIENT_ID")
-    client_secret = os.getenv("EBAY_CLIENT_SECRET")
-
-    headers = {
-        "Content-Type": "application/x-www-form-urlencoded"
+    url = "https://svcs.sandbox.ebay.com/services/search/FindingService/v1"
+    params = {
+        "OPERATION-NAME": "findCompletedItems",
+        "SERVICE-VERSION": "1.13.0",
+        "SECURITY-APPNAME": os.getenv("EBAY_SANDBOX_APP_ID"),
+        "RESPONSE-DATA-FORMAT": "JSON",
+        "REST-PAYLOAD": "",
+        "keywords": query,
+        "siteid": "3",
+        "paginationInput.entriesPerPage": 10,
+        "itemFilter(0).name": "SoldItemsOnly",
+        "itemFilter(0).value": "true"
     }
 
-    data = {
-        "grant_type": "client_credentials",
-        "scope": "https://api.ebay.com/oauth/api_scope"
-    }
-
-    response = requests.post(
-        "https://api.ebay.com/identity/v1/oauth2/token",
-        headers=headers,
-        data=data,
-        auth=(client_id, client_secret)
-    )
-
-    if response.status_code != 200:
-        return JSONResponse(status_code=502, content={"error": "OAuth token fetch failed", "detail": response.text})
-
-    token_info = response.json()
-    token_cache["access_token"] = token_info["access_token"]
-    token_cache["expires_at"] = datetime.utcnow() + timedelta(seconds=token_info["expires_in"] - 30)
-
-    return {
-        "token": token_info["access_token"],
-        "expires_in": token_info["expires_in"],
-        "status": "fresh"
-    }
+    r = requests.get(url, params=params)
+    if r.status_code_
