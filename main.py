@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 app = FastAPI()
 
-# CORS
+# CORS setup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -17,15 +18,20 @@ def root():
     return {"message": "eBay API is live!"}
 
 @app.post("/marketplace-deletion")
-async def handle_marketplace_deletion(request: Request):
+async def handle_deletion(
+    request: Request,
+    x_ebay_verification_token: str = Header(default=None)
+):
+    expected_token = os.getenv("EBAY_VERIFICATION_TOKEN")
+    if x_ebay_verification_token != expected_token:
+        raise HTTPException(status_code=401, detail="Invalid verification token")
+
     data = await request.json()
 
-    # Step 1: respond to eBay challenge
+    # If it's a verification challenge
     if "challenge" in data:
         return {"challenge": data["challenge"]}
 
-    # Step 2: Handle actual deletion notification
+    # Otherwise handle deletion notice
     print("Received deletion notification:", data)
-    return {"status": "received"}
-
     return {"status": "received"}
