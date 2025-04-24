@@ -1,6 +1,5 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import os
 
 app = FastAPI()
 
@@ -20,10 +19,13 @@ def root():
 @app.post("/marketplace-deletion")
 async def handle_marketplace_deletion(request: Request):
     data = await request.json()
-    verification_token = os.getenv("EBAY_VERIFICATION_TOKEN")
 
+    # Step 1: respond to eBay challenge
     if "challenge" in data:
         return {"challenge": data["challenge"]}
 
+    # Step 2: Handle actual deletion notification
     print("Received deletion notification:", data)
+    return {"status": "received"}
+
     return {"status": "received"}
