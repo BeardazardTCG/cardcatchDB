@@ -1,7 +1,10 @@
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import List, Optional
 import os, requests
+from datetime import datetime, timedelta
 
 app = FastAPI()
 
@@ -15,7 +18,9 @@ app.add_middleware(
 )
 
 def fetch_oauth_token(sandbox: bool):
-    # Choose credentials & token URL
+    """
+    Fetches an OAuth token from eBay (sandbox or production).
+    """
     if sandbox:
         client_id = os.getenv("EBAY_SANDBOX_APP_ID")
         client_secret = os.getenv("EBAY_SANDBOX_CLIENT_SECRET")
@@ -33,26 +38,38 @@ def fetch_oauth_token(sandbox: bool):
         "grant_type": "client_credentials",
         "scope": "https://api.ebay.com/oauth/api_scope"
     }
-    resp = requests.post(token_url, headers=headers, data=data, auth=(client_id, client_secret))
+    resp = requests.post(
+        token_url,
+        headers=headers,
+        data=data,
+        auth=(client_id, client_secret)
+    )
     if resp.status_code != 200:
         raise HTTPException(status_code=502, detail=f"OAuth token fetch failed: {resp.text}")
+
     return resp.json()["access_token"]
 
 @app.get("/token")
 def token_endpoint(
     sandbox: bool = Query(True, description="true=Sandbox, false=Production")
 ):
+    """
+    Returns a fresh OAuth token.
+    """
     token = fetch_oauth_token(sandbox)
     return {"access_token": token}
 
 @app.get("/price")
 def price_lookup(
     card: str = Query(..., description="Card name"),
-    number: str = Query(None, description="Card number"),
-    set_name: str = Query(None, alias="set", description="Card set"),
+    number: Optional[str] = Query(None, description="Card number"),
+    set_name: Optional[str] = Query(None, alias="set", description="Card set"),
     lang: str = Query("en", description="Language code"),
     sandbox: bool = Query(True, description="true=Sandbox, false=Production")
 ):
+    """
+    Returns UK GBP sold-item stats via the Browse API.
+    """
     # Build search query
     parts = [card]
     if number:
@@ -62,7 +79,7 @@ def price_lookup(
     parts.append(lang)
     query = " ".join(parts)
 
-    # Always fetch a fresh token
+    # Fetch OAuth token
     token = fetch_oauth_token(sandbox)
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -98,3 +115,30 @@ def price_lookup(
         "highest_price": max_price,
         "suggested_resale": suggested
     }
+
+# Pydantic model for bulk queries
+class CardQuery(BaseModel):
+    card: str
+    number: Optional[str] = None
+    set: Optional[str] = None
+    lang: Optional[str] = "en"
+
+@app.post("/bulk-price")
+def bulk_price(
+    queries: List[CardQuery],
+    sandbox: bool = Query(True, description="true=Sandbox, false=Production")
+):
+    """
+    Accepts a list of card queries and returns pricing stats for each.
+    """
+    results = []
+    for q in queries:
+        stats = price_lookup(
+            card=q.card,
+            number=q.number,
+            set_name=q.set,
+            lang=q.lang,
+            sandbox=sandbox
+        )
+        results.append(stats)
+    return results
