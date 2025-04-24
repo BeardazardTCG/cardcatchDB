@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+import os
 
 app = FastAPI()
 
-# Allow all CORS (adjust later for security)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,9 +14,16 @@ app.add_middleware(
 )
 
 @app.get("/")
-def read_root():
+def root():
     return {"message": "eBay API is live!"}
 
-@app.get("/search")
-def search_stub():
-    return {"message": "This is where eBay search results will go."}
+@app.post("/marketplace-deletion")
+async def handle_marketplace_deletion(request: Request):
+    data = await request.json()
+    verification_token = os.getenv("EBAY_VERIFICATION_TOKEN")
+
+    if "challenge" in data:
+        return {"challenge": data["challenge"]}
+
+    print("Received deletion notification:", data)
+    return {"status": "received"}
