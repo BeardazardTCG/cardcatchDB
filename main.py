@@ -2,7 +2,6 @@ from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import os, requests
-from datetime import datetime, timedelta
 
 app = FastAPI()
 
@@ -15,15 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory cache for OAuth tokens
-token_cache = {"access_token": None, "expires_at": datetime.utcnow()}
-
-def get_oauth_token(sandbox: bool = True):
-    global token_cache
-    # Return cached token if still valid
-    if token_cache["access_token"] and token_cache["expires_at"] > datetime.utcnow():
-        return token_cache["access_token"]
-
+def fetch_oauth_token(sandbox: bool):
     # Choose credentials & token URL
     if sandbox:
         client_id = os.getenv("EBAY_SANDBOX_APP_ID")
@@ -45,21 +36,14 @@ def get_oauth_token(sandbox: bool = True):
     resp = requests.post(token_url, headers=headers, data=data, auth=(client_id, client_secret))
     if resp.status_code != 200:
         raise HTTPException(status_code=502, detail=f"OAuth token fetch failed: {resp.text}")
-
-    info = resp.json()
-    token_cache["access_token"] = info["access_token"]
-    token_cache["expires_at"] = datetime.utcnow() + timedelta(seconds=info["expires_in"] - 60)
-    return token_cache["access_token"]
+    return resp.json()["access_token"]
 
 @app.get("/token")
 def token_endpoint(
     sandbox: bool = Query(True, description="true=Sandbox, false=Production")
 ):
-    """
-    Fetch and cache an eBay OAuth token.
-    """
-    token = get_oauth_token(sandbox)
-    return {"access_token": token, "expires_at": token_cache["expires_at"].isoformat()}
+    token = fetch_oauth_token(sandbox)
+    return {"access_token": token}
 
 @app.get("/price")
 def price_lookup(
@@ -69,10 +53,6 @@ def price_lookup(
     lang: str = Query("en", description="Language code"),
     sandbox: bool = Query(True, description="true=Sandbox, false=Production")
 ):
-    """
-    Return UK GBP sold-item stats (count, average, min, max, suggested resale)
-    by querying eBay's Browse API using an OAuth token.
-    """
     # Build search query
     parts = [card]
     if number:
@@ -82,8 +62,8 @@ def price_lookup(
     parts.append(lang)
     query = " ".join(parts)
 
-    # Get OAuth token
-    token = get_oauth_token(sandbox)
+    # Always fetch a fresh token
+    token = fetch_oauth_token(sandbox)
     headers = {"Authorization": f"Bearer {token}"}
 
     # Browse API endpoint
