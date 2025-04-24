@@ -15,16 +15,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# In-memory cache for OAuth token
+# In-memory cache for OAuth tokens
 token_cache = {"access_token": None, "expires_at": datetime.utcnow()}
 
 def get_oauth_token(sandbox: bool = True):
     global token_cache
-    # Return cached if still valid
+    # Return cached token if still valid
     if token_cache["access_token"] and token_cache["expires_at"] > datetime.utcnow():
         return token_cache["access_token"]
 
-    # Select credentials & token URL
+    # Choose credentials & token URL
     if sandbox:
         client_id = os.getenv("EBAY_SANDBOX_APP_ID")
         client_secret = os.getenv("EBAY_SANDBOX_CLIENT_SECRET")
@@ -38,4 +38,83 @@ def get_oauth_token(sandbox: bool = True):
         raise HTTPException(status_code=500, detail="Missing OAuth credentials")
 
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
-    data =
+    data = {
+        "grant_type": "client_credentials",
+        "scope": "https://api.ebay.com/oauth/api_scope"
+    }
+    resp = requests.post(token_url, headers=headers, data=data, auth=(client_id, client_secret))
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"OAuth token fetch failed: {resp.text}")
+
+    info = resp.json()
+    token_cache["access_token"] = info["access_token"]
+    token_cache["expires_at"] = datetime.utcnow() + timedelta(seconds=info["expires_in"] - 60)
+    return token_cache["access_token"]
+
+@app.get("/token")
+def token_endpoint(
+    sandbox: bool = Query(True, description="true=Sandbox, false=Production")
+):
+    """
+    Fetch and cache an eBay OAuth token.
+    """
+    token = get_oauth_token(sandbox)
+    return {"access_token": token, "expires_at": token_cache["expires_at"].isoformat()}
+
+@app.get("/price")
+def price_lookup(
+    card: str = Query(..., description="Card name"),
+    number: str = Query(None, description="Card number"),
+    set_name: str = Query(None, alias="set", description="Card set"),
+    lang: str = Query("en", description="Language code"),
+    sandbox: bool = Query(True, description="true=Sandbox, false=Production")
+):
+    """
+    Return UK GBP sold-item stats (count, average, min, max, suggested resale)
+    by querying eBay's Browse API using an OAuth token.
+    """
+    # Build search query
+    parts = [card]
+    if number:
+        parts.append(number)
+    if set_name:
+        parts.append(set_name)
+    parts.append(lang)
+    query = " ".join(parts)
+
+    # Get OAuth token
+    token = get_oauth_token(sandbox)
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Browse API endpoint
+    base = "api.sandbox.ebay.com" if sandbox else "api.ebay.com"
+    url = f"https://{base}/buy/browse/v1/item_summary/search"
+    params = {
+        "q": query,
+        "filter": "priceCurrency:GBP,conditions:{NEW|USED},buyingOptions:{FIXED_PRICE}",
+        "limit": "20",
+        "sort": "-price"
+    }
+    resp = requests.get(url, headers=headers, params=params)
+    if resp.status_code != 200:
+        return JSONResponse(status_code=502, content={"error": "Browse API failed", "detail": resp.text})
+
+    items = resp.json().get("itemSummaries", [])
+    prices = [float(item["price"]["value"]) for item in items if "price" in item]
+
+    if not prices:
+        return {"message": "No sold data found for this query."}
+
+    avg_price = round(sum(prices) / len(prices), 2)
+    min_price = round(min(prices), 2)
+    max_price = round(max(prices), 2)
+    suggested = round(avg_price * 1.1, 2)
+
+    return {
+        "card": card,
+        "sold_count": len(prices),
+        "average_price": avg_price,
+        "lowest_price": min_price,
+        "highest_price": max_price,
+        "suggested_resale": suggested
+    }
