@@ -1,5 +1,7 @@
-from fastapi import FastAPI, Request, Header, HTTPException
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from hashlib import sha256
 import os
 
 app = FastAPI()
@@ -17,21 +19,21 @@ app.add_middleware(
 def root():
     return {"message": "eBay API is live!"}
 
+@app.get("/marketplace-deletion")
+def verify_challenge(challenge_code: str = None):
+    verification_token = os.getenv("EBAY_VERIFICATION_TOKEN")
+    endpoint_url = "https://cardcatch-ebay-endpointnew.onrender.com/marketplace-deletion"
+
+    if not challenge_code:
+        raise HTTPException(status_code=400, detail="Missing challenge_code")
+
+    combined = challenge_code + verification_token + endpoint_url
+    hashed = sha256(combined.encode("utf-8")).hexdigest()
+    
+    return JSONResponse(content={"challengeResponse": hashed}, media_type="application/json")
+
 @app.post("/marketplace-deletion")
-async def handle_deletion(
-    request: Request,
-    x_ebay_verification_token: str = Header(default=None)
-):
-    expected_token = os.getenv("EBAY_VERIFICATION_TOKEN")
-    if x_ebay_verification_token != expected_token:
-        raise HTTPException(status_code=401, detail="Invalid verification token")
-
+async def handle_deletion(request: Request):
     data = await request.json()
-
-    # If it's a verification challenge
-    if "challenge" in data:
-        return {"challenge": data["challenge"]}
-
-    # Otherwise handle deletion notice
     print("Received deletion notification:", data)
     return {"status": "received"}
