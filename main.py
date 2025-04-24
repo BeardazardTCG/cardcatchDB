@@ -14,8 +14,8 @@ logger = logging.getLogger("cardcatch")
 
 app = FastAPI(
     title="CardCatch Pricing API",
-    description="Fetches live sold-item stats from eBay via OAuth-protected Browse API",
-    version="1.0.1"
+    description="Fetches sold-item stats from eBay via OAuth-protected Browse API",
+    version="1.0.2"
 )
 
 # CORS setup
@@ -43,25 +43,24 @@ CACHE_BUFFER_SEC = 60
 
 def get_oauth_token(sandbox: bool) -> str:
     """
-    Fetches and caches OAuth token for sandbox or production.
+    Fetches and caches OAuth token for sandbox or production environments.
     """
     global token_cache
-    # Return cached if valid
+    # Return cached if still valid
     if token_cache["access_token"] and token_cache["expires_at"] > datetime.utcnow():
         return token_cache["access_token"]
 
     # Select credentials
     if sandbox:
-        client_id = os.getenv("EBAY_SANDBOX_APP_ID")
-        client_secret = os.getenv("EBAY_SANDBOX_CLIENT_SECRET")
-        token_url = "https://api.sandbox.ebay.com/identity/v1/oauth2/token"
+        # Sandbox environment returns stub data, no OAuth
+        return None
     else:
         client_id = os.getenv("EBAY_CLIENT_ID")
         client_secret = os.getenv("EBAY_CLIENT_SECRET")
         token_url = "https://api.ebay.com/identity/v1/oauth2/token"
 
     if not client_id or not client_secret:
-        logger.error("Missing OAuth credentials for %s", "sandbox" if sandbox else "production")
+        logger.error("Missing OAuth credentials for production")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Missing OAuth credentials")
 
     headers = {"Content-Type": "application/x-www-form-urlencoded"}
@@ -86,10 +85,12 @@ def get_oauth_token(sandbox: bool) -> str:
 def health() -> Any:
     return {"message": "CardCatch is live — production mode active."}
 
-@app.get("/token", response_model=OAuthToken, summary="Get OAuth token")
+@app.get("/token", response_model=OAuthToken, summary="Get OAuth token (production only)")
 def token_endpoint(
-    sandbox: bool = Query(True, description="true=Sandbox, false=Production")
+    sandbox: bool = Query(False, description="false=Production only, sandbox returns no token")
 ) -> OAuthToken:
+    if sandbox:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Sandbox does not support OAuth tokens")
     token = get_oauth_token(sandbox)
     return OAuthToken(access_token=token, expires_at=token_cache["expires_at"])
 
@@ -99,7 +100,7 @@ def price_lookup(
     number: Optional[str] = Query(None, description="Card number"),
     set_name: Optional[str] = Query(None, alias="set", description="Card set name"),
     lang: str = Query("en", description="Language code"),
-    sandbox: bool = Query(True, description="true=Sandbox, false=Production"),
+    sandbox: bool = Query(True, description="true=Return stub data, false=Production live data"),
     limit: int = Query(20, ge=1, le=100, description="Max items to fetch")
 ) -> Any:
     # Build search query
@@ -109,10 +110,14 @@ def price_lookup(
     parts.append(lang)
     query = " ".join(parts)
 
+    if sandbox:
+        # Return stub data for sandbox
+        return {"card": card, "sold_count": 0, "average_price": 0.0, "lowest_price": 0.0, "highest_price": 0.0, "suggested_resale": 0.0}
+
+    # Production flow
     token = get_oauth_token(sandbox)
     headers = {"Authorization": f"Bearer {token}"}
-    base = "api.sandbox.ebay.com" if sandbox else "api.ebay.com"
-    url = f"https://{base}/buy/browse/v1/item_summary/search"
+    url = f"https://api.ebay.com/buy/browse/v1/item_summary/search"
     params = {"q": query, "filter": "priceCurrency:GBP,conditions:{NEW|USED},buyingOptions:{FIXED_PRICE}", "limit": limit, "sort": "-price"}
 
     try:
@@ -138,7 +143,7 @@ def price_lookup(
 @app.post("/bulk-price", summary="Get bulk pricing stats")
 def bulk_price(
     queries: List[CardQuery],
-    sandbox: bool = Query(True, description="true=Sandbox, false=Production"),
+    sandbox: bool = Query(True, description="true=Return stub data, false=Production live data"),
     limit: int = Query(20, ge=1, le=100, description="Max items per card")
 ) -> List[Any]:
     results: List[Any] = []
