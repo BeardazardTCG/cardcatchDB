@@ -15,3 +15,7 @@ app.add_middleware(
 @app.get("/")
 def read_root():
     return {"message": "eBay API is live!"}
+
+@app.get("/search")
+def search_stub():
+    return {"message": "This is where eBay search results will go."}
