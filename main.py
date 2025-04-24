@@ -17,15 +17,16 @@ app.add_middleware(
 
 @app.get("/")
 def root():
-    return {"message": "CardCatch is live — sandbox mode active."}
+    return {"message": "CardCatch is live — production mode active."}
 
 @app.get("/price")
 def get_price(
-    card: str = Query(...),
-    number: str = Query(default=None),
-    set: str = Query(default=None),
-    lang: str = Query(default="en")
+    card: str = Query(..., description="Card name to search"),
+    number: str = Query(default=None, description="Card number (optional)"),
+    set: str = Query(default=None, description="Card set name (optional)"),
+    lang: str = Query(default="en", description="Card language (optional)")
 ):
+    # Build search query
     query_parts = [card]
     if number:
         query_parts.append(number)
@@ -34,27 +35,33 @@ def get_price(
     query_parts.append(lang)
     query = " ".join(query_parts)
 
-    url = "https://svcs.sandbox.ebay.com/services/search/FindingService/v1"
+    # eBay FindingService production endpoint
+    url = "https://svcs.ebay.com/services/search/FindingService/v1"
     params = {
         "OPERATION-NAME": "findCompletedItems",
         "SERVICE-VERSION": "1.13.0",
-        "SECURITY-APPNAME": os.getenv("EBAY_SANDBOX_APP_ID"),
+        "SECURITY-APPNAME": os.getenv("EBAY_CLIENT_ID"),  # Production App ID
         "RESPONSE-DATA-FORMAT": "JSON",
         "REST-PAYLOAD": "",
         "keywords": query,
-        "siteid": "3",
-        "paginationInput.entriesPerPage": 10,
+        "siteid": "3",  # eBay UK site
+        "paginationInput.entriesPerPage": 20,
         "itemFilter(0).name": "SoldItemsOnly",
         "itemFilter(0).value": "true"
     }
 
+    # Make the API call
     r = requests.get(url, params=params)
     if r.status_code != 200:
-        return {"error": "Failed to contact eBay Sandbox", "detail": r.text}
+        return JSONResponse(
+            status_code=502,
+            content={"error": "Failed to contact eBay Production", "detail": r.text}
+        )
 
     try:
-        results = r.json()
-        items = results["findCompletedItemsResponse"][0]["searchResult"][0].get("item", [])
+        data = r.json()
+        items = data["findCompletedItemsResponse"][0]["searchResult"][0].get("item", [])
+        # Extract GBP prices
         prices = [
             float(item["sellingStatus"][0]["currentPrice"][0]["__value__"])
             for item in items
@@ -62,8 +69,9 @@ def get_price(
         ]
 
         if not prices:
-            return {"message": "No mock pricing data found in sandbox."}
+            return {"message": "No UK sold data found for this card."}
 
+        # Compute statistics
         avg_price = round(sum(prices) / len(prices), 2)
         min_price = round(min(prices), 2)
         max_price = round(max(prices), 2)
@@ -71,6 +79,9 @@ def get_price(
 
         return {
             "card": card,
+            "number": number,
+            "set": set,
+            "lang": lang,
             "sold_count": len(prices),
             "average_price": avg_price,
             "lowest_price": min_price,
@@ -79,5 +90,8 @@ def get_price(
         }
 
     except Exception as e:
-        return {"error": "Failed to parse sandbox response", "detail": str(e)}
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Failed to parse eBay response", "detail": str(e)}
+        )
 
