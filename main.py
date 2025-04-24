@@ -1,13 +1,13 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from datetime import datetime, timedelta
 import os
 import requests
 
 app = FastAPI()
 
-# CORS setup
-app.add_middleware(
+# CORS setup\ napp.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
@@ -15,83 +15,81 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-@app.get("/")
-def root():
-    return {"message": "CardCatch is live — production mode active."}
+# Token cache
+_token_cache = {"token": None, "expires": datetime.utcnow()}
 
-@app.get("/price")
-def get_price(
-    card: str = Query(..., description="Card name to search"),
-    number: str = Query(default=None, description="Card number (optional)"),
-    set: str = Query(default=None, description="Card set name (optional)"),
-    lang: str = Query(default="en", description="Card language (optional)")
-):
-    # Build search query
-    query_parts = [card]
-    if number:
-        query_parts.append(number)
-    if set:
-        query_parts.append(set)
-    query_parts.append(lang)
-    query = " ".join(query_parts)
+def _get_app_token():
+    global _token_cache
+    if _token_cache["token"] and _token_cache["expires"] > datetime.utcnow():
+        return _token_cache["token"]
 
-    # eBay FindingService production endpoint
-    url = "https://svcs.ebay.com/services/search/FindingService/v1"
-    params = {
-        "OPERATION-NAME": "findCompletedItems",
-        "SERVICE-VERSION": "1.13.0",
-        "SECURITY-APPNAME": os.getenv("EBAY_CLIENT_ID"),  # Production App ID
-        "RESPONSE-DATA-FORMAT": "JSON",
-        "REST-PAYLOAD": "",
-        "keywords": query,
-        "siteid": "3",  # eBay UK site
-        "paginationInput.entriesPerPage": 20,
-        "itemFilter(0).name": "SoldItemsOnly",
-        "itemFilter(0).value": "true"
+    client_id = os.getenv("EBAY_CLIENT_ID")
+    client_secret = os.getenv("EBAY_CLIENT_SECRET")
+    if not client_id or not client_secret:
+        raise HTTPException(status_code=500, detail="Missing eBay credentials")
+
+    auth = (client_id + ":" + client_secret)
+    headers = {"Content-Type": "application/x-www-form-urlencoded"}
+    data = {
+        "grant_type": "client_credentials",
+        "scope": "https://api.ebay.com/oauth/api_scope"
     }
 
-    # Make the API call
-    r = requests.get(url, params=params)
-    if r.status_code != 200:
-        return JSONResponse(
-            status_code=502,
-            content={"error": "Failed to contact eBay Production", "detail": r.text}
-        )
+    resp = requests.post(
+        "https://api.ebay.com/identity/v1/oauth2/token",
+        headers=headers,
+        data=data,
+        auth=(client_id, client_secret)
+    )
+    if resp.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"OAuth fetch failed: {resp.text}")
 
-    try:
-        data = r.json()
-        items = data["findCompletedItemsResponse"][0]["searchResult"][0].get("item", [])
-        # Extract GBP prices
-        prices = [
-            float(item["sellingStatus"][0]["currentPrice"][0]["__value__"])
-            for item in items
-            if item["sellingStatus"][0]["currentPrice"][0]["@currencyId"] == "GBP"
-        ]
+    js = resp.json()
+    token = js.get("access_token")
+    expires = datetime.utcnow() + timedelta(seconds=js.get("expires_in", 3600) - 60)
+    _token_cache = {"token": token, "expires": expires}
+    return token
 
-        if not prices:
-            return {"message": "No UK sold data found for this card."}
+@app.get("/")
+def root():
+    return {"message": "CardCatch API live (Browse API + OAuth)"}
 
-        # Compute statistics
-        avg_price = round(sum(prices) / len(prices), 2)
-        min_price = round(min(prices), 2)
-        max_price = round(max(prices), 2)
-        suggested_resale = round(avg_price * 1.1, 2)
+@app.get("/price")
+def browse_price(
+    card: str = Query(...),
+    lang: str = Query(default="en")
+):
+    token = _get_app_token()
+    query = f"{card} {lang}".strip()
 
-        return {
-            "card": card,
-            "number": number,
-            "set": set,
-            "lang": lang,
-            "sold_count": len(prices),
-            "average_price": avg_price,
-            "lowest_price": min_price,
-            "highest_price": max_price,
-            "suggested_resale": suggested_resale
-        }
+    url = "https://api.ebay.com/buy/browse/v1/item_summary/search"
+    headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+    params = {
+        "q": query,
+        "filter": "priceCurrency:GBP,conditions:{NEW|USED},buyingOptions:{FIXED_PRICE}",
+        "limit": "20"
+    }
 
-    except Exception as e:
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Failed to parse eBay response", "detail": str(e)}
-        )
+    resp = requests.get(url, headers=headers, params=params)
+    if resp.status_code != 200:
+        return JSONResponse(status_code=502, content={"error": "Browse API failed", "detail": resp.text})
+
+    data = resp.json().get("itemSummaries", [])
+    prices = [float(it["price"]["value"]) for it in data if it.get("price")]
+    if not prices:
+        return {"message": "No UK pricing data found"}
+
+    avg = round(sum(prices) / len(prices), 2)
+    lo = round(min(prices), 2)
+    hi = round(max(prices), 2)
+    sug = round(avg * 1.1, 2)
+
+    return {
+        "card": card,
+        "count": len(prices),
+        "average": avg,
+        "lowest": lo,
+        "highest": hi,
+        "suggested_resale": sug
+    }
 
