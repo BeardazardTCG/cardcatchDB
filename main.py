@@ -3,9 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
+from datetime import datetime, timedelta
 import os
 import requests
-from datetime import datetime, timedelta
+from bs4 import BeautifulSoup
+import re
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -56,14 +58,14 @@ def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     resp = requests.post(
         token_url,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={"grant_type": "client_credentials", "scope": "https://api.ebay.com/oauth/api_scope"},
+        data={"grant_type":"client_credentials","scope":"https://api.ebay.com/oauth/api_scope"},
         auth=(client_id, client_secret), timeout=10
     )
     if resp.status_code != 200:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="OAuth token fetch failed")
     info = resp.json()
     token = info.get("access_token")
-    expires_in = info.get("expires_in", 3600)
+    expires_in = info.get("expires_in",3600)
     expires_at = datetime.utcnow() + timedelta(seconds=expires_in - CACHE_BUFFER_SEC)
     token_cache.update({"access_token": token, "expires_at": expires_at})
     return token
@@ -73,7 +75,7 @@ def health() -> Any:
     return {"message": "CardCatch is live — production mode active."}
 
 @app.get("/token", response_model=OAuthToken, summary="Get OAuth token (production)")
-def token_endpoint(sandbox: bool = Query(False)) -> OAuthToken:
+def token_endpoint(sandbox: bool = Query(False, description="true=Sandbox, false=Production")) -> OAuthToken:
     if sandbox:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Sandbox mode has no OAuth token")
     token = fetch_oauth_token(False)
@@ -107,10 +109,10 @@ def price_lookup(
     url = "https://api.ebay.com/buy/browse/v1/item_summary/search"
     filters = ["priceCurrency:GBP"]
     if condition:
-        conds = condition.replace(" ", "").split(",")
+        conds = condition.replace(" ","").split(",")
         filters.append(f"conditions:{{{'|'.join(conds)}}}")
     if buying_options:
-        opts = buying_options.replace(" ", "").split(",")
+        opts = buying_options.replace(" ","").split(",")
         filters.append(f"buyingOptions:{{{'|'.join(opts)}}}")
     if grade_agency:
         filters.append(f"aspectFilter=GradingCompany:{{{grade_agency}}}")
@@ -122,10 +124,10 @@ def price_lookup(
     prices = [float(i["price"]["value"]) for i in items if i.get("price")]
     if not prices:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No sold data found for this query.")
-    avg = round(sum(prices)/len(prices), 2)
-    lo = round(min(prices), 2)
-    hi = round(max(prices), 2)
-    suggestion = round(avg * 1.1, 2)
+    avg = round(sum(prices)/len(prices),2)
+    lo = round(min(prices),2)
+    hi = round(max(prices),2)
+    suggestion = round(avg*1.1,2)
     return {"card": card, "sold_count": len(prices), "average_price": avg, "lowest_price": lo, "highest_price": hi, "suggested_resale": suggestion}
 
 @app.post("/bulk-price", summary="Get bulk pricing stats")
@@ -149,22 +151,45 @@ def bulk_price(
         results.append(stats)
     return results
 
-@app.get("/scraped-price", summary="Scrape sold listings from eBay UK")
-def scraped_price(query: str, max_items: int = 20) -> Any:
-    from scraper import parse_ebay_sold_page
+@app.get("/scraped-price-with-dates", summary="Scrape sold listings with sold_date from eBay HTML")
+def scraped_price_with_dates(query: str = Query(...), limit: int = Query(20, ge=1, le=100)) -> Any:
     try:
-        return parse_ebay_sold_page(query, max_items=max_items)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        url = "https://www.ebay.co.uk/sch/i.html"
+        params = {
+            "_nkw": query,
+            "LH_Sold": "1",
+            "LH_Complete": "1",
+            "_sop": "13"
+        }
 
-@app.get("/api/getCardPrice", summary="Get filtered median sold price using scraper")
-def get_card_price(query: str) -> Any:
-    from scraper import getCardPrice
-    try:
-        return getCardPrice(
-            query=query,
-            includes=[],
-            excludes=["lot", "bundle", "proxy"]
-        )
+        resp = requests.get(url, params=params, timeout=10)
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        results = []
+        for item in soup.select(".s-item")[:limit]:
+            title = item.select_one(".s-item__title")
+            price = item.select_one(".s-item__price")
+            sold_date = None
+
+            for div in item.find_all("div"):
+                text = div.get_text(strip=True)
+                if text.lower().startswith("sold"):
+                    match = re.search(r"Sold (\d{1,2} \w+[,]? \d{4})", text)
+                    if match:
+                        try:
+                            sold_date = datetime.strptime(match.group(1), "%d %b %Y").date()
+                        except:
+                            sold_date = None
+                    break
+
+            if title and price:
+                price_clean = re.sub(r"[^\d.]", "", price.text)
+                results.append({
+                    "title": title.text.strip(),
+                    "price": float(price_clean) if price_clean else None,
+                    "sold_date": str(sold_date) if sold_date else None
+                })
+
+        return {"results": results, "count": len(results)}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"error": str(e)}
