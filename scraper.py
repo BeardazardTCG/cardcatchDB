@@ -17,7 +17,7 @@ def extract_sold_date(item):
                     pass
     return None
 
-def getSoldDataByDate(query: str, includes: list = [], excludes: list = [], max_items: int = 100):
+def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items: int = 100):
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
@@ -28,34 +28,4 @@ def getSoldDataByDate(query: str, includes: list = [], excludes: list = [], max_
     }
 
     resp = requests.get(url, params=params, timeout=10)
-    soup = BeautifulSoup(resp.text, "html.parser")
-    items = soup.select(".s-item")
-
-    results = []
-
-    for item in items[:max_items]:
-        title_elem = item.select_one(".s-item__title")
-        price_elem = item.select_one(".s-item__price")
-        if not title_elem or not price_elem:
-            continue
-
-        title = title_elem.text.strip()
-        if not all(term.lower() in title.lower() for term in includes):
-            continue
-        if any(term.lower() in title.lower() for term in excludes):
-            continue
-
-        price_clean = re.sub(r"[^\d.]", "", price_elem.text)
-        try:
-            price = float(price_clean)
-        except ValueError:
-            continue
-
-        sold_date = extract_sold_date(item)
-        if sold_date:
-            results.append({
-                "price": price,
-                "sold_date": str(sold_date)
-            })
-
-    return results
+    soup = BeautifulSoup(resp.text
