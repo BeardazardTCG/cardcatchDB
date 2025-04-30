@@ -16,21 +16,23 @@ def extract_sold_date(item):
                     return None
     return None
 
-def parse_character_and_set(query):
+def parse_character_set_and_number(query):
     parts = query.split()
     character = parts[0] if parts else ""
     set_name = ""
 
-    # Try to isolate set name by dropping known format pieces (number, rarity)
     known_rarities = ["ex", "v", "vmax", "vstar", "gx", "illustration", "rare", "promo", "ultra"]
     filtered = [p for p in parts if not re.match(r"\d+/\d+", p) and p.lower() not in known_rarities]
     if len(filtered) > 1:
         set_name = " ".join(filtered[1:])  # everything after character
 
-    return character, set_name
+    match = re.search(r"\d+/\d+", query)
+    card_number = match.group(0) if match else ""
+
+    return character.lower(), set_name, card_number
 
 def parse_ebay_sold_page(query, max_items=100):
-    character, set_name = parse_character_and_set(query)
+    character, set_name, card_number = parse_character_set_and_number(query)
 
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
@@ -38,13 +40,10 @@ def parse_ebay_sold_page(query, max_items=100):
         "LH_Sold": "1",
         "LH_Complete": "1",
         "LH_PrefLoc": "1",
-        "_dmd": "2",                   # gallery view
-        "_ipg": "120",
-        "_sop": "13",
-        "_dcat": "183454",            # CCG individual cards category
-        "Character": character,
-        "Set": set_name,
-        "Rarity": "Double Rare",      # keep if this is always relevant
+        "_dmd": "2",         # gallery view
+        "_ipg": "120",       # max per page
+        "_sop": "13",        # most recent
+        "_dcat": "183454",   # TCG individual cards
         "Graded": "No",
         "LH_BIN": "1"
     }
@@ -71,15 +70,20 @@ def parse_ebay_sold_page(query, max_items=100):
             continue
 
         title = title_tag.text.strip()
-        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
+        title_lower = title.lower()
+        if card_number not in title and card_number.replace("/", "") not in title:
+            continue
+        if character not in title_lower:
+            continue
 
+        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
         try:
             price_float = float(price_clean)
         except ValueError:
             continue
 
         results.append({
-            "character": character,
+            "character": character.title(),
             "set": set_name,
             "title": title,
             "price": price_float,
