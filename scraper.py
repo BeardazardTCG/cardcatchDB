@@ -45,8 +45,8 @@ def parse_ebay_sold_page(query, max_items=100):
         "_ipg": "120",
         "_sop": "13",
         "_dcat": "183454",
-        "Graded": "No",
-        "LH_BIN": "1"
+        "Graded": "No"
+        # "LH_BIN": "1" ← removed to allow auctions
     }
 
     try:
