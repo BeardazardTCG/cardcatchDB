@@ -4,29 +4,20 @@ import re
 from datetime import datetime
 
 def extract_sold_date(item):
-    # Check for span with exact class holding the sold date
-    span = item.select_one("span.s-item__title--tagblock")
-    if span and "Sold" in span.text:
-        match = re.search(r"Sold\s+(\d{1,2})\s+([A-Za-z]+),?\s+(\d{4})", span.text)
-        if match:
-            day, month, year = match.groups()
-            try:
-                return datetime.strptime(f"{day} {month} {year}", "%d %b %Y").date()
-            except ValueError:
-                pass
-
-    # Check for alt layout (subtitle, etc.)
-    subtitle = item.select_one(".s-item__subtitle")
-    if subtitle and "Sold" in subtitle.text:
-        match = re.search(r"Sold\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", subtitle.text)
-        if match:
-            day, month, year = match.groups()
-            try:
-                return datetime.strptime(f"{day} {month} {year}", "%d %b %Y").date()
-            except ValueError:
-                pass
-
+    # Look through all span tags for one starting with "Sold"
+    spans = item.find_all("span")
+    for span in spans:
+        text = span.get_text(strip=True)
+        if text.startswith("Sold"):
+            match = re.search(r"Sold\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
+            if match:
+                day, month, year = match.groups()
+                try:
+                    return datetime.strptime(f"{day} {month} {year}", "%d %b %Y").date()
+                except ValueError:
+                    pass
     return None
+
 
 
 def parse_ebay_sold_page(query, max_items=100):
