@@ -17,7 +17,7 @@ def extract_sold_date(item):
                     pass
     return None
 
-def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items: int = 100):
+def getSoldDataByDate(query: str, includes: list = [], excludes: list = [], max_items: int = 100):
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
@@ -31,8 +31,7 @@ def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items
     soup = BeautifulSoup(resp.text, "html.parser")
     items = soup.select(".s-item")
 
-    prices = []
-    sold_dates = []
+    results = []
 
     for item in items[:max_items]:
         title_elem = item.select_one(".s-item__title")
@@ -52,38 +51,11 @@ def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items
         except ValueError:
             continue
 
-        prices.append(price)
         sold_date = extract_sold_date(item)
         if sold_date:
-            sold_dates.append(sold_date)
+            results.append({
+                "price": price,
+                "sold_date": str(sold_date)
+            })
 
-    if not prices:
-        return {
-            "query": query,
-            "medianPrice": None,
-            "soldCount": 0,
-            "lowestPrice": None,
-            "highestPrice": None,
-            "lastSoldDate": None,
-            "latestSoldDate": None
-        }
-
-    sorted_prices = sorted(prices)
-    mid = len(sorted_prices) // 2
-    if len(sorted_prices) % 2 == 0:
-        median = round((sorted_prices[mid - 1] + sorted_prices[mid]) / 2, 2)
-    else:
-        median = round(sorted_prices[mid], 2)
-
-    last_sold_date = sold_dates[0] if sold_dates else None
-    latest_sold_date = max(sold_dates) if sold_dates else None
-
-    return {
-        "query": query,
-        "medianPrice": median,
-        "soldCount": len(prices),
-        "lowestPrice": round(min(prices), 2),
-        "highestPrice": round(max(prices), 2),
-        "lastSoldDate": str(last_sold_date) if last_sold_date else None,
-        "latestSoldDate": str(latest_sold_date) if latest_sold_date else None
-    }
+    return results
