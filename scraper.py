@@ -1,4 +1,4 @@
-from bs4 import BeautifulSoup
+ffrom bs4 import BeautifulSoup
 import requests
 import re
 from datetime import datetime
@@ -23,7 +23,7 @@ def parse_ebay_sold_page(query, max_items=20):
         "_nkw": query,
         "LH_Sold": "1",
         "LH_Complete": "1",
-        "_sop": "13"  # Sort by most recent
+        "_sop": "13"
     }
 
     resp = requests.get(url, params=params, timeout=10)
