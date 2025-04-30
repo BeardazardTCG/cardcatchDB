@@ -3,13 +3,31 @@ import requests
 import re
 from datetime import datetime
 
+def extract_sold_date(item):
+    sold_date = None
+    # Look for span containing "Sold <date>" inside common containers
+    spans = item.select("div.s-item__title--tagblock span, .s-item__title span")
+
+    for span in spans:
+        text = span.text.strip()
+        if text.lower().startswith("sold"):
+            match = re.search(r"Sold (\d{1,2} \w+ \d{4})", text)
+            if match:
+                try:
+                    sold_date = datetime.strptime(match.group(1), "%d %b %Y").date()
+                except:
+                    sold_date = None
+            break
+
+    return sold_date
+
 def parse_ebay_sold_page(query, max_items=20):
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
         "LH_Sold": "1",
         "LH_Complete": "1",
-        "_sop": "13"
+        "_sop": "13"  # Sort by most recent
     }
 
     resp = requests.get(url, params=params, timeout=10)
@@ -19,15 +37,10 @@ def parse_ebay_sold_page(query, max_items=20):
     for item in soup.select(".s-item")[:max_items]:
         title = item.select_one(".s-item__title")
         price = item.select_one(".s-item__price")
-        sold = item.select_one(".s-item__title--tagblock")
+        sold_date = extract_sold_date(item)
 
         if title and price:
             price_clean = re.sub(r"[^\d.]", "", price.text)
-            try:
-                date_match = re.search(r"Sold (\d{1,2} \w+)", sold.text) if sold else None
-                sold_date = datetime.strptime(date_match.group(1) + f" {datetime.now().year}", "%d %b %Y").date() if date_match else None
-            except:
-                sold_date = None
 
             results.append({
                 "title": title.text.strip(),
