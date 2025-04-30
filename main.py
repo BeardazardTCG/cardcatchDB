@@ -171,16 +171,15 @@ def scraped_price_with_dates(query: str = Query(...), limit: int = Query(20, ge=
             price = item.select_one(".s-item__price")
             sold_date = None
 
-            for div in item.find_all("div"):
-                text = div.get_text(strip=True)
-                if text.lower().startswith("sold"):
-                    match = re.search(r"Sold (\d{1,2} \w+[,]? \d{4})", text)
-                    if match:
-                        try:
-                            sold_date = datetime.strptime(match.group(1), "%d %b %Y").date()
-                        except:
-                            sold_date = None
-                    break
+            # ✅ Targeting span.POSITIVE which contains "Sold 30 Apr, 2025"
+            sold_span = item.select_one("span.POSITIVE")
+            if sold_span:
+                match = re.search(r"Sold (\d{1,2} \w+[,]? \d{4})", sold_span.text.strip())
+                if match:
+                    try:
+                        sold_date = datetime.strptime(match.group(1), "%d %b, %Y").date()
+                    except ValueError:
+                        sold_date = None
 
             if title and price:
                 price_clean = re.sub(r"[^\d.]", "", price.text)
