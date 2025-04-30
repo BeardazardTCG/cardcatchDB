@@ -3,9 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
+from datetime import datetime, timedelta
 import os
 import requests
-from datetime import datetime, timedelta
+from bs4 import BeautifulSoup
+import re
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -42,15 +44,12 @@ class CardQuery(BaseModel):
     graded: Optional[bool] = Field(None, description="Only graded? True/False")
     grade_agency: Optional[str] = Field(None, description="Grading agency (PSA)")
 
-
 def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     global token_cache
     if sandbox:
         return None
-    # reuse cached token
     if token_cache["access_token"] and token_cache["expires_at"] > datetime.utcnow():
         return token_cache["access_token"]
-    # get credentials
     client_id = os.getenv("EBAY_CLIENT_ID")
     client_secret = os.getenv("EBAY_CLIENT_SECRET")
     if not client_id or not client_secret:
@@ -96,7 +95,6 @@ def price_lookup(
     sandbox: bool = Query(True),
     limit: int = Query(20, ge=1, le=100)
 ) -> Any:
-    # build query
     parts = [card]
     if number: parts.append(number)
     if set_name: parts.append(set_name)
@@ -152,3 +150,46 @@ def bulk_price(
             continue
         results.append(stats)
     return results
+
+@app.get("/scraped-price-with-dates", summary="Scrape sold listings with sold_date from eBay HTML")
+def scraped_price_with_dates(query: str = Query(...), limit: int = Query(20, ge=1, le=100)) -> Any:
+    try:
+        url = "https://www.ebay.co.uk/sch/i.html"
+        params = {
+            "_nkw": query,
+            "LH_Sold": "1",
+            "LH_Complete": "1",
+            "_sop": "13"
+        }
+
+        resp = requests.get(url, params=params, timeout=10)
+        soup = BeautifulSoup(resp.text, "html.parser")
+
+        results = []
+        for item in soup.select(".s-item")[:limit]:
+            title = item.select_one(".s-item__title")
+            price = item.select_one(".s-item__price")
+            sold_date = None
+
+            for div in item.find_all("div"):
+                text = div.get_text(strip=True)
+                if text.lower().startswith("sold"):
+                    match = re.search(r"Sold (\d{1,2} \w+[,]? \d{4})", text)
+                    if match:
+                        try:
+                            sold_date = datetime.strptime(match.group(1), "%d %b %Y").date()
+                        except:
+                            sold_date = None
+                    break
+
+            if title and price:
+                price_clean = re.sub(r"[^\d.]", "", price.text)
+                results.append({
+                    "title": title.text.strip(),
+                    "price": float(price_clean) if price_clean else None,
+                    "sold_date": str(sold_date) if sold_date else None
+                })
+
+        return {"results": results, "count": len(results)}
+    except Exception as e:
+        return {"error": str(e)}
