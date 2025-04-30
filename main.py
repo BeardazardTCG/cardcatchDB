@@ -152,3 +152,11 @@ def bulk_price(
             continue
         results.append(stats)
     return results
+@app.get("/scraped-price", summary="Scrape sold listings from eBay UK")
+def scraped_price(query: str, max_items: int = 20) -> Any:
+    from scraper import parse_ebay_sold_page
+    try:
+        results = parse_ebay_sold_page(query, max_items=max_items)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
