@@ -5,11 +5,10 @@ from datetime import datetime
 
 def extract_sold_date(item):
     sold_date = None
-    # Look for span containing "Sold <date>" inside common containers
-    spans = item.select("div.s-item__title--tagblock span, .s-item__title span")
+    tagblock = item.select_one("div.s-item__title--tagblock")
 
-    for span in spans:
-        text = span.text.strip()
+    if tagblock:
+        text = tagblock.get_text(strip=True)
         if text.lower().startswith("sold"):
             match = re.search(r"Sold (\d{1,2} \w+ \d{4})", text)
             if match:
@@ -17,7 +16,6 @@ def extract_sold_date(item):
                     sold_date = datetime.strptime(match.group(1), "%d %b %Y").date()
                 except:
                     sold_date = None
-            break
 
     return sold_date
 
