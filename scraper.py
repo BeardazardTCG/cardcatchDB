@@ -1,4 +1,4 @@
-ffrom bs4 import BeautifulSoup
+from bs4 import BeautifulSoup
 import requests
 import re
 from datetime import datetime
