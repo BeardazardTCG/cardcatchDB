@@ -24,7 +24,7 @@ def parse_character_set_and_number(query):
     known_rarities = ["ex", "v", "vmax", "vstar", "gx", "illustration", "rare", "promo", "ultra"]
     filtered = [p for p in parts if not re.match(r"\d+/\d+", p) and p.lower() not in known_rarities]
     if len(filtered) > 1:
-        set_name = " ".join(filtered[1:])  # everything after character
+        set_name = " ".join(filtered[1:])
 
     match = re.search(r"\d+/\d+", query)
     card_number = match.group(0) if match else ""
@@ -33,6 +33,7 @@ def parse_character_set_and_number(query):
 
 def parse_ebay_sold_page(query, max_items=100):
     character, set_name, card_number = parse_character_set_and_number(query)
+    card_number_digits = re.sub(r"[^\d]", "", card_number)
 
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
@@ -40,10 +41,10 @@ def parse_ebay_sold_page(query, max_items=100):
         "LH_Sold": "1",
         "LH_Complete": "1",
         "LH_PrefLoc": "1",
-        "_dmd": "2",         # gallery view
-        "_ipg": "120",       # max per page
-        "_sop": "13",        # most recent
-        "_dcat": "183454",   # TCG individual cards
+        "_dmd": "2",
+        "_ipg": "120",
+        "_sop": "13",
+        "_dcat": "183454",
         "Graded": "No",
         "LH_BIN": "1"
     }
@@ -71,7 +72,9 @@ def parse_ebay_sold_page(query, max_items=100):
 
         title = title_tag.text.strip()
         title_lower = title.lower()
-        if card_number not in title and card_number.replace("/", "") not in title:
+        title_digits = re.sub(r"[^\d]", "", title)
+
+        if card_number_digits not in title_digits:
             continue
         if character not in title_lower:
             continue
