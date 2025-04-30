@@ -42,6 +42,7 @@ class CardQuery(BaseModel):
     graded: Optional[bool] = Field(None, description="Only graded? True/False")
     grade_agency: Optional[str] = Field(None, description="Grading agency (PSA)")
 
+# OAuth token retrieval function
 def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     global token_cache
     if sandbox:
@@ -68,10 +69,12 @@ def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     token_cache.update({"access_token": token, "expires_at": expires_at})
     return token
 
+# Health check endpoint
 @app.get("/", summary="Health check")
 def health() -> Any:
     return {"message": "CardCatch is live — production mode active."}
 
+# OAuth token endpoint
 @app.get("/token", response_model=OAuthToken, summary="Get OAuth token (production)")
 def token_endpoint(sandbox: bool = Query(False)) -> OAuthToken:
     if sandbox:
@@ -79,6 +82,7 @@ def token_endpoint(sandbox: bool = Query(False)) -> OAuthToken:
     token = fetch_oauth_token(False)
     return OAuthToken(access_token=token, expires_at=token_cache["expires_at"])
 
+# Get single-card pricing stats (existing)
 @app.get("/price", summary="Get single-card pricing stats")
 def price_lookup(
     card: str = Query(...),
@@ -128,6 +132,7 @@ def price_lookup(
     suggestion = round(avg * 1.1, 2)
     return {"card": card, "sold_count": len(prices), "average_price": avg, "lowest_price": lo, "highest_price": hi, "suggested_resale": suggestion}
 
+# Bulk price lookup (existing)
 @app.post("/bulk-price", summary="Get bulk pricing stats")
 def bulk_price(
     queries: List[CardQuery],
@@ -149,6 +154,7 @@ def bulk_price(
         results.append(stats)
     return results
 
+# Scrape sold listings from eBay (existing)
 @app.get("/scraped-price", summary="Scrape sold listings from eBay UK")
 def scraped_price(query: str, max_items: int = 20) -> Any:
     from scraper import parse_ebay_sold_page
@@ -157,6 +163,7 @@ def scraped_price(query: str, max_items: int = 20) -> Any:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Return filtered median sold price using scraper (existing)
 @app.get("/api/getCardPrice", summary="Get filtered median sold price using scraper")
 def get_card_price(query: str) -> Any:
     from scraper import getCardPrice
@@ -169,15 +176,15 @@ def get_card_price(query: str) -> Any:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+# Get sold prices and dates for recent listings (new route)
 @app.get("/api/sold-history", summary="Get sold prices and dates for recent listings")
 def sold_history(query: str) -> Any:
     from scraper import getSoldDataByDate
     try:
         return getSoldDataByDate(
             query=query,
-            includes=[],
+            includes=[],  # Add filters like ["Charizard"] if needed
             excludes=["lot", "bundle", "proxy"]
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
