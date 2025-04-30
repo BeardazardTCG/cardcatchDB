@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 
 def extract_sold_date(item):
-    # Look through all span tags for one starting with "Sold"
+    # Check span tags first
     spans = item.find_all("span")
     for span in spans:
         text = span.get_text(strip=True)
@@ -16,8 +16,18 @@ def extract_sold_date(item):
                     return datetime.strptime(f"{day} {month} {year}", "%d %b %Y").date()
                 except ValueError:
                     pass
-    return None
 
+    # Fallback to checking divs, just in case
+    for div in item.find_all("div"):
+        text = div.get_text(strip=True)
+        if text.lower().startswith("sold"):
+            match = re.search(r"Sold (\d{1,2} \w+ \d{4})", text)
+            if match:
+                try:
+                    return datetime.strptime(match.group(1), "%d %b %Y").date()
+                except:
+                    return None
+    return None
 
 def parse_ebay_sold_page(query, max_items=100):
     url = "https://www.ebay.co.uk/sch/i.html"
