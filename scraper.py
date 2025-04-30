@@ -53,7 +53,6 @@ def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items
             continue
 
         prices.append(price)
-
         sold_date = extract_sold_date(item)
         if sold_date:
             sold_dates.append(sold_date)
@@ -65,6 +64,7 @@ def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items
             "soldCount": 0,
             "lowestPrice": None,
             "highestPrice": None,
+            "lastSoldDate": None,
             "latestSoldDate": None
         }
 
@@ -75,11 +75,15 @@ def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items
     else:
         median = round(sorted_prices[mid], 2)
 
+    last_sold_date = sold_dates[0] if sold_dates else None
+    latest_sold_date = max(sold_dates) if sold_dates else None
+
     return {
         "query": query,
         "medianPrice": median,
         "soldCount": len(prices),
         "lowestPrice": round(min(prices), 2),
         "highestPrice": round(max(prices), 2),
-        "latestSoldDate": str(max(sold_dates)) if sold_dates else None
+        "lastSoldDate": str(last_sold_date) if last_sold_date else None,
+        "latestSoldDate": str(latest_sold_date) if latest_sold_date else None
     }
