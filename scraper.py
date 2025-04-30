@@ -5,10 +5,8 @@ from datetime import datetime
 
 def extract_sold_date(item):
     sold_date = None
-    tagblock = item.select_one("div.s-item__title--tagblock")
-
-    if tagblock:
-        text = tagblock.get_text(strip=True)
+    for div in item.find_all("div"):
+        text = div.get_text(strip=True)
         if text.lower().startswith("sold"):
             match = re.search(r"Sold (\d{1,2} \w+ \d{4})", text)
             if match:
@@ -16,7 +14,7 @@ def extract_sold_date(item):
                     sold_date = datetime.strptime(match.group(1), "%d %b %Y").date()
                 except:
                     sold_date = None
-
+            break
     return sold_date
 
 def parse_ebay_sold_page(query, max_items=20):
