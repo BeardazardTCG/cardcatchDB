@@ -152,3 +152,12 @@ def bulk_price(
             continue
         results.append(stats)
     return results
+from scraper import parse_ebay_sold_page
+
+@app.get("/scraped-price", summary="Scrape sold listings with sold_date")
+def scraped_price(query: str = Query(...)):
+    try:
+        data = parse_ebay_sold_page(query)
+        return {"results": data, "count": len(data)}
+    except Exception as e:
+        return {"error": str(e)}
