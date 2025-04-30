@@ -4,7 +4,6 @@ import re
 from datetime import datetime
 
 def extract_sold_date(item):
-    # Look through all span tags for one starting with "Sold"
     spans = item.find_all("span")
     for span in spans:
         text = span.get_text(strip=True)
@@ -18,44 +17,69 @@ def extract_sold_date(item):
                     pass
     return None
 
-
-
-def parse_ebay_sold_page(query, max_items=100):
+def getCardPrice(query: str, includes: list = [], excludes: list = [], max_items: int = 100):
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
         "LH_Sold": "1",
         "LH_Complete": "1",
-        "_sop": "13",     # Sort by most recent
-        "_ipg": "100"     # Items per page
+        "_sop": "13",
+        "_ipg": "100"
     }
 
     resp = requests.get(url, params=params, timeout=10)
     soup = BeautifulSoup(resp.text, "html.parser")
+    items = soup.select(".s-item")
 
-    results = []
-    count = 0
+    prices = []
+    sold_dates = []
 
-    for item in soup.select(".s-item"):
-        if count >= max_items:
-            break
+    for item in items[:max_items]:
+        title_elem = item.select_one(".s-item__title")
+        price_elem = item.select_one(".s-item__price")
+        if not title_elem or not price_elem:
+            continue
 
-        title = item.select_one(".s-item__title")
-        price = item.select_one(".s-item__price")
+        title = title_elem.text.strip()
+        if not all(term.lower() in title.lower() for term in includes):
+            continue
+        if any(term.lower() in title.lower() for term in excludes):
+            continue
+
+        price_clean = re.sub(r"[^\d.]", "", price_elem.text)
+        try:
+            price = float(price_clean)
+        except ValueError:
+            continue
+
+        prices.append(price)
+
         sold_date = extract_sold_date(item)
+        if sold_date:
+            sold_dates.append(sold_date)
 
-        if title and price:
-            price_clean = re.sub(r"[^\d.]", "", price.text)
-            try:
-                price_float = float(price_clean)
-            except ValueError:
-                continue
+    if not prices:
+        return {
+            "query": query,
+            "medianPrice": None,
+            "soldCount": 0,
+            "lowestPrice": None,
+            "highestPrice": None,
+            "latestSoldDate": None
+        }
 
-            results.append({
-                "title": title.text.strip(),
-                "price": price_float,
-                "sold_date": str(sold_date) if sold_date else None
-            })
-            count += 1
+    sorted_prices = sorted(prices)
+    mid = len(sorted_prices) // 2
+    if len(sorted_prices) % 2 == 0:
+        median = round((sorted_prices[mid - 1] + sorted_prices[mid]) / 2, 2)
+    else:
+        median = round(sorted_prices[mid], 2)
 
-    return results
+    return {
+        "query": query,
+        "medianPrice": median,
+        "soldCount": len(prices),
+        "lowestPrice": round(min(prices), 2),
+        "highestPrice": round(max(prices), 2),
+        "latestSoldDate": str(max(sold_dates)) if sold_dates else None
+    }
