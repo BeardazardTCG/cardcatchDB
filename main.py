@@ -172,3 +172,15 @@ def get_card_price(query: str) -> Any:
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@app.get("/api/getCardPrice", summary="Get filtered median sold price using scraper")
+def get_card_price(query: str) -> Any:
+    from scraper import getCardPrice
+    try:
+        result = getCardPrice(
+            query=query,
+            includes=[],  # Add words to require (e.g. ["Charizard"])
+            excludes=["lot", "bundle", "proxy"]  # Filter bad listings
+        )
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
