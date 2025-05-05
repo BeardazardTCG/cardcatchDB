@@ -244,6 +244,3 @@ async def tcg_prices_batch(request: Request):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
-        return results
-
