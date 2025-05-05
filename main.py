@@ -160,3 +160,47 @@ def scraped_price(query: str, max_items: int = 20) -> Any:
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@app.post("/tcg-prices-batch")
+def tcg_prices_batch(request: Request):
+    try:
+        body = request.json()
+        card_ids = body.get("card_ids", [])
+        results = []
+
+        for card_id in card_ids:
+            url = f"https://api.pokemontcg.io/v2/cards/{card_id}"
+            resp = requests.get(url, headers={
+                "X-Api-Key": os.getenv("POKEMONTCG_API_KEY")
+            }, timeout=10)
+
+            if resp.status_code != 200:
+                results.append({"id": card_id, "market": None, "low": None})
+                continue
+
+            data = resp.json().get("data", {})
+            prices = data.get("tcgplayer", {}).get("prices", {})
+
+            market = (
+                prices.get("holofoil", {}).get("market") or
+                prices.get("reverseHolofoil", {}).get("market") or
+                prices.get("normal", {}).get("market") or
+                prices.get("1stEditionHolofoil", {}).get("market")
+            )
+
+            low = (
+                prices.get("holofoil", {}).get("low") or
+                prices.get("reverseHolofoil", {}).get("low") or
+                prices.get("normal", {}).get("low") or
+                prices.get("1stEditionHolofoil", {}).get("low")
+            )
+
+            results.append({
+                "id": card_id,
+                "market": round(market, 2) if market else None,
+                "low": round(low, 2) if low else None
+            })
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
