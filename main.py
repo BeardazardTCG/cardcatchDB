@@ -162,9 +162,9 @@ def scraped_price(query: str, max_items: int = 20) -> Any:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 @app.post("/tcg-prices-batch")
-def tcg_prices_batch(request: Request):
+async def tcg_prices_batch(request: Request):
     try:
-        body = request.json()
+        body = await request.json()
         card_ids = body.get("card_ids", [])
         results = []
 
