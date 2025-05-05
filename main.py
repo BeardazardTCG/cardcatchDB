@@ -43,15 +43,12 @@ class CardQuery(BaseModel):
     graded: Optional[bool] = Field(None, description="Only graded? True/False")
     grade_agency: Optional[str] = Field(None, description="Grading agency (PSA)")
 
-
 def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     global token_cache
     if sandbox:
         return None
-    # reuse cached token
     if token_cache["access_token"] and token_cache["expires_at"] > datetime.utcnow():
         return token_cache["access_token"]
-    # get credentials
     client_id = os.getenv("EBAY_CLIENT_ID")
     client_secret = os.getenv("EBAY_CLIENT_SECRET")
     if not client_id or not client_secret:
@@ -60,14 +57,14 @@ def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     resp = requests.post(
         token_url,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
-        data={"grant_type":"client_credentials","scope":"https://api.ebay.com/oauth/api_scope"},
+        data={"grant_type": "client_credentials", "scope": "https://api.ebay.com/oauth/api_scope"},
         auth=(client_id, client_secret), timeout=10
     )
     if resp.status_code != 200:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="OAuth token fetch failed")
     info = resp.json()
     token = info.get("access_token")
-    expires_in = info.get("expires_in",3600)
+    expires_in = info.get("expires_in", 3600)
     expires_at = datetime.utcnow() + timedelta(seconds=expires_in - CACHE_BUFFER_SEC)
     token_cache.update({"access_token": token, "expires_at": expires_at})
     return token
@@ -97,7 +94,6 @@ def price_lookup(
     sandbox: bool = Query(True),
     limit: int = Query(20, ge=1, le=100)
 ) -> Any:
-    # build query
     parts = [card]
     if number: parts.append(number)
     if set_name: parts.append(set_name)
@@ -112,10 +108,10 @@ def price_lookup(
     url = "https://api.ebay.com/buy/browse/v1/item_summary/search"
     filters = ["priceCurrency:GBP"]
     if condition:
-        conds = condition.replace(" ","").split(",")
+        conds = condition.replace(" ", "").split(",")
         filters.append(f"conditions:{{{'|'.join(conds)}}}")
     if buying_options:
-        opts = buying_options.replace(" ","").split(",")
+        opts = buying_options.replace(" ", "").split(",")
         filters.append(f"buyingOptions:{{{'|'.join(opts)}}}")
     if grade_agency:
         filters.append(f"aspectFilter=GradingCompany:{{{grade_agency}}}")
@@ -127,10 +123,10 @@ def price_lookup(
     prices = [float(i["price"]["value"]) for i in items if i.get("price")]
     if not prices:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No sold data found for this query.")
-    avg = round(sum(prices)/len(prices),2)
-    lo = round(min(prices),2)
-    hi = round(max(prices),2)
-    suggestion = round(avg*1.1,2)
+    avg = round(sum(prices)/len(prices), 2)
+    lo = round(min(prices), 2)
+    hi = round(max(prices), 2)
+    suggestion = round(avg * 1.1, 2)
     return {"card": card, "sold_count": len(prices), "average_price": avg, "lowest_price": lo, "highest_price": hi, "suggested_resale": suggestion}
 
 @app.post("/bulk-price", summary="Get bulk pricing stats")
@@ -153,6 +149,7 @@ def bulk_price(
             continue
         results.append(stats)
     return results
+
 @app.get("/scraped-price", summary="Scrape sold listings from eBay UK")
 def scraped_price(query: str, max_items: int = 20) -> Any:
     from scraper import parse_ebay_sold_page
@@ -161,45 +158,7 @@ def scraped_price(query: str, max_items: int = 20) -> Any:
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-@app.post("/tcg-prices-batch")
-async def tcg_prices_batch(request: Request):
-    try:
-        body = await request.json()
-        card_ids = body.get("card_ids", [])
-        results = []
 
-        for card_id in card_ids:
-            url = f"https://api.pokemontcg.io/v2/cards/{card_id}"
-            resp = requests.get(url, headers={
-                "X-Api-Key": os.getenv("POKEMONTCG_API_KEY")
-            }, timeout=10)
-
-            if resp.status_code != 200:
-                results.append({"id": card_id, "market": None, "low": None})
-                continue
-
-            data = resp.json().get("data", {})
-            prices = data.get("tcgplayer", {}).get("prices", {})
-
-            market = (
-                prices.get("holofoil", {}).get("market") or
-                prices.get("reverseHolofoil", {}).get("market") or
-                prices.get("normal", {}).get("market") or
-                prices.get("1stEditionHolofoil", {}).get("market")
-            )
-
-            low = (
-                prices.get("holofoil", {}).get("low") or
-                prices.get("reverseHolofoil", {}).get("low") or
-                prices.get("normal", {}).get("low") or
-                prices.get("1stEditionHolofoil", {}).get("low")
-            )
-
-            results.append({
-                "id": card_id,
-                "market": round(market, 2) if market else None,
-                "low": round(low, 2) if low else None
-            })
 @app.post("/tcg-prices-batch")
 async def tcg_prices_batch(request: Request):
     try:
