@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Query, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi import Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
 import os
