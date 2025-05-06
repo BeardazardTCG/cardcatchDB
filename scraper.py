@@ -3,6 +3,7 @@ import requests
 import re
 from datetime import datetime
 
+
 def extract_sold_date(item):
     spans = item.find_all("span")
     for span in spans:
@@ -15,6 +16,7 @@ def extract_sold_date(item):
                 except ValueError:
                     return None
     return None
+
 
 def parse_character_set_and_number(query):
     parts = query.split()
@@ -31,6 +33,7 @@ def parse_character_set_and_number(query):
 
     return character.lower(), set_name, card_number
 
+
 def parse_ebay_sold_page(query, max_items=100):
     character, set_name, card_number = parse_character_set_and_number(query)
     card_number_digits = re.sub(r"[^\d]", "", card_number)
@@ -46,7 +49,6 @@ def parse_ebay_sold_page(query, max_items=100):
         "_sop": "13",
         "_dcat": "183454",
         "Graded": "No"
-        # "LH_BIN": "1" ← removed to allow auctions
     }
 
     try:
@@ -91,6 +93,61 @@ def parse_ebay_sold_page(query, max_items=100):
             "title": title,
             "price": price_float,
             "sold_date": str(sold_date)
+        })
+        count += 1
+
+    return results
+
+
+def parse_ebay_active_page(query, max_items=30):
+    url = "https://www.ebay.co.uk/sch/i.html"
+    params = {
+        "_nkw": query,
+        "LH_BIN": "1",           # Buy It Now only
+        "LH_PrefLoc": "1",       # UK only
+        "_ipg": "120",
+        "_sop": "15",            # Lowest price + postage
+        "_dcat": "183454",       # Pokémon TCG
+        "Graded": "No"           # Ungraded
+    }
+
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        soup = BeautifulSoup(resp.text, "html.parser")
+    except Exception as e:
+        print("Active scrape error:", e)
+        return []
+
+    results = []
+    count = 0
+
+    for item in soup.select(".s-item"):
+        if count >= max_items:
+            break
+
+        title_tag = item.select_one(".s-item__title")
+        price_tag = item.select_one(".s-item__price")
+        link_tag = item.select_one(".s-item__link")
+
+        if not title_tag or not price_tag:
+            continue
+
+        title = title_tag.text.strip()
+        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
+        url = link_tag['href'] if link_tag else ""
+
+        try:
+            price_float = float(price_clean)
+        except ValueError:
+            continue
+
+        if any(term in title.lower() for term in ["proxy", "lot", "damaged", "jumbo"]):
+            continue
+
+        results.append({
+            "title": title,
+            "price": price_float,
+            "url": url
         })
         count += 1
 
