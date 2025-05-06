@@ -198,6 +198,12 @@ async def tcg_prices_batch(request: Request):
                 "market": round(market, 2) if market else None,
                 "low": round(low, 2) if low else None
             })
+
+        return results
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 from scraper import parse_ebay_active_page
 
 @app.get("/scraped-active-price", summary="Scrape active listings from eBay UK")
