@@ -100,15 +100,18 @@ def parse_ebay_sold_page(query, max_items=100):
 
 
 def parse_ebay_active_page(query, max_items=30):
+    character, set_name, card_number = parse_character_set_and_number(query)
+    card_number_digits = re.sub(r"[^\d]", "", card_number)
+
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
         "LH_BIN": "1",           # Buy It Now only
         "LH_PrefLoc": "1",       # UK only
-        "_ipg": "120",
-        "_sop": "15",            # Lowest price + postage
+        "_ipg": "120",           # 120 results per page
+        "_sop": "12",            # Best Match sort (was 15: lowest+post)
         "_dcat": "183454",       # Pokémon TCG
-        "Graded": "No"           # Ungraded
+        "Graded": "No"
     }
 
     try:
@@ -133,21 +136,30 @@ def parse_ebay_active_page(query, max_items=30):
             continue
 
         title = title_tag.text.strip()
-        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
+        title_lower = title.lower()
+        title_digits = re.sub(r"[^\d]", "", title)
         url = link_tag['href'] if link_tag else ""
 
+        if any(term in title_lower for term in ["proxy", "lot", "damaged", "jumbo", "binder", "custom"]):
+            continue
+        if character and character.lower() not in title_lower:
+            continue
+        if card_number_digits and card_number_digits not in title_digits:
+            continue
+
+        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
         try:
             price_float = float(price_clean)
         except ValueError:
             continue
 
-        if any(term in title.lower() for term in ["proxy", "lot", "damaged", "jumbo"]):
-            continue
-
         results.append({
+            "character": character.title(),
+            "set": set_name,
             "title": title,
             "price": price_float,
-            "url": url
+            "url": url,
+            "listing_date": str(datetime.today().date())
         })
         count += 1
 
