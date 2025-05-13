@@ -8,6 +8,10 @@ import os
 import requests
 from datetime import datetime, timedelta
 
+# ✅ NEW IMPORTS (added safely)
+from sqlmodel import SQLModel
+from sqlalchemy.ext.asyncio import create_async_engine
+
 # Initialize FastAPI app
 app = FastAPI(
     title="CardCatch Pricing API",
@@ -23,6 +27,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ✅ NEW: DATABASE CONNECTION SETUP
+DATABASE_URL = os.getenv("DATABASE_URL")
+engine = create_async_engine(DATABASE_URL, echo=True)
+
+# ✅ NEW: STARTUP EVENT TO CONNECT DATABASE
+@app.on_event("startup")
+async def on_startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+    print("Connected to the database successfully.")
 
 # OAuth token cache
 token_cache: Dict[str, Any] = {"access_token": None, "expires_at": datetime.min}
@@ -211,10 +226,5 @@ def get_active_price(query: str, max_items: int = 30) -> Any:
     try:
         results = parse_ebay_active_page(query, max_items=max_items)
         return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-        return results
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
