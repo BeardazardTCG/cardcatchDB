@@ -1,20 +1,24 @@
 # upload_master_cards.py
 
 import pandas as pd
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import SQLModel, Session
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 from models import MasterCard
+import asyncio
 import os
 
 # Load environment variable
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-# Connect to the database
-engine = create_engine(DATABASE_URL)
+# Create async engine
+engine = create_async_engine(DATABASE_URL, echo=True)
+async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 # Read the Excel file
 df = pd.read_excel("CardBrain_Master.xlsx", sheet_name="Master Card Library")
 
-# Columns we expect in your spreadsheet:
+# Columns we expect
 expected_columns = [
     "Unique ID", "Card Name", "Set Name", "Card Number",
     "Card ID", "Full Query", "Tier", "Status", "High Demand Boost"
@@ -41,11 +45,14 @@ for _, row in df.iterrows():
     )
     cards_to_insert.append(card)
 
-# Insert into the database
-print(f"Inserting {len(cards_to_insert)} cards...")
-SQLModel.metadata.create_all(engine)
-with Session(engine) as session:
-    session.add_all(cards_to_insert)
-    session.commit()
+# Upload function
+async def upload_cards():
+    print(f"Inserting {len(cards_to_insert)} cards...")
+    async with async_session() as session:
+        session.add_all(cards_to_insert)
+        await session.commit()
+    print("✅ All cards uploaded successfully!")
 
-print("✅ All cards uploaded successfully!")
+# Run
+if __name__ == "__main__":
+    asyncio.run(upload_cards())
