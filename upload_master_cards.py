@@ -6,7 +6,8 @@ import os
 # Force sync connection for upload
 DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql+asyncpg", "postgresql+psycopg2")
 
-engine = create_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=True, future=True)
+
 
 # Read Excel
 df = pd.read_excel("CardBrain_Master.xlsx", sheet_name="Master Card Library")
