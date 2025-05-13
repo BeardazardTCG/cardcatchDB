@@ -4,3 +4,4 @@ requests
 python-dotenv
 beautifulsoup4
 sqlmodel
+psycopg2-binary
