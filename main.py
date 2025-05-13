@@ -1,16 +1,18 @@
-from fastapi import FastAPI, Query, HTTPException, status
+from fastapi import FastAPI, Query, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from fastapi import Request
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
 import os
 import requests
 from datetime import datetime, timedelta
 
-# ✅ NEW IMPORTS (added safely)
+# ✅ Import database tools
 from sqlmodel import SQLModel
 from sqlalchemy.ext.asyncio import create_async_engine
+
+# ✅ Import your MasterCard model
+from models import MasterCard
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -28,11 +30,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ NEW: DATABASE CONNECTION SETUP
+# Set up database connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL, echo=True)
 
-# ✅ NEW: STARTUP EVENT TO CONNECT DATABASE
+# Startup event: create tables
 @app.on_event("startup")
 async def on_startup():
     async with engine.begin() as conn:
@@ -43,10 +45,12 @@ async def on_startup():
 token_cache: Dict[str, Any] = {"access_token": None, "expires_at": datetime.min}
 CACHE_BUFFER_SEC = 60
 
+# OAuth token model
 class OAuthToken(BaseModel):
     access_token: str
     expires_at: datetime
 
+# Card query model
 class CardQuery(BaseModel):
     card: str = Field(..., description="Name of the card to search")
     number: Optional[str] = Field(None, description="Optional card number")
@@ -58,6 +62,7 @@ class CardQuery(BaseModel):
     graded: Optional[bool] = Field(None, description="Only graded? True/False")
     grade_agency: Optional[str] = Field(None, description="Grading agency (PSA)")
 
+# Fetch OAuth token
 def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     global token_cache
     if sandbox:
@@ -73,7 +78,8 @@ def fetch_oauth_token(sandbox: bool) -> Optional[str]:
         token_url,
         headers={"Content-Type": "application/x-www-form-urlencoded"},
         data={"grant_type": "client_credentials", "scope": "https://api.ebay.com/oauth/api_scope"},
-        auth=(client_id, client_secret), timeout=10
+        auth=(client_id, client_secret),
+        timeout=10
     )
     if resp.status_code != 200:
         raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="OAuth token fetch failed")
@@ -84,10 +90,12 @@ def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     token_cache.update({"access_token": token, "expires_at": expires_at})
     return token
 
+# Health check
 @app.get("/", summary="Health check")
 def health() -> Any:
     return {"message": "CardCatch is live — production mode active."}
 
+# Get OAuth token endpoint
 @app.get("/token", response_model=OAuthToken, summary="Get OAuth token (production)")
 def token_endpoint(sandbox: bool = Query(False, description="true=Sandbox, false=Production")) -> OAuthToken:
     if sandbox:
@@ -95,6 +103,7 @@ def token_endpoint(sandbox: bool = Query(False, description="true=Sandbox, false
     token = fetch_oauth_token(False)
     return OAuthToken(access_token=token, expires_at=token_cache["expires_at"])
 
+# Price lookup endpoint
 @app.get("/price", summary="Get single-card pricing stats")
 def price_lookup(
     card: str = Query(...),
@@ -144,6 +153,7 @@ def price_lookup(
     suggestion = round(avg * 1.1, 2)
     return {"card": card, "sold_count": len(prices), "average_price": avg, "lowest_price": lo, "highest_price": hi, "suggested_resale": suggestion}
 
+# Bulk price lookup endpoint
 @app.post("/bulk-price", summary="Get bulk pricing stats")
 def bulk_price(
     queries: List[CardQuery],
@@ -165,6 +175,7 @@ def bulk_price(
         results.append(stats)
     return results
 
+# Scraped sold listings endpoint
 @app.get("/scraped-price", summary="Scrape sold listings from eBay UK")
 def scraped_price(query: str, max_items: int = 20) -> Any:
     from scraper import parse_ebay_sold_page
@@ -174,7 +185,8 @@ def scraped_price(query: str, max_items: int = 20) -> Any:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tcg-prices-batch")
+# TCGplayer batch price endpoint
+@app.post("/tcg-prices-batch", summary="Batch fetch TCGPlayer prices")
 async def tcg_prices_batch(request: Request):
     try:
         body = await request.json()
@@ -219,10 +231,10 @@ async def tcg_prices_batch(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-from scraper import parse_ebay_active_page
-
+# Scraped active listings endpoint
 @app.get("/scraped-active-price", summary="Scrape active listings from eBay UK")
 def get_active_price(query: str, max_items: int = 30) -> Any:
+    from scraper import parse_ebay_active_page
     try:
         results = parse_ebay_active_page(query, max_items=max_items)
         return results
