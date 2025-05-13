@@ -22,3 +22,27 @@ class MasterCard(SQLModel, table=True):
     net_resale_value: Optional[float]
     review_flag: Optional[str]
     sort_key: Optional[str]
+
+class DailyPriceLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unique_id: int
+    sold_date: datetime
+    median_price: Optional[float]
+    average_price: Optional[float]
+    lowest_price: Optional[float]
+    highest_price: Optional[float]
+    sold_count: Optional[int]
+    query_used: Optional[str]
+    card_number: Optional[str]
+
+class ActiveDailyPriceLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unique_id: int
+    scrape_date: datetime
+    median_price: Optional[float]
+    average_price: Optional[float]
+    lowest_price: Optional[float]
+    highest_price: Optional[float]
+    active_count: Optional[int]
+    query_used: Optional[str]
+    card_number: Optional[str]
