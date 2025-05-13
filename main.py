@@ -1,19 +1,18 @@
-from batch_manager import BatchManager
-from fastapi import FastAPI, Query, HTTPException, status, Request
+from fastapi import FastAPI, Query, HTTPException, status, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlmodel import SQLModel
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
 import os
 import requests
 from datetime import datetime, timedelta
 
-# ✅ Import database tools
-from sqlmodel import SQLModel
-from sqlalchemy.ext.asyncio import create_async_engine
-
-# ✅ Import your MasterCard model
 from models import MasterCard
+from batch_manager import BatchManager
+from scraper_launcher import ScraperLauncher
+from scraper import parse_ebay_sold_page, parse_ebay_active_page
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -34,6 +33,12 @@ app.add_middleware(
 # Set up database connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL, echo=True)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+# Dependency for FastAPI routes
+async def get_db_session() -> AsyncSession:
+    async with async_session() as session:
+        yield session
 
 # Startup event: create tables
 @app.on_event("startup")
@@ -46,24 +51,21 @@ async def on_startup():
 token_cache: Dict[str, Any] = {"access_token": None, "expires_at": datetime.min}
 CACHE_BUFFER_SEC = 60
 
-# OAuth token model
 class OAuthToken(BaseModel):
     access_token: str
     expires_at: datetime
 
-# Card query model
 class CardQuery(BaseModel):
     card: str = Field(..., description="Name of the card to search")
     number: Optional[str] = Field(None, description="Optional card number")
     set_name: Optional[str] = Field(None, alias="set", description="Card set name")
-    lang: Optional[str] = Field("en", description="Language code")
+    lang: str = Field("en", description="Language code")
     rarity: Optional[str] = Field(None, description="Rarity filter")
     condition: Optional[str] = Field(None, description="Condition filter (NEW,USED)")
     buying_options: Optional[str] = Field("FIXED_PRICE", description="Buying options (FIXED_PRICE,AUCTION)")
     graded: Optional[bool] = Field(None, description="Only graded? True/False")
     grade_agency: Optional[str] = Field(None, description="Grading agency (PSA)")
 
-# Fetch OAuth token
 def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     global token_cache
     if sandbox:
@@ -91,12 +93,10 @@ def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     token_cache.update({"access_token": token, "expires_at": expires_at})
     return token
 
-# Health check
 @app.get("/", summary="Health check")
 def health() -> Any:
     return {"message": "CardCatch is live — production mode active."}
 
-# Get OAuth token endpoint
 @app.get("/token", response_model=OAuthToken, summary="Get OAuth token (production)")
 def token_endpoint(sandbox: bool = Query(False, description="true=Sandbox, false=Production")) -> OAuthToken:
     if sandbox:
@@ -104,7 +104,6 @@ def token_endpoint(sandbox: bool = Query(False, description="true=Sandbox, false
     token = fetch_oauth_token(False)
     return OAuthToken(access_token=token, expires_at=token_cache["expires_at"])
 
-# Price lookup endpoint
 @app.get("/price", summary="Get single-card pricing stats")
 def price_lookup(
     card: str = Query(...),
@@ -154,7 +153,6 @@ def price_lookup(
     suggestion = round(avg * 1.1, 2)
     return {"card": card, "sold_count": len(prices), "average_price": avg, "lowest_price": lo, "highest_price": hi, "suggested_resale": suggestion}
 
-# Bulk price lookup endpoint
 @app.post("/bulk-price", summary="Get bulk pricing stats")
 def bulk_price(
     queries: List[CardQuery],
@@ -176,24 +174,28 @@ def bulk_price(
         results.append(stats)
     return results
 
-# Scraped sold listings endpoint
 @app.get("/scraped-price", summary="Scrape sold listings from eBay UK")
 def scraped_price(query: str, max_items: int = 20) -> Any:
-    from scraper import parse_ebay_sold_page
     try:
         results = parse_ebay_sold_page(query, max_items=max_items)
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# TCGplayer batch price endpoint
+@app.get("/scraped-active-price", summary="Scrape active listings from eBay UK")
+def get_active_price(query: str, max_items: int = 30) -> Any:
+    try:
+        results = parse_ebay_active_page(query, max_items=max_items)
+        return results
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/tcg-prices-batch", summary="Batch fetch TCGPlayer prices")
 async def tcg_prices_batch(request: Request):
     try:
         body = await request.json()
         card_ids = body.get("card_ids", [])
         results = []
-
         for card_id in card_ids:
             url = f"https://api.pokemontcg.io/v2/cards/{card_id}"
             resp = requests.get(url, headers={
@@ -213,7 +215,6 @@ async def tcg_prices_batch(request: Request):
                 prices.get("normal", {}).get("market") or
                 prices.get("1stEditionHolofoil", {}).get("market")
             )
-
             low = (
                 prices.get("holofoil", {}).get("low") or
                 prices.get("reverseHolofoil", {}).get("low") or
@@ -232,12 +233,8 @@ async def tcg_prices_batch(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Scraped active listings endpoint
-@app.get("/scraped-active-price", summary="Scrape active listings from eBay UK")
-def get_active_price(query: str, max_items: int = 30) -> Any:
-    from scraper import parse_ebay_active_page
-    try:
-        results = parse_ebay_active_page(query, max_items=max_items)
-        return results
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/start-scrape", summary="Start full scraping process (TCG, eBay Sold, eBay Active)")
+async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
+    launcher = ScraperLauncher(db_session)
+    await launcher.run_all_scrapers()
+    return {"status": "Scraping started!"}
