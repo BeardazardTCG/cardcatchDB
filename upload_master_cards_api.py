@@ -36,7 +36,7 @@ for _, row in df.iterrows():
 
 # Upload in chunks
 def upload_cards(cards):
-    chunk_size = 500
+    chunk_size = 250
     for i in range(0, len(cards), chunk_size):
         chunk = cards[i:i+chunk_size]
         response = requests.post(API_URL, json=chunk)
