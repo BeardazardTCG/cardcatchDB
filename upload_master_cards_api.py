@@ -21,29 +21,40 @@ for col in expected_columns:
 # Prepare cards
 cards = []
 for _, row in df.iterrows():
-    card = {
-        "unique_id": int(row["Unique ID"]),
-        "card_name": str(row["Card Name"]).strip(),
-        "set_name": str(row["Set Name"]).strip(),
-        "card_number": str(row["Card Number"]).strip() if pd.notna(row["Card Number"]) else None,
-        "card_id": str(row["Card ID"]).strip(),
-        "query": str(row["Full Query"]).strip(),
-        "tier": str(row["Tier"]).strip() if pd.notna(row["Tier"]) else None,
-        "status": str(row["Status"]).strip() if pd.notna(row["Status"]) else None,
-        "high_demand_boost": str(row["High Demand Boost"]).strip() if pd.notna(row["High Demand Boost"]) else None
-    }
-    cards.append(card)
+    try:
+        card = {
+            "unique_id": int(row["Unique ID"]),
+            "card_name": str(row["Card Name"]).strip(),
+            "set_name": str(row["Set Name"]).strip(),
+            "card_number": str(row["Card Number"]).strip() if pd.notna(row["Card Number"]) else None,
+            "card_id": str(row["Card ID"]).strip(),
+            "query": str(row["Full Query"]).strip(),
+            "tier": str(row["Tier"]).strip() if pd.notna(row["Tier"]) else None,
+            "status": str(row["Status"]).strip() if pd.notna(row["Status"]) else None,
+            "high_demand_boost": str(row["High Demand Boost"]).strip() if pd.notna(row["High Demand Boost"]) else None
+        }
+        cards.append(card)
+    except Exception as e:
+        print(f"❌ Skipping card due to error: {e}")
 
 # Upload in chunks
 def upload_cards(cards):
-    chunk_size = 150
+    chunk_size = 10  # Keep it small and safe
     for i in range(0, len(cards), chunk_size):
         chunk = cards[i:i+chunk_size]
-        response = requests.post(API_URL, json=chunk)
-        if response.status_code == 200:
-            print(f"✅ Uploaded/Updated {len(chunk)} cards.")
-        else:
-            print(f"❌ Error: {response.text}")
+        try:
+            response = requests.post(API_URL, json=chunk)
+            if response.status_code == 200:
+                print(f"✅ Uploaded/Updated {len(chunk)} cards.")
+            else:
+                print(f"❌ Error for batch {i//chunk_size+1}: {response.text}")
+        except Exception as e:
+            print(f"❌ Failed to upload batch {i//chunk_size+1} due to error: {e}")
+
+if __name__ == "__main__":
+    print(f"Preparing to upload {len(cards)} cards...")
+    upload_cards(cards)
+
 
 if __name__ == "__main__":
     print(f"Preparing to upload {len(cards)} cards...")
