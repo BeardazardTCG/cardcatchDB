@@ -1,0 +1,52 @@
+import pandas as pd
+import requests
+
+# Your live Render API endpoint
+API_URL = "https://cardcatchdb.onrender.com/bulk-upload-master-cards"
+
+# Read the Excel file
+df = pd.read_excel("CardBrain_Master.xlsx", sheet_name="Master Card Library")
+
+# Expected columns
+expected_columns = [
+    "Unique ID", "Card Name", "Set Name", "Card Number",
+    "Card ID", "Full Query", "Tier", "Status", "High Demand Boost"
+]
+
+# Validate columns
+for col in expected_columns:
+    if col not in df.columns:
+        raise ValueError(f"Missing required column: {col}")
+
+# Prepare cards
+cards = []
+for _, row in df.iterrows():
+    if pd.isna(row["Card Name"]) or pd.isna(row["Set Name"]) or pd.isna(row["Card Number"]):
+        continue
+    card = {
+        "unique_id": int(row["Unique ID"]),
+        "card_name": row["Card Name"],
+        "set_name": row["Set Name"],
+        "card_number": str(row["Card Number"]),
+        "card_id": row["Card ID"],
+        "query": row["Full Query"],
+        "tier": str(row["Tier"]) if pd.notna(row["Tier"]) else None,
+        "status": row["Status"] if pd.notna(row["Status"]) else None,
+        "high_demand_boost": str(row["High Demand Boost"]) if pd.notna(row["High Demand Boost"]) else None
+    }
+    cards.append(card)
+
+# Upload in chunks
+def upload_cards(cards):
+    chunk_size = 500
+    for i in range(0, len(cards), chunk_size):
+        chunk = cards[i:i+chunk_size]
+        response = requests.post(API_URL, json=chunk)
+        if response.status_code == 200:
+            print(f"✅ Uploaded {len(chunk)} cards.")
+        else:
+            print(f"❌ Error: {response.text}")
+
+if __name__ == "__main__":
+    print(f"Preparing to upload {len(cards)} cards...")
+    upload_cards(cards)
