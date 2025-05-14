@@ -313,3 +313,50 @@ async def bulk_upload_master_cards(cards: List[MasterCardUpload], db_session: As
         "inserted": successful_inserts,
         "skipped": len(skipped_cards)
     }
+from sqlmodel import select
+from typing import List
+
+class MasterCardUpsert(BaseModel):
+    unique_id: int
+    card_name: str
+    set_name: str
+    card_number: Optional[str] = None
+    card_id: str
+    query: str
+    tier: Optional[str] = None
+    status: Optional[str] = None
+    high_demand_boost: Optional[str] = None
+
+@app.post("/bulk-upsert-master-cards", summary="Upsert Master Cards into database")
+async def bulk_upsert_master_cards(cards: List[MasterCardUpsert], db_session: AsyncSession = Depends(get_db_session)):
+    for card in cards:
+        result = await db_session.execute(select(MasterCard).where(MasterCard.unique_id == card.unique_id))
+        existing_card = result.scalar_one_or_none()
+
+        if existing_card:
+            # Update existing
+            existing_card.card_name = card.card_name
+            existing_card.set_name = card.set_name
+            existing_card.card_number = card.card_number
+            existing_card.card_id = card.card_id
+            existing_card.query = card.query
+            existing_card.tier = card.tier
+            existing_card.status = card.status
+            existing_card.high_demand_boost = card.high_demand_boost
+        else:
+            # Insert new
+            new_card = MasterCard(
+                unique_id=card.unique_id,
+                card_name=card.card_name,
+                set_name=card.set_name,
+                card_number=card.card_number,
+                card_id=card.card_id,
+                query=card.query,
+                tier=card.tier,
+                status=card.status,
+                high_demand_boost=card.high_demand_boost
+            )
+            db_session.add(new_card)
+
+    await db_session.commit()
+    return {"status": "Upsert complete", "count": len(cards)}
