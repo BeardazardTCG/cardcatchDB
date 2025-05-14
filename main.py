@@ -266,3 +266,50 @@ async def bulk_upload_cards(cards: List[CardUpload], db_session: AsyncSession = 
         "inserted": successful_inserts,
         "skipped": len(skipped_cards)
     }
+from models import MasterCard
+from sqlmodel import select
+
+from typing import List
+from fastapi import Depends
+from sqlmodel.ext.asyncio.session import AsyncSession
+
+class MasterCardUpload(BaseModel):
+    unique_id: int
+    card_name: str
+    set_name: str
+    card_number: Optional[str] = None
+    card_id: str
+    query: str
+    tier: Optional[str] = None
+    status: Optional[str] = None
+    high_demand_boost: Optional[str] = None
+
+@app.post("/bulk-upload-master-cards", summary="Bulk upload Master Cards into database")
+async def bulk_upload_master_cards(cards: List[MasterCardUpload], db_session: AsyncSession = Depends(get_db_session)):
+    successful_inserts = 0
+    skipped_cards = []
+
+    for card in cards:
+        if not card.card_name or not card.set_name or not card.card_number:
+            skipped_cards.append(card)
+            continue
+        new_card = MasterCard(
+            unique_id=card.unique_id,
+            card_name=card.card_name,
+            set_name=card.set_name,
+            card_number=card.card_number,
+            card_id=card.card_id,
+            query=card.query,
+            tier=card.tier,
+            status=card.status,
+            high_demand_boost=card.high_demand_boost
+        )
+        db_session.add(new_card)
+        successful_inserts += 1
+
+    await db_session.commit()
+
+    return {
+        "inserted": successful_inserts,
+        "skipped": len(skipped_cards)
+    }
