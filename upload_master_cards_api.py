@@ -25,14 +25,14 @@ for _, row in df.iterrows():
         continue
     card = {
         "unique_id": int(row["Unique ID"]),
-        "card_name": row["Card Name"],
-        "set_name": row["Set Name"],
-        "card_number": str(row["Card Number"]),
-        "card_id": row["Card ID"],
-        "query": row["Full Query"],
-        "tier": str(row["Tier"]) if pd.notna(row["Tier"]) else None,
-        "status": row["Status"] if pd.notna(row["Status"]) else None,
-        "high_demand_boost": str(row["High Demand Boost"]) if pd.notna(row["High Demand Boost"]) else None
+        "card_name": str(row["Card Name"]).strip(),
+        "set_name": str(row["Set Name"]).strip(),
+        "card_number": str(row["Card Number"]).strip(),
+        "card_id": str(row["Card ID"]).strip(),
+        "query": str(row["Full Query"]).strip(),
+        "tier": str(row["Tier"]).strip() if pd.notna(row["Tier"]) else None,
+        "status": str(row["Status"]).strip() if pd.notna(row["Status"]) else None,
+        "high_demand_boost": str(row["High Demand Boost"]).strip() if pd.notna(row["High Demand Boost"]) else None
     }
     cards.append(card)
 
