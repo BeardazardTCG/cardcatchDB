@@ -238,3 +238,31 @@ async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
     launcher = ScraperLauncher(db_session)
     await launcher.run_all_scrapers()
     return {"status": "Scraping started!"}
+class CardUpload(BaseModel):
+    name: str
+    set_name: str
+    card_number: str
+
+@app.post("/bulk-upload-cards", summary="Bulk upload cards to database")
+async def bulk_upload_cards(cards: List[CardUpload], db_session: AsyncSession = Depends(get_db_session)):
+    successful_inserts = 0
+    skipped_cards = []
+
+    for card in cards:
+        if not card.name or not card.set_name or not card.card_number:
+            skipped_cards.append(card)
+            continue
+        new_card = MasterCard(
+            name=card.name,
+            set_name=card.set_name,
+            card_number=card.card_number
+        )
+        db_session.add(new_card)
+        successful_inserts += 1
+
+    await db_session.commit()
+
+    return {
+        "inserted": successful_inserts,
+        "skipped": len(skipped_cards)
+    }
