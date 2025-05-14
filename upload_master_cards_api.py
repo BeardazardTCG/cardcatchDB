@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 
 # Your live Render API endpoint
-API_URL = "https://cardcatchdb.onrender.com/bulk-upload-master-cards"
+API_URL = "https://cardcatchdb.onrender.com/bulk-upsert-master-cards"
 
 # Read the Excel file
 df = pd.read_excel("CardBrain_Master.xlsx", sheet_name="Master Card Library")
@@ -21,13 +21,11 @@ for col in expected_columns:
 # Prepare cards
 cards = []
 for _, row in df.iterrows():
-    if pd.isna(row["Card Name"]) or pd.isna(row["Set Name"]) or pd.isna(row["Card Number"]):
-        continue
     card = {
         "unique_id": int(row["Unique ID"]),
         "card_name": str(row["Card Name"]).strip(),
         "set_name": str(row["Set Name"]).strip(),
-        "card_number": str(row["Card Number"]).strip(),
+        "card_number": str(row["Card Number"]).strip() if pd.notna(row["Card Number"]) else None,
         "card_id": str(row["Card ID"]).strip(),
         "query": str(row["Full Query"]).strip(),
         "tier": str(row["Tier"]).strip() if pd.notna(row["Tier"]) else None,
@@ -43,7 +41,7 @@ def upload_cards(cards):
         chunk = cards[i:i+chunk_size]
         response = requests.post(API_URL, json=chunk)
         if response.status_code == 200:
-            print(f"✅ Uploaded {len(chunk)} cards.")
+            print(f"✅ Uploaded/Updated {len(chunk)} cards.")
         else:
             print(f"❌ Error: {response.text}")
 
