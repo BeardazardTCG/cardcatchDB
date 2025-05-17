@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Query, HTTPException, status, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
@@ -14,14 +14,12 @@ from batch_manager import BatchManager
 from scraper_launcher import ScraperLauncher
 from scraper import parse_ebay_sold_page, parse_ebay_active_page
 
-# Initialize FastAPI app
 app = FastAPI(
     title="CardCatch Pricing API",
     description="Fetch sold-item stats from eBay with rich search filters",
     version="2.0.1"
 )
 
-# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,24 +28,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Set up database connection
 DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-# Dependency for FastAPI routes
 async def get_db_session() -> AsyncSession:
     async with async_session() as session:
         yield session
 
-# Startup event: create tables
 @app.on_event("startup")
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
     print("Connected to the database successfully.")
 
-# OAuth token cache
 token_cache: Dict[str, Any] = {"access_token": None, "expires_at": datetime.min}
 CACHE_BUFFER_SEC = 60
 
@@ -56,15 +50,26 @@ class OAuthToken(BaseModel):
     expires_at: datetime
 
 class CardQuery(BaseModel):
-    card: str = Field(..., description="Name of the card to search")
-    number: Optional[str] = Field(None, description="Optional card number")
-    set_name: Optional[str] = Field(None, alias="set", description="Card set name")
-    lang: str = Field("en", description="Language code")
-    rarity: Optional[str] = Field(None, description="Rarity filter")
-    condition: Optional[str] = Field(None, description="Condition filter (NEW,USED)")
-    buying_options: Optional[str] = Field("FIXED_PRICE", description="Buying options (FIXED_PRICE,AUCTION)")
-    graded: Optional[bool] = Field(None, description="Only graded? True/False")
-    grade_agency: Optional[str] = Field(None, description="Grading agency (PSA)")
+    card: str
+    number: Optional[str] = None
+    set_name: Optional[str] = Field(None, alias="set")
+    lang: str = "en"
+    rarity: Optional[str] = None
+    condition: Optional[str] = None
+    buying_options: Optional[str] = "FIXED_PRICE"
+    graded: Optional[bool] = None
+    grade_agency: Optional[str] = None
+
+class MasterCardUpsert(BaseModel):
+    unique_id: int
+    card_name: str
+    set_name: str
+    card_number: Optional[str]
+    card_id: str
+    query: str
+    tier: Optional[str]
+    status: Optional[str]
+    high_demand_boost: Optional[str]
 
 def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     global token_cache
@@ -93,104 +98,56 @@ def fetch_oauth_token(sandbox: bool) -> Optional[str]:
     token_cache.update({"access_token": token, "expires_at": expires_at})
     return token
 
-@app.get("/", summary="Health check")
+@app.get("/")
 def health() -> Any:
     return {"message": "CardCatch is live — production mode active."}
 
-@app.get("/token", response_model=OAuthToken, summary="Get OAuth token (production)")
-def token_endpoint(sandbox: bool = Query(False, description="true=Sandbox, false=Production")) -> OAuthToken:
-    if sandbox:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Sandbox mode has no OAuth token")
-    token = fetch_oauth_token(False)
-    return OAuthToken(access_token=token, expires_at=token_cache["expires_at"])
+@app.post("/bulk-upsert-master-cards")
+async def bulk_upsert_master_cards(cards: List[MasterCardUpsert], db_session: AsyncSession = Depends(get_db_session)):
+    upserted = 0
+    for card in cards:
+        result = await db_session.execute(select(MasterCard).where(MasterCard.unique_id == card.unique_id))
+        matches = result.scalars().all()
 
-@app.get("/price", summary="Get single-card pricing stats")
-def price_lookup(
-    card: str = Query(...),
-    number: Optional[str] = Query(None),
-    set_name: Optional[str] = Query(None, alias="set"),
-    lang: str = Query("en"),
-    rarity: Optional[str] = Query(None),
-    condition: Optional[str] = Query(None),
-    buying_options: Optional[str] = Query("FIXED_PRICE"),
-    graded: Optional[bool] = Query(None),
-    grade_agency: Optional[str] = Query(None),
-    sandbox: bool = Query(True),
-    limit: int = Query(20, ge=1, le=100)
-) -> Any:
-    parts = [card]
-    if number: parts.append(number)
-    if set_name: parts.append(set_name)
-    if rarity: parts.append(rarity)
-    if graded: parts.append("Graded")
-    parts.append(lang)
-    q = " ".join(parts)
-    if sandbox:
-        return {"card": card, "sold_count": 0, "average_price": 0.0, "lowest_price": 0.0, "highest_price": 0.0, "suggested_resale": 0.0}
-    token = fetch_oauth_token(False)
-    headers = {"Authorization": f"Bearer {token}"}
-    url = "https://api.ebay.com/buy/browse/v1/item_summary/search"
-    filters = ["priceCurrency:GBP"]
-    if condition:
-        conds = condition.replace(" ", "").split(",")
-        filters.append(f"conditions:{{{'|'.join(conds)}}}")
-    if buying_options:
-        opts = buying_options.replace(" ", "").split(",")
-        filters.append(f"buyingOptions:{{{'|'.join(opts)}}}")
-    if grade_agency:
-        filters.append(f"aspectFilter=GradingCompany:{{{grade_agency}}}")
-    params = {"q": q, "filter": ",".join(filters), "limit": limit, "sort": "-price"}
-    resp = requests.get(url, headers=headers, params=params, timeout=10)
-    if resp.status_code != 200:
-        return JSONResponse(status_code=status.HTTP_502_BAD_GATEWAY, content={"error": resp.text})
-    items = resp.json().get("itemSummaries", [])
-    prices = [float(i["price"]["value"]) for i in items if i.get("price")]
-    if not prices:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No sold data found for this query.")
-    avg = round(sum(prices)/len(prices), 2)
-    lo = round(min(prices), 2)
-    hi = round(max(prices), 2)
-    suggestion = round(avg * 1.1, 2)
-    return {"card": card, "sold_count": len(prices), "average_price": avg, "lowest_price": lo, "highest_price": hi, "suggested_resale": suggestion}
-
-@app.post("/bulk-price", summary="Get bulk pricing stats")
-def bulk_price(
-    queries: List[CardQuery],
-    sandbox: bool = Query(True),
-    limit: int = Query(20, ge=1, le=100)
-) -> List[Any]:
-    results: List[Any] = []
-    for q in queries:
-        try:
-            stats = price_lookup(
-                card=q.card, number=q.number, set_name=q.set_name,
-                lang=q.lang, rarity=q.rarity, condition=q.condition,
-                buying_options=q.buying_options, graded=q.graded,
-                grade_agency=q.grade_agency, sandbox=sandbox, limit=limit
-            )
-        except HTTPException as e:
-            results.append({"card": q.card, "error": e.detail})
+        if len(matches) > 1:
+            print(f"⚠️ Multiple matches for UID {card.unique_id}, skipping batch.")
             continue
-        results.append(stats)
-    return results
 
-@app.get("/scraped-price", summary="Scrape sold listings from eBay UK")
+        existing_card = matches[0] if matches else None
+
+        if existing_card:
+            existing_card.card_name = card.card_name
+            existing_card.set_name = card.set_name
+            existing_card.card_number = card.card_number
+            existing_card.card_id = card.card_id
+            existing_card.query = card.query
+            existing_card.tier = card.tier
+            existing_card.status = card.status
+            existing_card.high_demand_boost = card.high_demand_boost
+        else:
+            new_card = MasterCard(**card.dict())
+            db_session.add(new_card)
+
+        upserted += 1
+
+    await db_session.commit()
+    return {"status": "Upsert complete", "count": upserted}
+
+@app.get("/scraped-price")
 def scraped_price(query: str, max_items: int = 20) -> Any:
     try:
-        results = parse_ebay_sold_page(query, max_items=max_items)
-        return results
+        return parse_ebay_sold_page(query, max_items=max_items)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/scraped-active-price", summary="Scrape active listings from eBay UK")
+@app.get("/scraped-active-price")
 def get_active_price(query: str, max_items: int = 30) -> Any:
     try:
-        results = parse_ebay_active_page(query, max_items=max_items)
-        return results
+        return parse_ebay_active_page(query, max_items=max_items)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tcg-prices-batch", summary="Batch fetch TCGPlayer prices")
+@app.post("/tcg-prices-batch")
 async def tcg_prices_batch(request: Request):
     try:
         body = await request.json()
@@ -233,130 +190,8 @@ async def tcg_prices_batch(request: Request):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/start-scrape", summary="Start full scraping process (TCG, eBay Sold, eBay Active)")
+@app.post("/start-scrape")
 async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
     launcher = ScraperLauncher(db_session)
     await launcher.run_all_scrapers()
     return {"status": "Scraping started!"}
-class CardUpload(BaseModel):
-    name: str
-    set_name: str
-    card_number: str
-
-@app.post("/bulk-upload-cards", summary="Bulk upload cards to database")
-async def bulk_upload_cards(cards: List[CardUpload], db_session: AsyncSession = Depends(get_db_session)):
-    successful_inserts = 0
-    skipped_cards = []
-
-    for card in cards:
-        if not card.name or not card.set_name or not card.card_number:
-            skipped_cards.append(card)
-            continue
-        new_card = MasterCard(
-            name=card.name,
-            set_name=card.set_name,
-            card_number=card.card_number
-        )
-        db_session.add(new_card)
-        successful_inserts += 1
-
-    await db_session.commit()
-
-    return {
-        "inserted": successful_inserts,
-        "skipped": len(skipped_cards)
-    }
-from models import MasterCard
-from sqlmodel import select
-
-from typing import List
-from fastapi import Depends
-from sqlmodel.ext.asyncio.session import AsyncSession
-
-class MasterCardUpload(BaseModel):
-    unique_id: int
-    card_name: str
-    set_name: str
-    card_number: Optional[str] = None
-    card_id: str
-    query: str
-    tier: Optional[str] = None
-    status: Optional[str] = None
-    high_demand_boost: Optional[str] = None
-
-@app.post("/bulk-upload-master-cards", summary="Bulk upload Master Cards into database")
-async def bulk_upload_master_cards(cards: List[MasterCardUpload], db_session: AsyncSession = Depends(get_db_session)):
-    successful_inserts = 0
-    skipped_cards = []
-
-    for card in cards:
-        if not card.card_name or not card.set_name or not card.card_number:
-            skipped_cards.append(card)
-            continue
-        new_card = MasterCard(
-            unique_id=card.unique_id,
-            card_name=card.card_name,
-            set_name=card.set_name,
-            card_number=card.card_number,
-            card_id=card.card_id,
-            query=card.query,
-            tier=card.tier,
-            status=card.status,
-            high_demand_boost=card.high_demand_boost
-        )
-        db_session.add(new_card)
-        successful_inserts += 1
-
-    await db_session.commit()
-
-    return {
-        "inserted": successful_inserts,
-        "skipped": len(skipped_cards)
-    }
-from sqlmodel import select
-from typing import List
-
-class MasterCardUpsert(BaseModel):
-    unique_id: int
-    card_name: str
-    set_name: str
-    card_number: Optional[str] = None
-    card_id: str
-    query: str
-    tier: Optional[str] = None
-    status: Optional[str] = None
-    high_demand_boost: Optional[str] = None
-
-@app.post("/bulk-upsert-master-cards", summary="Upsert Master Cards into database")
-async def bulk_upsert_master_cards(cards: List[MasterCardUpsert], db_session: AsyncSession = Depends(get_db_session)):
-    for card in cards:
-        result = await db_session.execute(select(MasterCard).where(MasterCard.unique_id == card.unique_id))
-        existing_card = result.scalar_one_or_none()
-
-        if existing_card:
-            # Update existing
-            existing_card.card_name = card.card_name
-            existing_card.set_name = card.set_name
-            existing_card.card_number = card.card_number
-            existing_card.card_id = card.card_id
-            existing_card.query = card.query
-            existing_card.tier = card.tier
-            existing_card.status = card.status
-            existing_card.high_demand_boost = card.high_demand_boost
-        else:
-            # Insert new
-            new_card = MasterCard(
-                unique_id=card.unique_id,
-                card_name=card.card_name,
-                set_name=card.set_name,
-                card_number=card.card_number,
-                card_id=card.card_id,
-                query=card.query,
-                tier=card.tier,
-                status=card.status,
-                high_demand_boost=card.high_demand_boost
-            )
-            db_session.add(new_card)
-
-    await db_session.commit()
-    return {"status": "Upsert complete", "count": len(cards)}
