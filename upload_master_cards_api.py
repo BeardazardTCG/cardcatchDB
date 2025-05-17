@@ -39,7 +39,7 @@ for _, row in df.iterrows():
 
 # Upload in chunks
 def upload_cards(cards):
-    chunk_size = 10  # Keep it small and safe
+    chunk_size = 200 # Keep it small and safe
     for i in range(0, len(cards), chunk_size):
         chunk = cards[i:i+chunk_size]
         try:
