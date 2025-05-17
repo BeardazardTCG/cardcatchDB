@@ -109,10 +109,6 @@ async def bulk_upsert_master_cards(cards: List[MasterCardUpsert], db_session: As
         result = await db_session.execute(select(MasterCard).where(MasterCard.unique_id == card.unique_id))
         matches = result.scalars().all()
 
-        if len(matches) > 1:
-            print(f"⚠️ Multiple matches for UID {card.unique_id}, skipping batch.")
-            continue
-
         existing_card = matches[0] if matches else None
 
         if existing_card:
@@ -191,6 +187,10 @@ async def tcg_prices_batch(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/start-scrape")
+async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
+    launcher = ScraperLauncher(db_session)
+    await launcher.run_all_scrapers()
+    return {"status": "Scraping started!"}
 async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
     launcher = ScraperLauncher(db_session)
     await launcher.run_all_scrapers()
