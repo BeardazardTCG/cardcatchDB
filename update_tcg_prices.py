@@ -2,6 +2,7 @@ import requests
 import psycopg2
 from psycopg2.extras import execute_batch
 
+API_URL = "https://cardcatchdb.onrender.com/tcg-prices-batch"
 DB_CONFIG = {
     "dbname": "railway",
     "user": "postgres",
