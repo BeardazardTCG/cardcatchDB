@@ -5,4 +5,5 @@ python-dotenv
 beautifulsoup4
 sqlmodel
 asyncpg
+psycopg2-binary
 
