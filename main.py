@@ -8,7 +8,9 @@ from typing import List, Optional, Any, Dict
 from datetime import datetime, timedelta
 import os
 import requests
-import time  # for rate limiting in tcg-prices-batch
+import time
+import httpx
+import asyncio
 
 from models import MasterCard
 from batch_manager import BatchManager
@@ -146,12 +148,6 @@ def get_active_price(query: str, max_items: int = 30) -> Any:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-import httpx
-import asyncio
-
-import httpx
-import asyncio
-
 @app.post("/tcg-prices-batch-async")
 async def tcg_prices_batch_async(request: Request):
     try:
@@ -159,26 +155,24 @@ async def tcg_prices_batch_async(request: Request):
         card_ids = body.get("card_ids", [])
         results = []
 
-        sem = asyncio.Semaphore(10)  # max 10 concurrent requests
+        sem = asyncio.Semaphore(10)
 
         async def fetch_card(card_id: str):
-    url = f"https://api.pokemontcg.io/v2/cards/{card_id.upper()}"
-    headers = {"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")}
+            url = f"https://api.pokemontcg.io/v2/cards/{card_id.upper()}"
+            headers = {"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")}
+            print(f"🔍 Fetching {card_id} with headers: {headers}")
 
-    # ✅ This line is safe now — no indent error
-    print(f"🔍 Fetching {card_id} with headers: {headers}")
-
-    try:
-        async with sem:
-            async with httpx.AsyncClient(timeout=30) as client:
-                resp = await client.get(url, headers=headers)
-                await asyncio.sleep(0.1)
-
+            try:
+                async with sem:
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        resp = await client.get(url, headers=headers)
+                        await asyncio.sleep(0.1)
 
                 if resp.status_code != 200:
+                    print(f"❌ Failed to fetch {card_id}: {resp.status_code}")
                     return {"card_id": card_id, "market": None, "low": None}
 
-                json_data = await resp.json()
+                json_data = resp.json()
                 data = json_data.get("data", {})
                 prices = data.get("tcgplayer", {}).get("prices", {})
 
@@ -202,6 +196,7 @@ async def tcg_prices_batch_async(request: Request):
                 }
 
             except Exception as e:
+                print(f"❌ Exception for {card_id}: {e}")
                 return {"card_id": card_id, "market": None, "low": None}
 
         tasks = [fetch_card(cid) for cid in card_ids]
@@ -216,4 +211,3 @@ async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
     launcher = ScraperLauncher(db_session)
     await launcher.run_all_scrapers()
     return {"status": "Scraping started!"}
-
