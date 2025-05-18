@@ -37,7 +37,7 @@ def update_prices(data):
                         tcg_low_price = %s
                     WHERE card_id = %s
                     """,
-                    (d["market"], d["low"], d["id"])
+                    (d["market"], d["low"], d["card_id"])
                 )
                 updated_rows += cur.rowcount
             conn.commit()
