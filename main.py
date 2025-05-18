@@ -146,26 +146,29 @@ def get_active_price(query: str, max_items: int = 30) -> Any:
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/tcg-prices-batch")
-async def tcg_prices_batch(request: Request):
+import httpx
+import asyncio
+
+@app.post("/tcg-prices-batch-async")
+async def tcg_prices_batch_async(request: Request):
     try:
         body = await request.json()
         card_ids = body.get("card_ids", [])
         results = []
 
-        for card_id in card_ids:
+        sem = asyncio.Semaphore(10)  # max 10 concurrent requests
+
+        async def fetch_card(card_id: str):
             url = f"https://api.pokemontcg.io/v2/cards/{card_id}"
+            headers = {"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")}
             try:
-                resp = requests.get(
-                    url,
-                    headers={"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")},
-                    timeout=30
-                )
-                time.sleep(0.1)
+                async with sem:
+                    async with httpx.AsyncClient(timeout=30) as client:
+                        resp = await client.get(url, headers=headers)
+                        await asyncio.sleep(0.1)  # rate limit
 
                 if resp.status_code != 200:
-                    results.append({"id": card_id, "market": None, "low": None})
-                    continue
+                    return {"id": card_id, "market": None, "low": None}
 
                 data = resp.json().get("data", {})
                 prices = data.get("tcgplayer", {}).get("prices", {})
@@ -183,18 +186,22 @@ async def tcg_prices_batch(request: Request):
                     prices.get("1stEditionHolofoil", {}).get("low")
                 )
 
-                results.append({
+                return {
                     "id": card_id,
                     "market": round(market, 2) if market else None,
                     "low": round(low, 2) if low else None
-                })
-            except Exception as e:
-                results.append({"id": card_id, "market": None, "low": None})
+                }
 
+            except Exception:
+                return {"id": card_id, "market": None, "low": None}
+
+        tasks = [fetch_card(cid) for cid in card_ids]
+        results = await asyncio.gather(*tasks)
         return results
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/start-scrape")
 async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
