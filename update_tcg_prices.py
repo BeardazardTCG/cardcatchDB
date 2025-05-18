@@ -5,9 +5,9 @@ from psycopg2.extras import execute_batch
 DB_CONFIG = {
     "dbname": "railway",
     "user": "postgres",
-    "password": "ckQFRJkrJluWsJnHSdhlvbtSridaddDF",
-    "host": "postgres.railway.internal",
-    "port": "5432",
+    "password": "ckQFRJkrJluWsJnHsDhlhvbtSridadDF",
+    "host": "metro.proxy.rlwy.net",
+    "port": "52025",
 }
 BATCH_SIZE = 1000
 
