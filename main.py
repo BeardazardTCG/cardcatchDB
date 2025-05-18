@@ -165,6 +165,8 @@ async def tcg_prices_batch_async(request: Request):
             url = f"https://api.pokemontcg.io/v2/cards/{card_id.upper()}"
             headers = {"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")}
 
+             print(f"🔍 Fetching {card_id} with headers: {headers}")  # <-- ADD THIS LINE
+            
             try:
                 async with sem:
                     async with httpx.AsyncClient(timeout=30) as client:
