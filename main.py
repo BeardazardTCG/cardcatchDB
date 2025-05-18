@@ -5,9 +5,10 @@ from sqlmodel import SQLModel, select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from pydantic import BaseModel, Field
 from typing import List, Optional, Any, Dict
+from datetime import datetime, timedelta
 import os
 import requests
-from datetime import datetime, timedelta
+import time  # for rate limiting in tcg-prices-batch
 
 from models import MasterCard
 from batch_manager import BatchManager
@@ -111,7 +112,6 @@ async def bulk_upsert_master_cards(cards: List[MasterCardUpsert], db_session: As
     for card in cards:
         result = await db_session.execute(select(MasterCard).where(MasterCard.unique_id == card.unique_id))
         matches = result.scalars().all()
-
         existing_card = matches[0] if matches else None
 
         if existing_card:
@@ -152,43 +152,44 @@ async def tcg_prices_batch(request: Request):
         body = await request.json()
         card_ids = body.get("card_ids", [])
         results = []
+
         for card_id in card_ids:
             url = f"https://api.pokemontcg.io/v2/cards/{card_id}"
-            import time
+            try:
+                resp = requests.get(
+                    url,
+                    headers={"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")},
+                    timeout=30
+                )
+                time.sleep(0.1)
 
-resp = requests.get(
-    url,
-    headers={"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")},
-    timeout=30
-)
-time.sleep(0.1)
+                if resp.status_code != 200:
+                    results.append({"id": card_id, "market": None, "low": None})
+                    continue
 
+                data = resp.json().get("data", {})
+                prices = data.get("tcgplayer", {}).get("prices", {})
 
-            if resp.status_code != 200:
+                market = (
+                    prices.get("holofoil", {}).get("market") or
+                    prices.get("reverseHolofoil", {}).get("market") or
+                    prices.get("normal", {}).get("market") or
+                    prices.get("1stEditionHolofoil", {}).get("market")
+                )
+                low = (
+                    prices.get("holofoil", {}).get("low") or
+                    prices.get("reverseHolofoil", {}).get("low") or
+                    prices.get("normal", {}).get("low") or
+                    prices.get("1stEditionHolofoil", {}).get("low")
+                )
+
+                results.append({
+                    "id": card_id,
+                    "market": round(market, 2) if market else None,
+                    "low": round(low, 2) if low else None
+                })
+            except Exception as e:
                 results.append({"id": card_id, "market": None, "low": None})
-                continue
-
-            data = resp.json().get("data", {})
-            prices = data.get("tcgplayer", {}).get("prices", {})
-
-            market = (
-                prices.get("holofoil", {}).get("market") or
-                prices.get("reverseHolofoil", {}).get("market") or
-                prices.get("normal", {}).get("market") or
-                prices.get("1stEditionHolofoil", {}).get("market")
-            )
-            low = (
-                prices.get("holofoil", {}).get("low") or
-                prices.get("reverseHolofoil", {}).get("low") or
-                prices.get("normal", {}).get("low") or
-                prices.get("1stEditionHolofoil", {}).get("low")
-            )
-
-            results.append({
-                "id": card_id,
-                "market": round(market, 2) if market else None,
-                "low": round(low, 2) if low else None
-            })
 
         return results
 
@@ -200,3 +201,4 @@ async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
     launcher = ScraperLauncher(db_session)
     await launcher.run_all_scrapers()
     return {"status": "Scraping started!"}
+
