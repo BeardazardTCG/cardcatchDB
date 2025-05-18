@@ -13,12 +13,12 @@ DB_CONFIG = {
 }
 BATCH_SIZE = 1000
 
-# --- GET CARD IDS ---
+# --- GET CARD IDs ---
 def get_card_ids():
     print("📡 Connecting to DB and pulling card IDs...")
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT id FROM mastercard")
+            cur.execute("SELECT card_id FROM mastercard")
             rows = cur.fetchall()
             print(f"🔢 Found {len(rows)} card IDs.")
             return [row[0] for row in rows]
@@ -35,7 +35,7 @@ def update_prices(data):
                     UPDATE mastercard
                     SET tcg_market_price = %s,
                         tcg_low_price = %s
-                    WHERE id = %s
+                    WHERE card_id = %s
                     """,
                     (d["market"], d["low"], d["id"])
                 )
