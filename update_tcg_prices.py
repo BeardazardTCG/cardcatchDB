@@ -19,7 +19,7 @@ def normalize_card_id(card_id: str) -> str:
     match = re.match(r"([a-zA-Z0-9]+)-(\d+)", card_id)
     if match:
         set_code, number = match.groups()
-        return f"{set_code.upper()}-{number}"  # ✅ no zero-padding
+        return f"{set_code.upper()}-{number}"  # ✅ No zero-padding, just uppercase
     return card_id.upper()
 
 # --- GET CARD IDs ---
@@ -27,9 +27,9 @@ def get_card_ids():
     print("📡 Connecting to DB and pulling card IDs...")
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT card_id FROM mastercard WHERE tcg_market_price IS NULL AND tier IN ('1','2','3')")
+            cur.execute("SELECT card_id FROM mastercard WHERE tcg_market_price IS NULL")
             rows = cur.fetchall()
-            print(f"🔢 Found {len(rows)} unpriced card IDs in Tier 1–3.")
+            print(f"🔢 Found {len(rows)} unpriced card IDs.")
             return [normalize_card_id(row[0]) for row in rows]
 
 # --- UPDATE PRICES IN DB ---
