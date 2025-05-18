@@ -158,7 +158,8 @@ async def tcg_prices_batch_async(request: Request):
         sem = asyncio.Semaphore(10)
 
         async def fetch_card(card_id: str):
-            url = f"https://api.pokemontcg.io/v2/cards/{card_id.upper()}"
+            card_id = card_id.strip().lower()  # Normalize case for API matching
+            url = f"https://api.pokemontcg.io/v2/cards/{card_id}"
             headers = {"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")}
             print(f"🔍 Fetching {card_id} with headers: {headers}")
 
@@ -188,6 +189,8 @@ async def tcg_prices_batch_async(request: Request):
                     prices.get("normal", {}).get("low") or
                     prices.get("1stEditionHolofoil", {}).get("low")
                 )
+
+                print(f"✅ Parsed {card_id} → Market: {market}, Low: {low}")
 
                 return {
                     "card_id": card_id,
