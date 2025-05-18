@@ -25,11 +25,15 @@ def get_card_ids():
 
 # --- UPDATE PRICES IN DB ---
 def update_prices(data):
-    print(f"💾 Writing {len(data)} prices to DB...")
+    print(f"💾 Writing prices to DB...")
     updated_rows = 0
+    skipped = 0
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             for d in data:
+                if d["market"] is None and d["low"] is None:
+                    skipped += 1
+                    continue  # ✅ Skip writing empty price data
                 cur.execute(
                     """
                     UPDATE mastercard
@@ -41,7 +45,7 @@ def update_prices(data):
                 )
                 updated_rows += cur.rowcount
             conn.commit()
-    print(f"✅ DB updated rows: {updated_rows}")
+    print(f"✅ DB updated rows: {updated_rows} (Skipped: {skipped})")
 
 # --- MAIN LOOP ---
 def run():
@@ -60,16 +64,19 @@ def run():
 
             results = response.json()
             print(f"📦 Received {len(results)} results")
-            print(f"🧪 Sample: {results[:3]}")
-
-            if len(results) == 0:
-                print("⚠️  No data returned for this batch. Skipping DB update.")
+            if results:
+                print(f"🧪 Sample: {results[:3]}")
             else:
-                update_prices(results)
+                print("⚠️ No results returned from endpoint.")
+
+            update_prices(results)
 
         except Exception as e:
             print(f"❌ Exception in batch {i}: {e}")
-            print(f"🔴 Raw response: {response.text[:500]}")
+            try:
+                print(f"🔴 Raw response: {response.text[:500]}")
+            except:
+                pass
 
 if __name__ == "__main__":
     print("🟢 TCG Price Update Script Starting...")
