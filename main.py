@@ -29,6 +29,9 @@ app.add_middleware(
 )
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is not set.")
+
 engine = create_async_engine(DATABASE_URL, echo=True)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
@@ -40,7 +43,7 @@ async def get_db_session() -> AsyncSession:
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
-    print("Connected to the database successfully.")
+    print("✅ Connected to the database successfully.")
 
 token_cache: Dict[str, Any] = {"access_token": None, "expires_at": datetime.min}
 CACHE_BUFFER_SEC = 60
@@ -187,10 +190,6 @@ async def tcg_prices_batch(request: Request):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/start-scrape")
-async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
-    launcher = ScraperLauncher(db_session)
-    await launcher.run_all_scrapers()
-    return {"status": "Scraping started!"}
 async def start_full_scrape(db_session: AsyncSession = Depends(get_db_session)):
     launcher = ScraperLauncher(db_session)
     await launcher.run_all_scrapers()
