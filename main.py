@@ -154,9 +154,15 @@ async def tcg_prices_batch(request: Request):
         results = []
         for card_id in card_ids:
             url = f"https://api.pokemontcg.io/v2/cards/{card_id}"
-            resp = requests.get(url, headers={
-                "X-Api-Key": os.getenv("POKEMONTCG_API_KEY")
-            }, timeout=10)
+            import time
+
+resp = requests.get(
+    url,
+    headers={"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")},
+    timeout=30
+)
+time.sleep(0.1)
+
 
             if resp.status_code != 200:
                 results.append({"id": card_id, "market": None, "low": None})
