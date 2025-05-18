@@ -11,7 +11,7 @@ DB_CONFIG = {
     "host": "metro.proxy.rlwy.net",
     "port": "52025",
 }
-BATCH_SIZE = 1000
+BATCH_SIZE = 333
 
 # --- GET CARD IDs ---
 def get_card_ids():
