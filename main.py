@@ -162,16 +162,18 @@ async def tcg_prices_batch_async(request: Request):
         sem = asyncio.Semaphore(10)  # max 10 concurrent requests
 
         async def fetch_card(card_id: str):
-            url = f"https://api.pokemontcg.io/v2/cards/{card_id.upper()}"
-            headers = {"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")}
+    url = f"https://api.pokemontcg.io/v2/cards/{card_id.upper()}"
+    headers = {"X-Api-Key": os.getenv("POKEMONTCG_API_KEY")}
 
-             print(f"🔍 Fetching {card_id} with headers: {headers}")  # <-- ADD THIS LINE
-            
-            try:
-                async with sem:
-                    async with httpx.AsyncClient(timeout=30) as client:
-                        resp = await client.get(url, headers=headers)
-                        await asyncio.sleep(0.1)
+    # ✅ This line is safe now — no indent error
+    print(f"🔍 Fetching {card_id} with headers: {headers}")
+
+    try:
+        async with sem:
+            async with httpx.AsyncClient(timeout=30) as client:
+                resp = await client.get(url, headers=headers)
+                await asyncio.sleep(0.1)
+
 
                 if resp.status_code != 200:
                     return {"card_id": card_id, "market": None, "low": None}
