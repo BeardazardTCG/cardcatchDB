@@ -2,14 +2,12 @@ import requests
 import psycopg2
 from psycopg2.extras import execute_batch
 
-# --- CONFIG ---
-API_URL = "https://cardcatchdb.onrender.com/tcg-prices-batch"
 DB_CONFIG = {
-    "dbname": "your_db_name",
-    "user": "your_user",
-    "password": "your_password",
-    "host": "your_host",
-    "port": "your_port",
+    "dbname": "railway",
+    "user": "postgres",
+    "password": "ckQFRJkrJluWsJnHSdhlvbtSridaddDF",
+    "host": "postgres.railway.internal",
+    "port": "5432",
 }
 BATCH_SIZE = 1000
 
