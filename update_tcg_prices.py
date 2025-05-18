@@ -1,5 +1,6 @@
 import requests
 import psycopg2
+import re
 from psycopg2.extras import execute_batch
 
 # --- CONFIG ---
@@ -13,6 +14,14 @@ DB_CONFIG = {
 }
 BATCH_SIZE = 333
 
+# --- CARD ID NORMALIZER ---
+def normalize_card_id(card_id: str) -> str:
+    match = re.match(r"([a-zA-Z0-9]+)-(\d+)", card_id)
+    if match:
+        set_code, number = match.groups()
+        return f"{set_code.upper()}-{int(number):03d}"
+    return card_id.upper()
+
 # --- GET CARD IDs ---
 def get_card_ids():
     print("📡 Connecting to DB and pulling card IDs...")
@@ -21,7 +30,7 @@ def get_card_ids():
             cur.execute("SELECT card_id FROM mastercard WHERE tcg_market_price IS NULL")
             rows = cur.fetchall()
             print(f"🔢 Found {len(rows)} unpriced card IDs.")
-            return [row[0] for row in rows]
+            return [normalize_card_id(row[0]) for row in rows]  # ✅ normalize each one
 
 # --- UPDATE PRICES IN DB ---
 def update_prices(data):
@@ -33,7 +42,7 @@ def update_prices(data):
             for d in data:
                 if d["market"] is None and d["low"] is None:
                     skipped += 1
-                    continue  # ✅ Skip writing empty price data
+                    continue
                 cur.execute(
                     """
                     UPDATE mastercard
