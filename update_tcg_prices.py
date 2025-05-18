@@ -18,9 +18,9 @@ def get_card_ids():
     print("📡 Connecting to DB and pulling card IDs...")
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT card_id FROM mastercard")
+            cur.execute("SELECT card_id FROM mastercard WHERE tcg_market_price IS NULL")
             rows = cur.fetchall()
-            print(f"🔢 Found {len(rows)} card IDs.")
+            print(f"🔢 Found {len(rows)} unpriced card IDs.")
             return [row[0] for row in rows]
 
 # --- UPDATE PRICES IN DB ---
