@@ -6,4 +6,5 @@ beautifulsoup4
 sqlmodel
 asyncpg
 psycopg2-binary
+httpx
 
