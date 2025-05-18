@@ -6,9 +6,7 @@ from scraper import parse_ebay_sold_page
 from sqlalchemy import select
 from utils import filter_outliers, calculate_median, calculate_average
 
-
 BATCH_SIZE = 60
-
 
 async def run_ebay_sold_scraper():
     async with get_session() as session:
@@ -40,7 +38,7 @@ async def run_ebay_sold_scraper():
                 if not grouped:
                     log = DailyPriceLog(
                         unique_id=card.unique_id,
-                        sold_date=datetime.today().date(),
+                        sold_date=str(datetime.today().date()),
                         median_price=None,
                         average_price=None,
                         sale_count=0,
@@ -60,7 +58,7 @@ async def run_ebay_sold_scraper():
 
                     log = DailyPriceLog(
                         unique_id=card.unique_id,
-                        sold_date=datetime.strptime(sold_date, "%Y-%m-%d").date(),
+                        sold_date=str(sold_date),  # ✅ FIXED: Convert to string
                         median_price=round(median, 2),
                         average_price=round(avg, 2),
                         sale_count=len(filtered),
@@ -71,7 +69,6 @@ async def run_ebay_sold_scraper():
 
             await session.commit()
             await asyncio.sleep(2)
-
 
 if __name__ == "__main__":
     asyncio.run(run_ebay_sold_scraper())
