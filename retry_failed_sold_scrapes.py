@@ -1,88 +1,40 @@
-import csv
-import asyncio
-from datetime import datetime
+import pandas as pd
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import select
-from db import get_session
-from models import DailyPriceLog
-from scraper import parse_ebay_sold_page
-from utils import filter_outliers, calculate_median, calculate_average
+from models import MasterCard
+import asyncio
+import os
 
-INPUT_CSV = "query_6-2025-05-19_94543.csv"
-BATCH_SLEEP_SEC = 2
+# ✅ Adjust this if your CSV is somewhere else in your repo
+CSV_PATH = "./data/query_6-2025-05-19_94543.csv"
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL is not set")
 
-def load_unscraped_cards():
-    with open(INPUT_CSV, newline='') as csvfile:
-        reader = csv.DictReader(csvfile)
-        return [
-            {
-                "unique_id": int(row["unique_id"]),
-                "query": row["query"],
-                "card_number": row.get("card_number", "")
-            }
-            for row in reader if row.get("query")
-        ]
+engine = create_async_engine(DATABASE_URL, echo=False)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
 
+async def find_unlogged_ids():
+    # Load logged UIDs from CSV
+    logged_df = pd.read_csv(CSV_PATH)
+    logged_ids = set(logged_df["unique_id"].dropna().astype(int))
 
-async def run_recovery_scraper():
-    cards = load_unscraped_cards()
-    print(f"📦 Total cards to retry: {len(cards)}")
+    async with async_session() as session:
+        result = await session.execute(select(MasterCard.unique_id))
+        all_ids = set(row[0] for row in result.all())
 
-    async with get_session() as session:
-        for idx, card in enumerate(cards):
-            print(f"🔁 Retrying {idx+1}/{len(cards)} → {card['unique_id']} | {card['query']}")
+    missing_ids = sorted(list(all_ids - logged_ids))
 
-            try:
-                results = parse_ebay_sold_page(card['query'], max_items=30)
-            except Exception as e:
-                print(f"❌ Error fetching {card['unique_id']}: {e}")
-                continue
+    print(f"🧮 Total in Master: {len(all_ids)}")
+    print(f"🧾 Total Logged: {len(logged_ids)}")
+    print(f"❌ Missing: {len(missing_ids)}")
 
-            grouped = {}
-            for item in results:
-                date = item.get("sold_date")
-                price = item.get("price")
-                if not date or price is None:
-                    continue
-                grouped.setdefault(date, []).append(price)
+    with open("unlogged_cards.txt", "w") as f:
+        for uid in missing_ids:
+            f.write(f"{uid}\n")
 
-            if not grouped:
-                log = DailyPriceLog(
-                    unique_id=card['unique_id'],
-                    sold_date=datetime.today().date().isoformat(),
-                    median_price=None,
-                    average_price=None,
-                    sale_count=0,
-                    query_used=card['query'],
-                    card_number=card['card_number']
-                )
-                session.add(log)
-                await session.commit()
-                await asyncio.sleep(BATCH_SLEEP_SEC)
-                continue
-
-            for sold_date, prices in grouped.items():
-                filtered = filter_outliers(prices)
-                if not filtered:
-                    continue
-
-                median = calculate_median(filtered)
-                avg = calculate_average(filtered)
-
-                log = DailyPriceLog(
-                    unique_id=card['unique_id'],
-                    sold_date=sold_date,  # already str from page
-                    median_price=round(median, 2),
-                    average_price=round(avg, 2),
-                    sale_count=len(filtered),
-                    query_used=card['query'],
-                    card_number=card['card_number']
-                )
-                session.add(log)
-
-            await session.commit()
-            await asyncio.sleep(BATCH_SLEEP_SEC)
-
+    print("📄 Saved to unlogged_cards.txt")
 
 if __name__ == "__main__":
-    asyncio.run(run_recovery_scraper())
+    asyncio.run(find_unlogged_ids())
