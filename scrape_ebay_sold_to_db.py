@@ -10,10 +10,20 @@ BATCH_SIZE = 60
 
 async def run_ebay_sold_scraper():
     async with get_session() as session:
-        result = await session.execute(select(MasterCard).where(MasterCard.query.isnot(None)))
+        # ✅ STEP 1: Get all unique_ids already logged
+        logged_result = await session.execute(select(DailyPriceLog.unique_id).distinct())
+        logged_ids = set(row[0] for row in logged_result.fetchall())
+
+        # ✅ STEP 2: Get only cards from MasterCard that aren't logged
+        result = await session.execute(
+            select(MasterCard).where(
+                MasterCard.query.isnot(None),
+                MasterCard.unique_id.notin_(logged_ids)
+            )
+        )
         cards = result.scalars().all()
 
-        print(f"📦 Total cards with queries: {len(cards)}")
+        print(f"📦 Total unlogged cards with queries: {len(cards)}")
 
         for i in range(0, len(cards), BATCH_SIZE):
             batch = cards[i:i + BATCH_SIZE]
@@ -58,7 +68,7 @@ async def run_ebay_sold_scraper():
 
                     log = DailyPriceLog(
                         unique_id=card.unique_id,
-                        sold_date=str(sold_date),  # ✅ FIXED: Convert to string
+                        sold_date=str(sold_date),
                         median_price=round(median, 2),
                         average_price=round(avg, 2),
                         sale_count=len(filtered),
