@@ -7,7 +7,7 @@ from sqlalchemy import select, delete
 async def generate_smart_suggestions():
     async with get_session() as session:
         master_result = await session.execute(
-            select(MasterCard).where(MasterCard.tier.in_([1, 2, 3]))
+            select(MasterCard).where(MasterCard.tier.in_(['1', '2', '3']))
         )
         master_cards = {c.unique_id: c for c in master_result.scalars().all()}
 
