@@ -38,6 +38,17 @@ def parse_ebay_graded_page(query, max_items=30):
         price_text = price_elem.get_text()
         shipping_text = shipping_elem.get_text() if shipping_elem else ""
 
+        # 🔍 Extract grading info
+        match = re.search(r"(PSA|ACE)[\\s-]*([9]{1}(\\.0)?|10(\\.0)?)", title.upper())
+        if not match:
+            continue
+
+        grading_company = match.group(1)
+        grade_score = float(match.group(2))
+
+        if grading_company not in {"PSA", "ACE"} or grade_score not in {9.0, 10.0}:
+            continue
+
         try:
             price = float(re.sub(r"[^\d.]", "", price_text))
         except:
@@ -60,7 +71,9 @@ def parse_ebay_graded_page(query, max_items=30):
         results.append({
             "title": title,
             "price": price,
-            "sold_date": str(sold_date)
+            "sold_date": str(sold_date),
+            "grading_company": grading_company,
+            "grade_score": grade_score
         })
 
         if len(results) >= max_items:
