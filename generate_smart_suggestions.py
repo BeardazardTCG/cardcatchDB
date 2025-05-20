@@ -3,13 +3,21 @@ from db import get_session
 from models import MasterCard, TrendTracker, SmartSuggestion
 from sqlalchemy import select, delete
 
+# 🔥 Hot character keywords (lowercase)
+HOT_CHARACTERS = {
+    "pikachu", "charizard", "eevee", "mewtwo", "mew", "charmander", "snorlax",
+    "blastoise", "squirtle", "bulbasaur", "gengar", "ace", "raichu", "venusaur",
+    "clefairy", "jolteon", "vaporeon", "articuno", "charmeleon", "zapdos"
+}
+
+def is_hot_character(name: str) -> bool:
+    return any(char in name.lower() for char in HOT_CHARACTERS)
+
 async def generate_smart_suggestions():
     async with get_session() as session:
-        # Load TrendTracker data
         trend_result = await session.execute(select(TrendTracker))
         trend_cards = trend_result.scalars().all()
 
-        # Load MasterCard reference data
         master_result = await session.execute(select(MasterCard))
         master_map = {str(c.unique_id): c for c in master_result.scalars().all()}
 
@@ -24,58 +32,70 @@ async def generate_smart_suggestions():
             clean_price = round(card.clean_avg_price, 2)
             resale = round(card.net_resale_value, 2)
             trend_symbol = trend.trend_stable or "⚠️"
-            status = "Unlisted"  # General market mode
+            name = card.card_name or ""
+            is_hot = is_hot_character(name)
+            status = "Unlisted"
 
-            # Price targets
+            # Skip unusable cards
+            if clean_price < 0.80 or resale < 0.80:
+                continue
+
+            action = None
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
-            action = None
-
-            # ✅ SMART SUGGESTIONS — Calibrated Logic for buyers + sellers
-            if clean_price < 0.80:
-                continue
-
-            # BUYING LOGIC
-            elif resale >= 7 and clean_price <= resale * 0.95:
+            # ✅ Buy logic (only if clean ≤ resale)
+            if resale >= 20 and clean_price <= resale * 0.90:
                 action = "Buy Now"
-            elif resale >= 10 and clean_price <= resale * 1.05 and trend_symbol == "📉":
+            elif resale >= 10 and clean_price <= resale * 0.95:
                 action = "Buy Now"
-            elif resale >= 20 and clean_price <= resale * 1.10:
-                action = "Buy Now"
-            elif clean_price <= resale * 0.85 and resale >= 4:
-                action = "Monitor"
+            elif resale >= 7 and clean_price <= resale:
+                action = "Safe Buy"
 
-            # SELLING LOGIC
+            # 🧠 Buy for Bundle logic (cheap + hot or value)
+            elif resale < 5 and clean_price < 2.50 and is_hot:
+                action = "Buy for Bundle"
+            elif resale >= 2 and resale < 5 and is_hot and clean_price < resale:
+                action = "Buy for Bundle"
+
+            # 🧢 Collector logic
+            elif resale >= 4 and resale < 7 and is_hot:
+                action = "Collector Pick"
+            elif resale < 4 and is_hot:
+                action = "Collector Pick"
+
+            # 📦 Sell-side fallback
             elif resale < 2:
                 action = "Job Lot"
             elif resale < 5:
                 action = "Bundle"
-            elif clean_price >= 9.80:
+
+            # 💰 Sell high-end cards
+            elif resale >= 9.80 and clean_price >= resale:
                 action = "List Now"
-            else:
-                action = "Monitor"
 
-            suggestions.append(SmartSuggestion(
-                unique_id=uid,
-                card_name=card.card_name,
-                set_name=card.set_name,
-                card_number=card.card_number,
-                card_status=status,
-                clean_price=clean_price,
-                target_sell=target_sell,
-                target_buy=target_buy,
-                suggested_action=action,
-                trend=trend_symbol,
-                resale_value=resale
-            ))
-            print(f"\u2705 UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
+            # 🚫 No forced suggestion if no clear value
 
-        # Final commit
+            if action:
+                suggestions.append(SmartSuggestion(
+                    unique_id=uid,
+                    card_name=card.card_name,
+                    set_name=card.set_name,
+                    card_number=card.card_number,
+                    card_status=status,
+                    clean_price=clean_price,
+                    target_sell=target_sell,
+                    target_buy=target_buy,
+                    suggested_action=action,
+                    trend=trend_symbol,
+                    resale_value=resale
+                ))
+                print(f"✅ UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
+
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
-        print(f"\u2705 Smart Suggestions generated for {len(suggestions)} cards.")
+        print(f"✅ Smart Suggestions v3.1 generated for {len(suggestions)} cards.")
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
