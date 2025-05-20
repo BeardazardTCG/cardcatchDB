@@ -6,17 +6,15 @@ from sqlalchemy import select, delete
 
 async def generate_smart_suggestions():
     async with get_session() as session:
-        # Get only Tier 1–3 cards
-        master_result = await session.execute(
-            select(MasterCard).where(MasterCard.tier.in_(['1', '2', '3']))
-        )
+        # Load all master cards regardless of tier
+        master_result = await session.execute(select(MasterCard))
         master_cards = {str(c.unique_id): c for c in master_result.scalars().all()}
 
         # Load all trend data
         trend_result = await session.execute(select(TrendTracker))
         trend_data = {str(t.unique_id): t for t in trend_result.scalars().all()}
 
-        # Get inventory and wishlist UID sets
+        # Load user ownership
         inv_result = await session.execute(select(Inventory.unique_id))
         wishlist_result = await session.execute(select(Wishlist.unique_id))
         inventory_uids = set(str(row[0]) for row in inv_result.all())
@@ -52,9 +50,9 @@ async def generate_smart_suggestions():
             if status == "Inventory":
                 if resale < 2:
                     action = "Job Lot"
-                elif resale < 7:
+                elif resale < 5:
                     action = "Bundle"
-                elif resale >= 7 and clean_price >= target_sell:
+                elif resale >= 5 and clean_price >= target_sell:
                     action = "List Now"
             elif status in ["Wishlist", "Unlisted"]:
                 if clean_price <= target_buy * 1.05:
@@ -77,7 +75,7 @@ async def generate_smart_suggestions():
                     resale_value=resale
                 ))
 
-        # Overwrite previous results
+        # Overwrite previous suggestions
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
