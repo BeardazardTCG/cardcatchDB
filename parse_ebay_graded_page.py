@@ -2,26 +2,38 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import re
+import time
+import random
+
+USER_AGENTS = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)",
+    "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:90.0)"
+]
 
 def parse_ebay_graded_page(query, max_items=30):
     headers = {
-        "User-Agent": "Mozilla/5.0"
+        "User-Agent": random.choice(USER_AGENTS)
     }
 
-    # Build the real graded eBay sold query
     base_url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
         "LH_Sold": "1",
         "LH_Complete": "1",
         "rt": "nc",
-        "LH_ItemCondition": "3000",  # Used/Graded
-        "LH_PrefLoc": "1",           # UK only
+        "LH_ItemCondition": "3000",
+        "LH_PrefLoc": "1",
         "_ipg": max_items
     }
 
-    response = requests.get(base_url, headers=headers, params=params)
-    if not response.ok:
+    # Retry logic
+    for attempt in range(3):
+        response = requests.get(base_url, headers=headers, params=params)
+        if response.status_code == 200:
+            break
+        time.sleep(2)
+    else:
         raise Exception(f"Request failed with status {response.status_code}")
 
     soup = BeautifulSoup(response.text, "html.parser")
@@ -42,19 +54,16 @@ def parse_ebay_graded_page(query, max_items=30):
         price_text = price_elem.get_text()
         shipping_text = shipping_elem.get_text() if shipping_elem else ""
 
-        # Price cleanup
         try:
             price = float(re.sub(r"[^\d.]", "", price_text))
         except:
             continue
 
-        # Adjust for auction or best offer
         if "Best offer accepted" in price_text:
             price *= 0.9
         elif "auction" in title.lower():
             price *= 0.92
 
-        # Shipping costs (if any)
         if "Free" not in shipping_text and "free" not in shipping_text:
             try:
                 ship_price = float(re.sub(r"[^\d.]", "", shipping_text))
@@ -62,7 +71,6 @@ def parse_ebay_graded_page(query, max_items=30):
             except:
                 pass
 
-        # Sold date fallback
         sold_date = datetime.today().date()
 
         results.append({
@@ -74,4 +82,11 @@ def parse_ebay_graded_page(query, max_items=30):
         if len(results) >= max_items:
             break
 
+    time.sleep(2)
     return results
+
+def parse_ebay_sold_page(query, max_items=30):
+    return []
+
+def parse_ebay_active_page(query, max_items=30):
+    return []
