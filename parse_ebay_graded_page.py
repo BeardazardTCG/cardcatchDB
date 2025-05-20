@@ -11,14 +11,32 @@ USER_AGENTS = [
     "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:90.0)"
 ]
 
-def parse_ebay_graded_page(query, max_items=30):
+def parse_ebay_graded_page(query, grade_filter, max_items=30):
     headers = {
         "User-Agent": random.choice(USER_AGENTS)
     }
 
-    search_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={requests.utils.quote(query)}&LH_Sold=1&LH_Complete=1&LH_PrefLoc=1"
-    response = requests.get(search_url, headers=headers)
+    # Map grading filters to eBay filter values
+    grade_map = {
+        "PSA 10": "10",
+        "PSA 9": "9",
+        "ACE 10": "10",
+        "ACE 9": "9"
+    }
+    grade_value = grade_map.get(grade_filter, "")
 
+    search_url = f"https://www.ebay.co.uk/sch/i.html"
+    params = {
+        "_nkw": query,
+        "LH_Sold": "1",
+        "LH_Complete": "1",
+        "LH_PrefLoc": "1",
+        "rt": "nc",
+        "Graded": "true",
+        "Grade": grade_value
+    }
+
+    response = requests.get(search_url, headers=headers, params=params)
     if not response.ok:
         raise Exception(f"Request failed with status {response.status_code}")
 
@@ -37,17 +55,6 @@ def parse_ebay_graded_page(query, max_items=30):
         title = title_elem.get_text().strip()
         price_text = price_elem.get_text()
         shipping_text = shipping_elem.get_text() if shipping_elem else ""
-
-        # 🔍 Extract grading info
-        match = re.search(r"(PSA|ACE)[\\s-]*([9]{1}(\\.0)?|10(\\.0)?)", title.upper())
-        if not match:
-            continue
-
-        grading_company = match.group(1)
-        grade_score = float(match.group(2))
-
-        if grading_company not in {"PSA", "ACE"} or grade_score not in {9.0, 10.0}:
-            continue
 
         try:
             price = float(re.sub(r"[^\d.]", "", price_text))
@@ -72,14 +79,14 @@ def parse_ebay_graded_page(query, max_items=30):
             "title": title,
             "price": price,
             "sold_date": str(sold_date),
-            "grading_company": grading_company,
-            "grade_score": grade_score
+            "grading_company": grade_filter.split()[0],
+            "grade_score": float(grade_filter.split()[1])
         })
 
         if len(results) >= max_items:
             break
 
-    time.sleep(2)
+    time.sleep(6)  # slower scrape to prevent rate-limit
     return results
 
 def parse_ebay_sold_page(query, max_items=30):
