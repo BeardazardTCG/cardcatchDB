@@ -13,6 +13,8 @@ class MasterCard(SQLModel, table=True):
     tier: Optional[str] = None
     status: Optional[str] = None
     high_demand_boost: Optional[str] = None
+    clean_avg_price: Optional[float] = None        # ✅ Add this
+    net_resale_value: Optional[float] = None       # ✅ Add this
 
 class DailyPriceLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
