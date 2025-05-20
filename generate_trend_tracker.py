@@ -4,6 +4,17 @@ from db import get_session
 from models import TrendTracker
 from sqlalchemy import text
 
+def filter_outliers_iqr(prices):
+    if len(prices) < 4:
+        return prices
+    sorted_prices = sorted(prices)
+    q1 = sorted_prices[len(prices) // 4]
+    q3 = sorted_prices[(len(prices) * 3) // 4]
+    iqr = q3 - q1
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+    return [p for p in prices if lower <= p <= upper]
+
 async def generate_trend_tracker():
     async with get_session() as session:
         cutoff_date = datetime.today().date() - timedelta(days=30)
@@ -31,23 +42,28 @@ async def generate_trend_tracker():
                 }
             if price is not None:
                 try:
-                    grouped[uid]["prices"].append(float(price))
+                    grouped[uid]["prices"].append((sold_date, float(price)))
                 except (TypeError, ValueError):
                     continue
 
         inserts = []
 
         for uid, data in grouped.items():
-            prices = data["prices"]
-            if len(prices) < 3:
+            # Sort prices by date
+            sorted_prices = sorted(data["prices"], key=lambda x: x[0], reverse=True)
+            prices_only = [p[1] for p in sorted_prices]
+
+            # Filter outliers
+            prices_clean = filter_outliers_iqr(prices_only)
+
+            if len(prices_clean) < 3:
                 continue
 
-            last = prices[0]
-            second = prices[1]
-            third = prices[2]
-            avg = round(sum(prices) / len(prices), 2)
+            last = prices_clean[0]
+            second = prices_clean[1]
+            third = prices_clean[2]
+            avg = round(sum(prices_clean) / len(prices_clean), 2)
 
-            # Calculate both trend signals
             # 📊 Stable: last vs average
             try:
                 stable_change = round(((last - avg) / avg) * 100, 2)
@@ -88,14 +104,14 @@ async def generate_trend_tracker():
                 second_last=second,
                 third_last=third,
                 average_30d=avg,
-                sample_size=len(prices),
+                sample_size=len(prices_clean),
                 pct_change_stable=stable_change,
                 pct_change_spike=spike_change,
                 trend_stable=trend_stable,
                 trend_spike=trend_spike
             ))
 
-        print(f"📦 Cards with ≥3 entries: {len(inserts)}")
+        print(f"📦 Cards with ≥3 entries after outlier filter: {len(inserts)}")
 
         await session.execute(text("DELETE FROM trendtracker"))
         session.add_all(inserts)
