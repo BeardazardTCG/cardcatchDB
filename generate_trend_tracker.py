@@ -76,3 +76,6 @@ async def generate_trend_tracker():
         session.add_all(inserts)
         await session.commit()
         print(f"✅ Trend tracker generated for {len(inserts)} cards.")
+
+if __name__ == "__main__":
+    asyncio.run(generate_trend_tracker())
