@@ -35,3 +35,22 @@ class ActiveDailyPriceLog(SQLModel, table=True):
     query_used: Optional[str]
     card_number: Optional[str]
 
+from sqlalchemy import Column, Integer, String, Numeric, DateTime
+from datetime import datetime
+from db import Base  # or wherever your Base comes from
+
+class TrendTracker(Base):
+    __tablename__ = "trendtracker"
+
+    id = Column(Integer, primary_key=True)
+    unique_id = Column(String)
+    card_name = Column(String)
+    set_name = Column(String)
+    last_price = Column(Numeric)
+    second_last = Column(Numeric)
+    third_last = Column(Numeric)
+    average_30d = Column(Numeric)
+    sample_size = Column(Integer)
+    pct_change = Column(Numeric)
+    trend = Column(String)
+    updated_at = Column(DateTime, default=datetime.utcnow)
