@@ -60,3 +60,23 @@ class TrendTracker(Base):
     trend_stable = Column(String)        # 📈 / 📉 / ➡️ (avg-based)
     trend_spike = Column(String)         # 📈 / 📉 / ➡️ (volatility)
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+from sqlalchemy import Column, String, Numeric, Integer, TIMESTAMP
+from sqlalchemy.sql import func
+from db import Base
+
+class SmartSuggestion(Base):
+    __tablename__ = "smartsuggestions"
+
+    id = Column(Integer, primary_key=True)
+    unique_id = Column(String)
+    card_name = Column(String)
+    set_name = Column(String)
+    card_number = Column(String)
+    card_status = Column(String)
+    clean_price = Column(Numeric)
+    target_sell = Column(Numeric)
+    target_buy = Column(Numeric)
+    suggested_action = Column(String)
+    trend = Column(String)
+    resale_value = Column(Numeric)
+    created_at = Column(TIMESTAMP, server_default=func.now())
