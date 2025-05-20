@@ -37,7 +37,7 @@ class ActiveDailyPriceLog(SQLModel, table=True):
     card_number: Optional[str]
 
 # SQLAlchemy-backed tables
-from sqlalchemy import Column, Integer, String, Numeric, TIMESTAMP
+from sqlalchemy import Column, Integer, String, Numeric, TIMESTAMP, Float
 from sqlalchemy.sql import func
 from db import Base
 
@@ -97,3 +97,4 @@ class Wishlist(Base):
 
     id = Column(Integer, primary_key=True)
     unique_id = Column(String)
+
