@@ -73,3 +73,15 @@ class SmartSuggestion(Base):
     trend = Column(String)
     resale_value = Column(Numeric)
     created_at = Column(TIMESTAMP, server_default=func.now())
+
+class Inventory(Base):
+    __tablename__ = "inventory"
+
+    id = Column(Integer, primary_key=True)
+    unique_id = Column(String)
+
+class Wishlist(Base):
+    __tablename__ = "wishlist"
+
+    id = Column(Integer, primary_key=True)
+    unique_id = Column(String)
