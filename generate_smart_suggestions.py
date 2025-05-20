@@ -1,65 +1,51 @@
 import asyncio
-from datetime import datetime
 from db import get_session
-from models import MasterCard, TrendTracker, SmartSuggestion, Inventory, Wishlist
+from models import MasterCard, TrendTracker, SmartSuggestion
 from sqlalchemy import select, delete
 
 async def generate_smart_suggestions():
     async with get_session() as session:
-        # Load master cards
-        master_result = await session.execute(select(MasterCard))
-        master_cards = {str(c.unique_id): c for c in master_result.scalars().all()}
-
-        # Load trends
+        # Load all trends
         trend_result = await session.execute(select(TrendTracker))
-        trend_data = {str(t.unique_id): t for t in trend_result.scalars().all()}
+        trend_cards = trend_result.scalars().all()
 
-        # Load ownership
-        inv_result = await session.execute(select(Inventory.unique_id))
-        wishlist_result = await session.execute(select(Wishlist.unique_id))
-        inventory_uids = set(str(row[0]) for row in inv_result.all())
-        wishlist_uids = set(str(row[0]) for row in wishlist_result.all())
+        # Load master into a dict
+        master_result = await session.execute(select(MasterCard))
+        master_map = {str(c.unique_id): c for c in master_result.scalars().all()}
 
         suggestions = []
 
-        for uid, card in master_cards.items():
-            if uid not in trend_data:
-                print(f"⛔ Skipped UID {uid} — no trend data")
+        for trend in trend_cards:
+            uid = str(trend.unique_id)
+            if uid not in master_map:
+                print(f"⛔ Skipped UID {uid} — not found in Master")
                 continue
+
+            card = master_map[uid]
             if card.clean_avg_price is None or card.net_resale_value is None:
-                print(f"⛔ Skipped UID {uid} — missing price data (avg={card.clean_avg_price}, resale={card.net_resale_value})")
+                print(f"⛔ Skipped UID {uid} — missing avg/resale")
                 continue
 
             clean_price = round(card.clean_avg_price, 2)
             resale = round(card.net_resale_value, 2)
-            trend_symbol = trend_data[uid].trend_stable or "⚠️"
-
-            # Determine ownership
-            if uid in inventory_uids:
-                status = "Inventory"
-            elif uid in wishlist_uids:
-                status = "Wishlist"
-            else:
-                status = "Unlisted"
+            trend_symbol = trend.trend_stable or "⚠️"
 
             # Price targets
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
-            # Suggestion logic
+            # Suggestion logic (no status dependency)
             action = None
-            if status == "Inventory":
-                if resale < 2:
-                    action = "Job Lot"
-                elif resale < 5:
-                    action = "Bundle"
-                elif resale >= 5 and clean_price >= target_sell:
-                    action = "List Now"
-            elif status in ["Wishlist", "Unlisted"]:
-                if clean_price <= target_buy * 1.05:
-                    action = "Buy Now"
-                elif clean_price <= target_buy * 1.25:
-                    action = "Monitor"
+            if resale < 2:
+                action = "Job Lot"
+            elif resale < 5:
+                action = "Bundle"
+            elif resale >= 5 and clean_price >= target_sell:
+                action = "List Now"
+            elif clean_price <= target_buy * 1.05:
+                action = "Buy Now"
+            elif clean_price <= target_buy * 1.25:
+                action = "Monitor"
 
             if action:
                 suggestions.append(SmartSuggestion(
@@ -67,7 +53,7 @@ async def generate_smart_suggestions():
                     card_name=card.card_name,
                     set_name=card.set_name,
                     card_number=card.card_number,
-                    card_status=status,
+                    card_status="Unlisted",
                     clean_price=clean_price,
                     target_sell=target_sell,
                     target_buy=target_buy,
@@ -75,11 +61,11 @@ async def generate_smart_suggestions():
                     trend=trend_symbol,
                     resale_value=resale
                 ))
-                print(f"✅ UID {uid} → {action} | {status}, resale={resale}, avg={clean_price}, trend={trend_symbol}")
+                print(f"✅ UID {uid} → {action} | avg={clean_price} resale={resale} trend={trend_symbol}")
             else:
-                print(f"🧐 UID {uid} — no action triggered | {status}, resale={resale}, avg={clean_price}, trend={trend_symbol}")
+                print(f"🧐 UID {uid} — no action triggered | avg={clean_price} resale={resale} trend={trend_symbol}")
 
-        # Overwrite table
+        # Final commit
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
