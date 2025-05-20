@@ -16,35 +16,19 @@ def parse_ebay_graded_page(query, max_items=30):
         "User-Agent": random.choice(USER_AGENTS)
     }
 
-    base_url = "https://www.ebay.co.uk/sch/i.html"
-    params = {
-        "_nkw": query,
-        "LH_Sold": "1",
-        "LH_Complete": "1",
-        "rt": "nc",
-        "LH_ItemCondition": "3000",
-        "LH_PrefLoc": "1",
-        "_ipg": max_items
-    }
+    search_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={requests.utils.quote(query)}&LH_Sold=1&LH_Complete=1&LH_PrefLoc=1"
+    response = requests.get(search_url, headers=headers)
 
-    # Retry logic
-    for attempt in range(3):
-        response = requests.get(base_url, headers=headers, params=params)
-        if response.status_code == 200:
-            break
-        time.sleep(2)
-    else:
+    if not response.ok:
         raise Exception(f"Request failed with status {response.status_code}")
 
     soup = BeautifulSoup(response.text, "html.parser")
     items = soup.select("li.s-item")
-
     results = []
 
     for item in items:
         title_elem = item.select_one("h3.s-item__title")
         price_elem = item.select_one("span.s-item__price")
-        date_elem = item.select_one("div.s-item__title--tagblock span.POSITIVE")
         shipping_elem = item.select_one("span.s-item__shipping")
 
         if not title_elem or not price_elem:
