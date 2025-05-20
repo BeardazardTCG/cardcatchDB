@@ -42,23 +42,27 @@ async def generate_smart_suggestions():
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
-            # ✅ Buyer-side suggestions only
+            # ✅ Expanded buyer logic only
             if resale >= 20 and clean_price <= resale * 0.90:
                 action = "Buy Now"
             elif resale >= 10 and clean_price <= resale * 0.95:
                 action = "Buy Now"
             elif resale >= 7 and clean_price <= resale:
                 action = "Safe Buy"
+            elif resale >= 5 and clean_price <= resale * 0.90:
+                action = "Safe Buy"
             elif resale < 5 and clean_price < 2.50 and is_hot:
                 action = "Buy for Bundle"
             elif 2 <= resale < 5 and is_hot and clean_price < resale:
+                action = "Buy for Bundle"
+            elif resale >= 1.25 and clean_price <= 1.25:
                 action = "Buy for Bundle"
             elif 4 <= resale < 7 and is_hot:
                 action = "Collector Pick"
             elif resale < 4 and is_hot:
                 action = "Collector Pick"
-
-            # 🚫 Seller logic removed
+            elif trend_symbol == "➡️" and is_hot and resale > 2 and clean_price < resale:
+                action = "Collector Pick"
 
             if action:
                 suggestions.append(SmartSuggestion(
@@ -79,7 +83,7 @@ async def generate_smart_suggestions():
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
-        print(f"✅ Smart Suggestions (buyers only) generated for {len(suggestions)} cards.")
+        print(f"✅ Smart Suggestions v3.4 (buyers only) generated for {len(suggestions)} cards.")
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
