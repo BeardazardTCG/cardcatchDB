@@ -33,34 +33,32 @@ async def generate_smart_suggestions():
             action = None
 
             # ✅ SMART SUGGESTIONS v2 — Calibrated Logic
-            # Junk filter
-if clean_price < 0.80:
-    continue
 
-# BUYING LOGIC — separate from selling logic
-if resale >= 5 and clean_price <= resale * 0.7:
-    action = "Buy Now"
-elif resale >= 7.5 and clean_price <= resale * 0.8:
-    action = "Buy Now"
-elif trend_symbol == "📉" and clean_price <= resale * 0.6:
-    action = "Buy Now"
-elif clean_price <= resale * 0.5 and resale >= 3:
-    action = "Buy Now"
+            # Junk filter — skip ultra-low cards
+            if clean_price < 0.80:
+                continue
 
-# FALLBACK to Monitor if strong but not quite Buy Now
-elif clean_price <= resale * 0.8 and resale >= 4:
-    action = "Monitor"
+            # BUYING LOGIC — separate from selling logic
+            if resale >= 5 and clean_price <= resale * 0.7:
+                action = "Buy Now"
+            elif resale >= 7.5 and clean_price <= resale * 0.8:
+                action = "Buy Now"
+            elif trend_symbol == "📉" and clean_price <= resale * 0.6:
+                action = "Buy Now"
+            elif clean_price <= resale * 0.5 and resale >= 3:
+                action = "Buy Now"
+            elif clean_price <= resale * 0.8 and resale >= 4:
+                action = "Monitor"
 
-# SELLING LOGIC
-elif resale < 2:
-    action = "Job Lot"
-elif resale < 5:
-    action = "Bundle"
-elif clean_price >= 9.80:
-    action = "List Now"
-else:
-    action = "Monitor"
-
+            # SELLING LOGIC
+            elif resale < 2:
+                action = "Job Lot"
+            elif resale < 5:
+                action = "Bundle"
+            elif clean_price >= 9.80:
+                action = "List Now"
+            else:
+                action = "Monitor"
 
             suggestions.append(SmartSuggestion(
                 unique_id=uid,
@@ -75,6 +73,7 @@ else:
                 trend=trend_symbol,
                 resale_value=resale
             ))
+
             print(f"✅ UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
 
         # Final commit
