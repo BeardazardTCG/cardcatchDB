@@ -43,18 +43,42 @@ async def generate_trend_tracker():
                 continue
 
             last = prices[0]
-            second = prices[1] if len(prices) > 1 else None
-            third = prices[2] if len(prices) > 2 else None
+            second = prices[1]
+            third = prices[2]
             avg = round(sum(prices) / len(prices), 2)
 
-            if third and third != 0:
-                pct_change = round(((last - third) / third) * 100, 2)
-                trend = "📈" if pct_change > 5 else "📉" if pct_change < -5 else "➡️"
+            # Calculate both trend signals
+            # 📊 Stable: last vs average
+            try:
+                stable_change = round(((last - avg) / avg) * 100, 2)
+            except ZeroDivisionError:
+                stable_change = None
+            if stable_change is not None:
+                if stable_change > 5:
+                    trend_stable = "📈"
+                elif stable_change < -5:
+                    trend_stable = "📉"
+                else:
+                    trend_stable = "➡️"
             else:
-                pct_change = None
-                trend = "⚠️"
+                trend_stable = "⚠️"
 
-            print(f"🧠 UID {uid} → Trend: {trend}, Avg: {avg}, Prices: {last}, {second}, {third}")
+            # ⚡ Spike: last vs third
+            try:
+                spike_change = round(((last - third) / third) * 100, 2)
+            except ZeroDivisionError:
+                spike_change = None
+            if spike_change is not None:
+                if spike_change > 5:
+                    trend_spike = "📈"
+                elif spike_change < -5:
+                    trend_spike = "📉"
+                else:
+                    trend_spike = "➡️"
+            else:
+                trend_spike = "⚠️"
+
+            print(f"🧠 UID {uid} → 📊 {trend_stable} ({stable_change}%) | ⚡ {trend_spike} ({spike_change}%)")
 
             inserts.append(TrendTracker(
                 unique_id=str(uid),
@@ -65,8 +89,10 @@ async def generate_trend_tracker():
                 third_last=third,
                 average_30d=avg,
                 sample_size=len(prices),
-                pct_change=pct_change,
-                trend=trend
+                pct_change_stable=stable_change,
+                pct_change_spike=spike_change,
+                trend_stable=trend_stable,
+                trend_spike=trend_spike
             ))
 
         print(f"📦 Cards with ≥3 entries: {len(inserts)}")
@@ -78,4 +104,3 @@ async def generate_trend_tracker():
 
 if __name__ == "__main__":
     asyncio.run(generate_trend_tracker())
-
