@@ -29,7 +29,9 @@ async def generate_trend_tracker():
                     "set_name": set_name,
                     "prices": []
                 }
-            grouped[uid]["prices"].append(float(price))
+            if price is not None:
+    grouped[uid]["prices"].append(float(price))
+
 
         inserts = []
 
