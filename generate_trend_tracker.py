@@ -8,7 +8,7 @@ async def generate_trend_tracker():
     async with get_session() as session:
         cutoff_date = datetime.today().date() - timedelta(days=30)
 
-        result = await session.execute(text(f"""
+        result = await session.execute(text("""
             SELECT d.unique_id, d.median_price, d.sold_date, 
                    m.card_name, m.set_name, m.tier
             FROM dailypricelog d
@@ -30,8 +30,10 @@ async def generate_trend_tracker():
                     "prices": []
                 }
             if price is not None:
-    grouped[uid]["prices"].append(float(price))
-
+                try:
+                    grouped[uid]["prices"].append(float(price))
+                except (TypeError, ValueError):
+                    continue
 
         inserts = []
 
@@ -68,11 +70,6 @@ async def generate_trend_tracker():
             ))
 
         print(f"📦 Cards with ≥3 entries: {len(inserts)}")
-
-        await session.execute(text("DELETE FROM trendtracker"))
-        session.add_all(inserts)
-        await session.commit()
-        print(f"✅ Trend tracker generated for {len(inserts)} cards.")
 
         await session.execute(text("DELETE FROM trendtracker"))
         session.add_all(inserts)
