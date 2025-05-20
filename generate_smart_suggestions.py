@@ -35,10 +35,10 @@ async def generate_smart_suggestions():
             # ✅ SMART SUGGESTIONS v2 — Calibrated Logic
             if clean_price < 0.80:
                 continue
-            elif resale >= 7.50 and clean_price <= target_buy * 1.50:
-                action = "Buy Now"
-            elif trend_symbol == "📉" and clean_price <= target_buy * 1.65 and resale >= 4.50:
-                action = "Buy Now"
+            elif resale >= 9.00 and clean_price <= target_buy * 1.30:
+                 action = "Buy Now"
+            elif trend_symbol == "📉" and clean_price <= target_buy * 1.45 and resale >= 6.00:
+                 action = "Buy Now"
             elif clean_price <= target_buy * 1.80:
                 action = "Monitor"
             elif resale < 2:
