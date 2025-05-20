@@ -26,35 +26,25 @@ async def generate_smart_suggestions():
             trend_symbol = trend.trend_stable or "⚠️"
             status = "Unlisted"  # General market mode
 
-            # Price targets
+            # Price targets (used for display/reference)
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
             action = None
 
-            # ✅ SMART SUGGESTIONS v3 — Buy-first logic
+            # ✅ SMART SUGGESTIONS v3 — Value-Based Buyer Logic
             if clean_price < 0.80:
                 continue
-            elif resale >= 15 and clean_price <= resale * 0.9:
+            elif clean_price <= 3 and trend_symbol == "📉":
                 action = "Buy Now"
-            elif resale >= 10 and clean_price <= resale * 0.85:
+            elif clean_price <= 5 and resale >= 8:
                 action = "Buy Now"
-            elif resale >= 7.5 and clean_price <= resale * 0.8:
+            elif resale >= 10 and clean_price <= 7:
                 action = "Buy Now"
-            elif trend_symbol == "📉" and clean_price <= resale * 0.85 and resale >= 5:
-                action = "Buy Now"
-            elif clean_price <= resale * 0.75 and resale >= 4:
-                action = "Buy Now"
-            elif clean_price <= resale * 0.95 and resale >= 3:
+            elif resale >= 6 and clean_price <= resale * 0.9:
                 action = "Monitor"
-            elif resale < 2:
-                action = "Job Lot"
-            elif resale < 5:
-                action = "Bundle"
-            elif clean_price >= 9.80:
-                action = "List Now"
             else:
-                action = "Monitor"
+                continue  # No action worth suggesting
 
             suggestions.append(SmartSuggestion(
                 unique_id=uid,
@@ -79,4 +69,3 @@ async def generate_smart_suggestions():
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
-
