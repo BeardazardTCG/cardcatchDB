@@ -71,3 +71,9 @@ def parse_ebay_graded_page(query, max_items=30):
             break
 
     return results
+
+def parse_ebay_sold_page(query, max_items=30):
+    return []
+
+def parse_ebay_active_page(query, max_items=30):
+    return []
