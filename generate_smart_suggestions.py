@@ -36,7 +36,6 @@ async def generate_smart_suggestions():
             is_hot = is_hot_character(name)
             status = "Unlisted"
 
-            # Skip unusable cards
             if clean_price < 0.80 or resale < 0.80:
                 continue
 
@@ -44,7 +43,7 @@ async def generate_smart_suggestions():
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
-            # ✅ Buy logic (only if clean ≤ resale)
+            # ✅ Buy logic
             if resale >= 20 and clean_price <= resale * 0.90:
                 action = "Buy Now"
             elif resale >= 10 and clean_price <= resale * 0.95:
@@ -52,29 +51,19 @@ async def generate_smart_suggestions():
             elif resale >= 7 and clean_price <= resale:
                 action = "Safe Buy"
 
-            # 🧠 Buy for Bundle logic (cheap + hot or value)
+            # 🧠 Bundle logic
             elif resale < 5 and clean_price < 2.50 and is_hot:
                 action = "Buy for Bundle"
-            elif resale >= 2 and resale < 5 and is_hot and clean_price < resale:
+            elif 2 <= resale < 5 and is_hot and clean_price < resale:
                 action = "Buy for Bundle"
 
-            # 🧢 Collector logic
-            elif resale >= 4 and resale < 7 and is_hot:
+            # 🎯 Collector logic
+            elif 4 <= resale < 7 and is_hot:
                 action = "Collector Pick"
             elif resale < 4 and is_hot:
                 action = "Collector Pick"
 
-            # 📦 Sell-side fallback
-            elif resale < 2:
-                action = "Job Lot"
-            elif resale < 5:
-                action = "Bundle"
-
-            # 💰 Sell high-end cards
-            elif resale >= 9.80 and clean_price >= resale:
-                action = "List Now"
-
-            # 🚫 No forced suggestion if no clear value
+            # 🚫 Selling logic disabled for Unlisted cards
 
             if action:
                 suggestions.append(SmartSuggestion(
@@ -95,7 +84,7 @@ async def generate_smart_suggestions():
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
-        print(f"✅ Smart Suggestions v3.1 generated for {len(suggestions)} cards.")
+        print(f"✅ Smart Suggestions v3.2 generated for {len(suggestions)} cards.")
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
