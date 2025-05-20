@@ -5,9 +5,11 @@ from sqlalchemy import select, delete
 
 async def generate_smart_suggestions():
     async with get_session() as session:
+        # Load TrendTracker data
         trend_result = await session.execute(select(TrendTracker))
         trend_cards = trend_result.scalars().all()
 
+        # Load MasterCard reference data
         master_result = await session.execute(select(MasterCard))
         master_map = {str(c.unique_id): c for c in master_result.scalars().all()}
 
@@ -22,25 +24,29 @@ async def generate_smart_suggestions():
             clean_price = round(card.clean_avg_price, 2)
             resale = round(card.net_resale_value, 2)
             trend_symbol = trend.trend_stable or "⚠️"
-            status = "Unlisted"
+            status = "Unlisted"  # General market mode
 
+            # Price targets
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
             action = None
 
-            # ✅ BUY LOGIC — balanced for flipping & collecting
+            # ✅ SMART SUGGESTIONS — Calibrated Logic for buyers + sellers
             if clean_price < 0.80:
                 continue
-            elif clean_price <= resale * 0.75 and resale >= 4:
+
+            # BUYING LOGIC
+            elif resale >= 7 and clean_price <= resale * 0.95:
                 action = "Buy Now"
-            elif trend_symbol == "📉" and clean_price <= resale * 0.90 and resale >= 6:
+            elif resale >= 10 and clean_price <= resale * 1.05 and trend_symbol == "📉":
                 action = "Buy Now"
-            elif resale >= 12 and clean_price <= resale * 0.92:
+            elif resale >= 20 and clean_price <= resale * 1.10:
                 action = "Buy Now"
-            elif resale >= 6 and trend_symbol == "📉" and clean_price <= resale:
+            elif clean_price <= resale * 0.85 and resale >= 4:
                 action = "Monitor"
-            # SELL LOGIC
+
+            # SELLING LOGIC
             elif resale < 2:
                 action = "Job Lot"
             elif resale < 5:
@@ -63,11 +69,13 @@ async def generate_smart_suggestions():
                 trend=trend_symbol,
                 resale_value=resale
             ))
+            print(f"\u2705 UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
 
+        # Final commit
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
-        print(f"✅ Smart Suggestions generated for {len(suggestions)} cards.")
+        print(f"\u2705 Smart Suggestions generated for {len(suggestions)} cards.")
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
