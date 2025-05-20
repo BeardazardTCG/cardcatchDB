@@ -3,7 +3,6 @@ from db import get_session
 from models import MasterCard, TrendTracker, SmartSuggestion
 from sqlalchemy import select, delete
 
-# 🔥 Hot character keywords (lowercase)
 HOT_CHARACTERS = {
     "pikachu", "charizard", "eevee", "mewtwo", "mew", "charmander", "snorlax",
     "blastoise", "squirtle", "bulbasaur", "gengar", "ace", "raichu", "venusaur",
@@ -43,27 +42,41 @@ async def generate_smart_suggestions():
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
-            # ✅ Buy logic
+            # 🔥 BUY LOGIC
             if resale >= 20 and clean_price <= resale * 0.90:
                 action = "Buy Now"
             elif resale >= 10 and clean_price <= resale * 0.95:
                 action = "Buy Now"
             elif resale >= 7 and clean_price <= resale:
                 action = "Safe Buy"
+            elif resale >= 5 and clean_price <= resale * 0.90:
+                action = "Safe Buy"
 
-            # 🧠 Bundle logic
+            # 🧠 BUNDLE LOGIC
             elif resale < 5 and clean_price < 2.50 and is_hot:
                 action = "Buy for Bundle"
-            elif 2 <= resale < 5 and is_hot and clean_price < resale:
+            elif resale >= 2 and resale < 5 and is_hot and clean_price < resale:
+                action = "Buy for Bundle"
+            elif resale >= 1.5 and clean_price <= 1.00:
                 action = "Buy for Bundle"
 
-            # 🎯 Collector logic
-            elif 4 <= resale < 7 and is_hot:
+            # 👑 COLLECTOR
+            elif resale >= 4 and resale < 7 and is_hot:
                 action = "Collector Pick"
             elif resale < 4 and is_hot:
                 action = "Collector Pick"
 
-            # 🚫 Selling logic disabled for Unlisted cards
+            # ➡️ HOT HOLD
+            elif trend_symbol == "➡️" and is_hot and resale > 2 and clean_price < resale:
+                action = "Collector Pick"
+
+            # 📦 SELL SIDE
+            elif resale < 2:
+                action = "Job Lot"
+            elif resale < 5:
+                action = "Bundle"
+            elif resale >= 9.80 and clean_price >= resale:
+                action = "List Now"
 
             if action:
                 suggestions.append(SmartSuggestion(
@@ -84,7 +97,7 @@ async def generate_smart_suggestions():
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
-        print(f"✅ Smart Suggestions v3.2 generated for {len(suggestions)} cards.")
+        print(f"✅ Smart Suggestions v3.3 generated for {len(suggestions)} cards.")
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
