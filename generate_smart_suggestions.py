@@ -29,19 +29,18 @@ async def generate_smart_suggestions():
 
             action = None
 
-            # Smart Suggestions v3 – Final Logic
+            # ✅ BUY LOGIC — balanced for flipping & collecting
             if clean_price < 0.80:
-                action = "Job Lot"
-            elif resale >= 5 and clean_price <= resale * 0.7:
+                continue
+            elif clean_price <= resale * 0.75 and resale >= 4:
                 action = "Buy Now"
-            elif resale >= 7.5 and clean_price <= resale * 0.8:
+            elif trend_symbol == "📉" and clean_price <= resale * 0.90 and resale >= 6:
                 action = "Buy Now"
-            elif trend_symbol == "📉" and clean_price <= resale * 0.6:
+            elif resale >= 12 and clean_price <= resale * 0.92:
                 action = "Buy Now"
-            elif clean_price <= resale * 0.5 and resale >= 3:
-                action = "Buy Now"
-            elif clean_price <= resale * 0.8 and resale >= 4:
+            elif resale >= 6 and trend_symbol == "📉" and clean_price <= resale:
                 action = "Monitor"
+            # SELL LOGIC
             elif resale < 2:
                 action = "Job Lot"
             elif resale < 5:
