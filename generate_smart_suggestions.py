@@ -5,10 +5,11 @@ from sqlalchemy import select, delete
 
 async def generate_smart_suggestions():
     async with get_session() as session:
-        # Get trend data and price lookups
+        # Load TrendTracker data
         trend_result = await session.execute(select(TrendTracker))
         trend_cards = trend_result.scalars().all()
 
+        # Load MasterCard reference data
         master_result = await session.execute(select(MasterCard))
         master_map = {str(c.unique_id): c for c in master_result.scalars().all()}
 
@@ -23,7 +24,7 @@ async def generate_smart_suggestions():
             clean_price = round(card.clean_avg_price, 2)
             resale = round(card.net_resale_value, 2)
             trend_symbol = trend.trend_stable or "⚠️"
-            status = "Unlisted"  # Always "Unlisted" for general market mode
+            status = "Unlisted"  # General market mode
 
             # Price targets
             target_sell = round(clean_price * 0.85, 2)
@@ -31,17 +32,19 @@ async def generate_smart_suggestions():
 
             action = None
 
-            # Suggestion logic (customise to taste)
+            # ✅ SMART SUGGESTIONS v2 — Calibrated Logic
             if clean_price < 0.80:
                 continue
+            elif resale >= 7.50 and clean_price <= target_buy * 1.50:
+                action = "Buy Now"
+            elif trend_symbol == "📉" and clean_price <= target_buy * 1.65 and resale >= 4.50:
+                action = "Buy Now"
+            elif clean_price <= target_buy * 1.80:
+                action = "Monitor"
             elif resale < 2:
                 action = "Job Lot"
             elif resale < 5:
                 action = "Bundle"
-            elif clean_price <= target_buy * 1.30:
-                action = "Buy Now"
-            elif clean_price <= target_buy * 1.45:
-                action = "Monitor"
             elif clean_price >= 9.80:
                 action = "List Now"
             else:
@@ -60,9 +63,9 @@ async def generate_smart_suggestions():
                 trend=trend_symbol,
                 resale_value=resale
             ))
-            print(f"✅ UID {uid} → {action} | {status} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
+            print(f"✅ UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
 
-        # Overwrite suggestions table
+        # Final commit
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
