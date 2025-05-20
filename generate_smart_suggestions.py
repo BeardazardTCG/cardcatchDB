@@ -5,11 +5,9 @@ from sqlalchemy import select, delete
 
 async def generate_smart_suggestions():
     async with get_session() as session:
-        # Load TrendTracker data
         trend_result = await session.execute(select(TrendTracker))
         trend_cards = trend_result.scalars().all()
 
-        # Load MasterCard reference data
         master_result = await session.execute(select(MasterCard))
         master_map = {str(c.unique_id): c for c in master_result.scalars().all()}
 
@@ -24,15 +22,14 @@ async def generate_smart_suggestions():
             clean_price = round(card.clean_avg_price, 2)
             resale = round(card.net_resale_value, 2)
             trend_symbol = trend.trend_stable or "⚠️"
-            status = "Unlisted"  # General market mode
+            status = "Unlisted"
 
-            # Price targets
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
             action = None
 
-            # ✅ SMART SUGGESTIONS v2.1 — Balanced Logic
+            # Smart Suggestions v3 – Final Logic
             if clean_price < 0.80:
                 action = "Job Lot"
             elif resale >= 5 and clean_price <= resale * 0.7:
@@ -51,9 +48,7 @@ async def generate_smart_suggestions():
                 action = "Bundle"
             elif clean_price >= 9.80:
                 action = "List Now"
-
-            # 🔁 FINAL CATCH-ALL if no rule triggered
-            if action is None:
+            else:
                 action = "Monitor"
 
             suggestions.append(SmartSuggestion(
@@ -69,9 +64,7 @@ async def generate_smart_suggestions():
                 trend=trend_symbol,
                 resale_value=resale
             ))
-            print(f"✅ UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
 
-        # Final commit
         await session.execute(delete(SmartSuggestion))
         session.add_all(suggestions)
         await session.commit()
@@ -79,4 +72,3 @@ async def generate_smart_suggestions():
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
-
