@@ -8,7 +8,6 @@ async def generate_trend_tracker():
     async with get_session() as session:
         cutoff_date = datetime.today().date() - timedelta(days=30)
 
-        # Raw SQL for simplicity and speed
         result = await session.execute(text(f"""
             SELECT d.unique_id, d.median_price, d.sold_date, 
                    m.card_name, m.set_name, m.tier
@@ -20,6 +19,7 @@ async def generate_trend_tracker():
         """), {"cutoff": cutoff_date})
         
         rows = result.fetchall()
+        print(f"🔍 Total joined rows fetched: {len(rows)}")
 
         grouped = {}
         for uid, price, sold_date, name, set_name, tier in rows:
@@ -50,6 +50,8 @@ async def generate_trend_tracker():
                 pct_change = None
                 trend = "⚠️"
 
+            print(f"🧠 UID {uid} → Trend: {trend}, Avg: {avg}, Prices: {last}, {second}, {third}")
+
             inserts.append(TrendTracker(
                 unique_id=uid,
                 card_name=data["card_name"],
@@ -62,6 +64,13 @@ async def generate_trend_tracker():
                 pct_change=pct_change,
                 trend=trend
             ))
+
+        print(f"📦 Cards with ≥3 entries: {len(inserts)}")
+
+        await session.execute(text("DELETE FROM trendtracker"))
+        session.add_all(inserts)
+        await session.commit()
+        print(f"✅ Trend tracker generated for {len(inserts)} cards.")
 
         await session.execute(text("DELETE FROM trendtracker"))
         session.add_all(inserts)
