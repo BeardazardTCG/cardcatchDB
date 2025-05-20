@@ -1,8 +1,7 @@
-# models.py
-
-from sqlmodel import SQLModel, Field
 from typing import Optional
+from sqlmodel import SQLModel, Field
 
+# SQLModel-backed tables
 class MasterCard(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     unique_id: int
@@ -35,11 +34,8 @@ class ActiveDailyPriceLog(SQLModel, table=True):
     query_used: Optional[str]
     card_number: Optional[str]
 
-from sqlalchemy import Column, Integer, String, Numeric, DateTime
-from datetime import datetime
-from db import Base  # or wherever your Base comes from
-
-from sqlalchemy import Column, String, Numeric, Integer, TIMESTAMP
+# SQLAlchemy-backed tables
+from sqlalchemy import Column, Integer, String, Numeric, TIMESTAMP
 from sqlalchemy.sql import func
 from db import Base
 
@@ -55,14 +51,11 @@ class TrendTracker(Base):
     third_last = Column(Numeric)
     average_30d = Column(Numeric)
     sample_size = Column(Integer)
-    pct_change_stable = Column(Numeric)  # last vs average
-    pct_change_spike = Column(Numeric)   # last vs third
-    trend_stable = Column(String)        # 📈 / 📉 / ➡️ (avg-based)
-    trend_spike = Column(String)         # 📈 / 📉 / ➡️ (volatility)
+    pct_change_stable = Column(Numeric)
+    pct_change_spike = Column(Numeric)
+    trend_stable = Column(String)
+    trend_spike = Column(String)
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
-from sqlalchemy import Column, String, Numeric, Integer, TIMESTAMP
-from sqlalchemy.sql import func
-from db import Base
 
 class SmartSuggestion(Base):
     __tablename__ = "smartsuggestions"
