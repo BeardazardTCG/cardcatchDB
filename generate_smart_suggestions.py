@@ -34,7 +34,7 @@ async def generate_smart_suggestions():
 
             # ✅ SMART SUGGESTIONS v2.1 — Balanced Logic
             if clean_price < 0.80:
-                continue
+                action = "Job Lot"
             elif resale >= 5 and clean_price <= resale * 0.7:
                 action = "Buy Now"
             elif resale >= 7.5 and clean_price <= resale * 0.8:
