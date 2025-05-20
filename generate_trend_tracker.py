@@ -57,7 +57,7 @@ async def generate_trend_tracker():
             print(f"🧠 UID {uid} → Trend: {trend}, Avg: {avg}, Prices: {last}, {second}, {third}")
 
             inserts.append(TrendTracker(
-                unique_id=uid,
+                unique_id=str(uid),
                 card_name=data["card_name"],
                 set_name=data["set_name"],
                 last_price=last,
@@ -78,3 +78,4 @@ async def generate_trend_tracker():
 
 if __name__ == "__main__":
     asyncio.run(generate_trend_tracker())
+
