@@ -59,6 +59,16 @@ class TrendTracker(Base):
     trend_spike = Column(String)
     updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
 
+    # 🆕 Graded price fields
+    psa_10_price = Column(Float)
+    psa_10_count = Column(Integer)
+    psa_9_price = Column(Float)
+    psa_9_count = Column(Integer)
+    ace_10_price = Column(Float)
+    ace_10_count = Column(Integer)
+    ace_9_price = Column(Float)
+    ace_9_count = Column(Integer)
+
 class SmartSuggestion(Base):
     __tablename__ = "smartsuggestions"
 
