@@ -38,9 +38,9 @@ async def generate_smart_suggestions():
                 action = "Job Lot"
             elif resale < 5:
                 action = "Bundle"
-            elif clean_price <= target_buy * 1.05:
+            elif clean_price <= target_buy * 1.30:
                 action = "Buy Now"
-            elif clean_price <= target_buy * 1.25:
+            elif clean_price <= target_buy * 1.45:
                 action = "Monitor"
             elif clean_price >= 9.80:
                 action = "List Now"
