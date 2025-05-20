@@ -32,25 +32,21 @@ async def generate_smart_suggestions():
 
             action = None
 
-            # ✅ SMART SUGGESTIONS v2 — Calibrated Logic
-
-            # Junk filter — skip ultra-low cards
+            # ✅ SMART SUGGESTIONS v3 — Buy-first logic
             if clean_price < 0.80:
                 continue
-
-            # BUYING LOGIC — separate from selling logic
-            if resale >= 5 and clean_price <= resale * 0.7:
+            elif resale >= 15 and clean_price <= resale * 0.9:
+                action = "Buy Now"
+            elif resale >= 10 and clean_price <= resale * 0.85:
                 action = "Buy Now"
             elif resale >= 7.5 and clean_price <= resale * 0.8:
                 action = "Buy Now"
-            elif trend_symbol == "📉" and clean_price <= resale * 0.6:
+            elif trend_symbol == "📉" and clean_price <= resale * 0.85 and resale >= 5:
                 action = "Buy Now"
-            elif clean_price <= resale * 0.5 and resale >= 3:
+            elif clean_price <= resale * 0.75 and resale >= 4:
                 action = "Buy Now"
-            elif clean_price <= resale * 0.8 and resale >= 4:
+            elif clean_price <= resale * 0.95 and resale >= 3:
                 action = "Monitor"
-
-            # SELLING LOGIC
             elif resale < 2:
                 action = "Job Lot"
             elif resale < 5:
@@ -73,7 +69,6 @@ async def generate_smart_suggestions():
                 trend=trend_symbol,
                 resale_value=resale
             ))
-
             print(f"✅ UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
 
         # Final commit
@@ -84,3 +79,4 @@ async def generate_smart_suggestions():
 
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
+
