@@ -33,24 +33,22 @@ async def generate_smart_suggestions():
             action = None
 
             # ✅ SMART SUGGESTIONS v2 — Calibrated Logic
-            # New logic:
-if clean_price < 0.80:
-    continue  # skip
-elif resale < 2:
-    action = "Job Lot"
-elif resale < 5:
-    action = "Bundle"
-elif clean_price >= 9.80:
-    action = "List Now"
-elif clean_price <= target_buy * 1.15 and resale >= 6.00:
-    action = "Buy Now"
-elif trend_symbol == "📉" and clean_price <= target_buy * 1.30 and resale >= 4.50:
-    action = "Buy Now"
-elif clean_price <= target_buy * 1.50:
-    action = "Monitor"
-else:
-    action = "Monitor"
-
+            if clean_price < 0.80:
+                continue
+            elif resale >= 7.50 and clean_price <= target_buy * 1.50:
+                action = "Buy Now"
+            elif trend_symbol == "📉" and clean_price <= target_buy * 1.65 and resale >= 4.50:
+                action = "Buy Now"
+            elif clean_price <= target_buy * 1.80:
+                action = "Monitor"
+            elif resale < 2:
+                action = "Job Lot"
+            elif resale < 5:
+                action = "Bundle"
+            elif clean_price >= 9.80:
+                action = "List Now"
+            else:
+                action = "Monitor"
 
             suggestions.append(SmartSuggestion(
                 unique_id=uid,
