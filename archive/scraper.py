@@ -1,120 +1,166 @@
-# ⚠️ WARNING: This script can trigger eBay bans/503s if run as-is.
-# Parked for future refactor with proper scraping safety.
-
-import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+import requests
 import re
+from datetime import datetime
 
-def parse_ebay_active_page(query, max_items=30):
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
 
-    base_url = "https://www.ebay.co.uk/sch/i.html"
-    params = {
-        "_nkw": query,
-        "_sop": "15",               # Lowest price
-        "_ipg": str(max_items),     # Items per page
-        "_dmd": "1",               # Full item view
-        "LH_BIN": "1",             # Buy It Now only
-        "LH_PrefLoc": "1"          # UK only
-    }
+def extract_sold_date(item):
+    spans = item.find_all("span")
+    for span in spans:
+        text = span.get_text(strip=True)
+        if text.lower().startswith("sold"):
+            match = re.search(r"Sold\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
+            if match:
+                try:
+                    return datetime.strptime(match.group(0)[5:], "%d %b %Y").date()
+                except ValueError:
+                    return None
+    return None
 
-    response = requests.get(base_url, headers=headers, params=params)
-    if not response.ok:
-        raise Exception(f"Active request failed with status {response.status_code}")
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    items = soup.select("li.s-item")
-    results = []
+def parse_character_set_and_number(query):
+    parts = query.split()
+    character = parts[0] if parts else ""
+    set_name = ""
 
-    for item in items:
-        title_elem = item.select_one("h3.s-item__title")
-        price_elem = item.select_one("span.s-item__price")
-        if not title_elem or not price_elem:
-            continue
+    known_rarities = ["ex", "v", "vmax", "vstar", "gx", "illustration", "rare", "promo", "ultra"]
+    filtered = [p for p in parts if not re.match(r"\d+/\d+", p) and p.lower() not in known_rarities]
+    if len(filtered) > 1:
+        set_name = " ".join(filtered[1:])
 
-        title = title_elem.get_text().strip()
-        price_text = price_elem.get_text().strip()
+    match = re.search(r"\d+/\d+", query)
+    card_number = match.group(0) if match else ""
 
-        try:
-            price = float(re.sub(r"[^\d.]", "", price_text))
-        except:
-            continue
+    return character.lower(), set_name, card_number
 
-        results.append({"title": title, "price": price})
 
-        if len(results) >= max_items:
-            break
+def parse_ebay_sold_page(query, max_items=100):
+    character, set_name, card_number = parse_character_set_and_number(query)
+    card_number_digits = re.sub(r"[^\d]", "", card_number)
 
-    return results
-
-def parse_ebay_sold_page(query, max_items=30):
-    headers = {
-        "User-Agent": "Mozilla/5.0"
-    }
-
-    base_url = "https://www.ebay.co.uk/sch/i.html"
+    url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
         "LH_Sold": "1",
         "LH_Complete": "1",
-        "rt": "nc",
-        "LH_PrefLoc": "1",         # UK only
-        "_ipg": str(max_items)      # Items per page
+        "LH_PrefLoc": "1",
+        "_dmd": "2",
+        "_ipg": "120",
+        "_sop": "13",
+        "_dcat": "183454",
+        "Graded": "No"
     }
 
-    response = requests.get(base_url, headers=headers, params=params)
-    if not response.ok:
-        raise Exception(f"Sold request failed with status {response.status_code}")
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        soup = BeautifulSoup(resp.text, "html.parser")
+    except Exception as e:
+        print("Scraper error:", e)
+        return []
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    items = soup.select("li.s-item")
     results = []
+    count = 0
 
-    for item in items:
-        title_elem = item.select_one("h3.s-item__title")
-        price_elem = item.select_one("span.s-item__price")
-        shipping_elem = item.select_one("span.s-item__shipping")
+    for item in soup.select(".s-item"):
+        if count >= max_items:
+            break
 
-        if not title_elem or not price_elem:
+        title_tag = item.select_one(".s-item__title")
+        price_tag = item.select_one(".s-item__price")
+        sold_date = extract_sold_date(item)
+
+        if not title_tag or not price_tag or not sold_date:
             continue
 
-        title = title_elem.get_text().strip()
-        price_text = price_elem.get_text()
-        shipping_text = shipping_elem.get_text() if shipping_elem else ""
+        title = title_tag.text.strip()
+        title_lower = title.lower()
+        title_digits = re.sub(r"[^\d]", "", title)
 
+        if card_number_digits not in title_digits:
+            continue
+        if character not in title_lower:
+            continue
+
+        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
         try:
-            price = float(re.sub(r"[^\d.]", "", price_text))
-        except:
+            price_float = float(price_clean)
+        except ValueError:
             continue
-
-        if "Best offer accepted" in price_text:
-            price *= 0.9
-        elif "auction" in title.lower():
-            price *= 0.92
-
-        if "Free" not in shipping_text and "free" not in shipping_text:
-            try:
-                ship_price = float(re.sub(r"[^\d.]", "", shipping_text))
-                price += ship_price
-            except:
-                pass
-
-        sold_date = datetime.today().date()
 
         results.append({
+            "character": character.title(),
+            "set": set_name,
             "title": title,
-            "price": price,
+            "price": price_float,
             "sold_date": str(sold_date)
         })
-
-        if len(results) >= max_items:
-            break
+        count += 1
 
     return results
 
-def parse_ebay_graded_page(query, max_items=30):
-    # This is the same logic as sold page but might be customized later
-    return parse_ebay_sold_page(query, max_items)
+
+def parse_ebay_active_page(query, max_items=30):
+    character, set_name, card_number = parse_character_set_and_number(query)
+    card_number_digits = re.sub(r"[^\d]", "", card_number)
+
+    url = "https://www.ebay.co.uk/sch/i.html"
+    params = {
+        "_nkw": query,
+        "LH_BIN": "1",           # Buy It Now only
+        "LH_PrefLoc": "1",       # UK only
+        "_ipg": "120",           # 120 results per page
+        "_sop": "12",            # Best Match sort (was 15: lowest+post)
+        "_dcat": "183454",       # Pokémon TCG
+        "Graded": "No"
+    }
+
+    try:
+        resp = requests.get(url, params=params, timeout=10)
+        soup = BeautifulSoup(resp.text, "html.parser")
+    except Exception as e:
+        print("Active scrape error:", e)
+        return []
+
+    results = []
+    count = 0
+
+    for item in soup.select(".s-item"):
+        if count >= max_items:
+            break
+
+        title_tag = item.select_one(".s-item__title")
+        price_tag = item.select_one(".s-item__price")
+        link_tag = item.select_one(".s-item__link")
+
+        if not title_tag or not price_tag:
+            continue
+
+        title = title_tag.text.strip()
+        title_lower = title.lower()
+        title_digits = re.sub(r"[^\d]", "", title)
+        url = link_tag['href'] if link_tag else ""
+
+        if any(term in title_lower for term in ["proxy", "lot", "damaged", "jumbo", "binder", "custom"]):
+            continue
+        if character and character.lower() not in title_lower:
+            continue
+        if card_number_digits and card_number_digits not in title_digits:
+            continue
+
+        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
+        try:
+            price_float = float(price_clean)
+        except ValueError:
+            continue
+
+        results.append({
+            "character": character.title(),
+            "set": set_name,
+            "title": title,
+            "price": price_float,
+            "url": url,
+            "listing_date": str(datetime.today().date())
+        })
+        count += 1
+
+    return results
