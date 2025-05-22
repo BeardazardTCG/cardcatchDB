@@ -22,7 +22,7 @@ if not DATABASE_URL:
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-BATCH_SIZE = 25  # Still in deeper test mode
+BATCH_SIZE = 25
 
 async def test_scrape_ebay_sold():
     async with async_session() as session:
@@ -39,9 +39,6 @@ async def test_scrape_ebay_sold():
             except Exception as e:
                 print(f"❌ Scrape error: {e}")
                 continue
-
-            if not results:
-                print(f"⚠️ No results found for: {card.query}")
 
             grouped = {}
             exclusion_log = []
@@ -61,10 +58,45 @@ async def test_scrape_ebay_sold():
 
                 grouped.setdefault(sold_date, []).append(price)
 
-            if exclusion_log:
-                print("🧹 Excluded Listings:")
-                for ex in exclusion_log:
-                    print(f"   - {ex['reason']}: {ex['title']} ({ex['url']})")
+            if not results:
+                print(f"⚠️ No results found for: {card.query}")
+
+                if exclusion_log:
+                    print("🧹 Excluded Listings:")
+                    for ex in exclusion_log:
+                        print(f"   - {ex['reason']}: {ex['title']} ({ex['url']})")
+
+                    summary = {
+                        "query": card.query,
+                        "raw_count": 0,
+                        "filtered_count": 0,
+                        "median": None,
+                        "average": None,
+                        "raw_prices": [],
+                        "filtered": [],
+                        "exclusions": exclusion_log
+                    }
+
+                    try:
+                        await session.execute(
+                            text("""
+                            INSERT INTO scraper_test_results (source, query, included_count, excluded_count, avg_price, raw_json)
+                            VALUES (:source, :query, :included_count, :excluded_count, :avg_price, :raw_json)
+                            """),
+                            {
+                                "source": "ebay_sold",
+                                "query": card.query,
+                                "included_count": 0,
+                                "excluded_count": 0,
+                                "avg_price": None,
+                                "raw_json": json.dumps(summary)
+                            }
+                        )
+                        await session.commit()
+                        print(f"📄 Logged exclusions only for: {card.query}")
+                    except Exception as e:
+                        print(f"❌ DB error (exclusion only): {e}")
+                continue
 
             for sold_date, prices in grouped.items():
                 filtered = filter_outliers(prices)
