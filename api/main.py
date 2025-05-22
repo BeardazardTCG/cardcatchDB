@@ -14,7 +14,7 @@ import asyncio
 from models.models import MasterCard
 from batch_manager import BatchManager
 from archive.scraper_launcher import ScraperLauncher
-from scrapers.parse_ebay_pages import parse_ebay_sold_page, parse_ebay_active_page
+
 
 # Load .env environment variables
 load_dotenv()
