@@ -99,12 +99,13 @@ def scrape_ebay_sold(query):
 
     return audit_log
 
-# === BATCH MODE WITH ERROR LOGGING ===
+# === BATCH MODE (LIMITED TO 5 FOR STABILITY) ===
 if __name__ == "__main__":
     df = pd.read_csv(INPUT_CSV)
-    for i, row in df.iterrows():
+    test_df = df.head(5)  # Only take the first 5 cards
+    for i, row in test_df.iterrows():
         q = row['query']
-        print(f"\n[{i+1}/{len(df)}] Scraping: {q}")
+        print(f"\n[{i+1}/{len(test_df)}] Scraping: {q}")
         try:
             scrape_ebay_sold(q)
         except Exception as e:
