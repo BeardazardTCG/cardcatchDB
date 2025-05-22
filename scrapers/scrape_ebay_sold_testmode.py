@@ -7,6 +7,7 @@ from datetime import datetime
 from dotenv import load_dotenv
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import text
 from models.models import MasterCard
 from utils import filter_outliers, calculate_median, calculate_average
 from archive.scraper import parse_ebay_sold_page
@@ -64,10 +65,10 @@ async def test_scrape_ebay_sold():
                 # Insert result into test table
                 try:
                     await session.execute(
-                        """
+                        text("""
                         INSERT INTO scraper_test_results (source, query, included_count, excluded_count, avg_price, raw_json)
                         VALUES (:source, :query, :included_count, :excluded_count, :avg_price, :raw_json)
-                        """,
+                        """),
                         {
                             "source": "ebay_sold",
                             "query": card.query,
