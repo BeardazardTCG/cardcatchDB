@@ -84,6 +84,7 @@ class SmartSuggestion(SQLModel, table=True):
     suggested_action: str
     trend: str
     resale_value: float
+    affiliate_buy_link: Optional[str] = None
     created_at: Optional[datetime] = None
 
 # === Inventory tracking ===
