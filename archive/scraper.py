@@ -52,7 +52,13 @@ def parse_ebay_sold_page(query, max_items=100):
     }
 
     try:
-        resp = requests.get(url, params=params, timeout=10)
+       headers = {
+    "User-Agent": "Mozilla/5.0",
+    "Accept-Language": "en-GB,en;q=0.9"
+}
+resp = requests.get(url, params=params, headers=headers, timeout=10)
+print("✅ Fetched from:", resp.url)
+
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Scraper error:", e)
