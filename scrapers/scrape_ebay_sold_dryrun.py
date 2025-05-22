@@ -105,4 +105,3 @@ if __name__ == "__main__":
         q = row['query']
         print(f"\n\n=== Running eBay SOLD scrape for: {q} ===")
         scrape_ebay_sold(q)
-
