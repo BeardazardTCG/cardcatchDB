@@ -1,3 +1,6 @@
+# ⚠️ WARNING: This script can trigger eBay bans/503s if run as-is.
+# Parked for future refactor with proper scraping safety.
+
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
