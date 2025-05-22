@@ -91,7 +91,8 @@ def scrape_ebay_sold(query):
 
     if DRY_RUN and AUDIT_MODE:
         timestamp = int(time.time())
-        filename = f"audit_ebay_sold_{query.replace(' ', '_')}_{timestamp}.json"
+        safe_query = query.replace(' ', '_').replace('/', '-')
+        filename = f"audit_ebay_sold_{safe_query}_{timestamp}.json"
         with open(filename, 'w') as f:
             json.dump(audit_log, f, indent=2)
         print(f"[AUDIT LOG SAVED] {filename}")
