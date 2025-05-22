@@ -51,14 +51,14 @@ def parse_ebay_sold_page(query, max_items=100):
         "Graded": "No"
     }
 
-    try:
-       headers = {
-    "User-Agent": "Mozilla/5.0",
-    "Accept-Language": "en-GB,en;q=0.9"
-}
-resp = requests.get(url, params=params, headers=headers, timeout=10)
-print("✅ Fetched from:", resp.url)
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "en-GB,en;q=0.9"
+    }
 
+    try:
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        print("✅ Fetched from:", resp.url)
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Scraper error:", e)
@@ -98,11 +98,13 @@ print("✅ Fetched from:", resp.url)
             "set": set_name,
             "title": title,
             "price": price_float,
-            "sold_date": str(sold_date)
+            "sold_date": str(sold_date),
+            "url": resp.url
         })
         count += 1
 
     return results
+
 
 
 def parse_ebay_active_page(query, max_items=30):
