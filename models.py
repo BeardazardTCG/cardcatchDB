@@ -1,7 +1,8 @@
 from typing import Optional
 from sqlmodel import SQLModel, Field
+from datetime import datetime
 
-# SQLModel-backed tables
+# === Master card record used throughout CardCatch ===
 class MasterCard(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     unique_id: int
@@ -13,9 +14,10 @@ class MasterCard(SQLModel, table=True):
     tier: Optional[str] = None
     status: Optional[str] = None
     high_demand_boost: Optional[str] = None
-    clean_avg_price: Optional[float] = None        # ✅ Add this
-    net_resale_value: Optional[float] = None       # ✅ Add this
+    clean_avg_price: Optional[float] = None
+    net_resale_value: Optional[float] = None
 
+# === Daily sold-price logging ===
 class DailyPriceLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     unique_id: int
@@ -26,6 +28,7 @@ class DailyPriceLog(SQLModel, table=True):
     query_used: Optional[str]
     card_number: Optional[str]
 
+# === Daily active listings snapshot ===
 class ActiveDailyPriceLog(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     unique_id: int
@@ -36,65 +39,60 @@ class ActiveDailyPriceLog(SQLModel, table=True):
     query_used: Optional[str]
     card_number: Optional[str]
 
-# SQLAlchemy-backed tables
-from sqlalchemy import Column, Integer, String, Numeric, TIMESTAMP, Float
-from sqlalchemy.sql import func
-from db import Base
-
-class TrendTracker(Base):
+# === Historical trend data for pricing movement ===
+class TrendTracker(SQLModel, table=True):
     __tablename__ = "trendtracker"
 
-    id = Column(Integer, primary_key=True)
-    unique_id = Column(String)
-    card_name = Column(String)
-    set_name = Column(String)
-    last_price = Column(Numeric)
-    second_last = Column(Numeric)
-    third_last = Column(Numeric)
-    average_30d = Column(Numeric)
-    sample_size = Column(Integer)
-    pct_change_stable = Column(Numeric)
-    pct_change_spike = Column(Numeric)
-    trend_stable = Column(String)
-    trend_spike = Column(String)
-    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unique_id: str
+    card_name: str
+    set_name: str
+    last_price: float
+    second_last: float
+    third_last: float
+    average_30d: float
+    sample_size: int
+    pct_change_stable: float
+    pct_change_spike: float
+    trend_stable: str
+    trend_spike: str
+    updated_at: Optional[datetime] = None
 
-    # 🆕 Graded price fields
-    psa_10_price = Column(Float)
-    psa_10_count = Column(Integer)
-    psa_9_price = Column(Float)
-    psa_9_count = Column(Integer)
-    ace_10_price = Column(Float)
-    ace_10_count = Column(Integer)
-    ace_9_price = Column(Float)
-    ace_9_count = Column(Integer)
+    # 🆕 Graded price tracking
+    psa_10_price: Optional[float] = None
+    psa_10_count: Optional[int] = None
+    psa_9_price: Optional[float] = None
+    psa_9_count: Optional[int] = None
+    ace_10_price: Optional[float] = None
+    ace_10_count: Optional[int] = None
+    ace_9_price: Optional[float] = None
+    ace_9_count: Optional[int] = None
 
-class SmartSuggestion(Base):
+# === Smart recommendations from algorithm ===
+class SmartSuggestion(SQLModel, table=True):
     __tablename__ = "smartsuggestions"
 
-    id = Column(Integer, primary_key=True)
-    unique_id = Column(String)
-    card_name = Column(String)
-    set_name = Column(String)
-    card_number = Column(String)
-    card_status = Column(String)
-    clean_price = Column(Numeric)
-    target_sell = Column(Numeric)
-    target_buy = Column(Numeric)
-    suggested_action = Column(String)
-    trend = Column(String)
-    resale_value = Column(Numeric)
-    created_at = Column(TIMESTAMP, server_default=func.now())
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unique_id: str
+    card_name: str
+    set_name: str
+    card_number: str
+    card_status: str
+    clean_price: float
+    target_sell: float
+    target_buy: float
+    suggested_action: str
+    trend: str
+    resale_value: float
+    created_at: Optional[datetime] = None
 
-class Inventory(Base):
-    __tablename__ = "inventory"
+# === Inventory tracking ===
+class Inventory(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unique_id: str
 
-    id = Column(Integer, primary_key=True)
-    unique_id = Column(String)
-
-class Wishlist(Base):
-    __tablename__ = "wishlist"
-
-    id = Column(Integer, primary_key=True)
-    unique_id = Column(String)
+# === Wishlist tracking ===
+class Wishlist(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unique_id: str
 
