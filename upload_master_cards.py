@@ -1,34 +1,41 @@
 # upload_master_cards.py
+# ⚠️ ARCHIVAL SCRIPT — one-time use for manually uploading cards from Excel
 
+import os
 import pandas as pd
 from sqlmodel import SQLModel, create_engine, Session
 from models import MasterCard
-import os
 
-# Load environment variable
+# === Setup database connection (sync mode for script use)
 DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL not set")
 
-# FIX: Convert async URL to sync URL
+# Convert async URL to sync format
 DATABASE_URL_SYNC = DATABASE_URL.replace("postgresql+asyncpg", "postgresql")
-
-# Connect to the database (sync engine)
 engine = create_engine(DATABASE_URL_SYNC)
 
-# Read the Excel file
-df = pd.read_excel("CardBrain_Master.xlsx", sheet_name="Master Card Library")
+# === Excel source file
+EXCEL_FILE = "CardBrain_Master.xlsx"
+SHEET_NAME = "Master Card Library"
 
-# Columns we expect in your spreadsheet:
+# === Load data
+try:
+    df = pd.read_excel(EXCEL_FILE, sheet_name=SHEET_NAME)
+except Exception as e:
+    raise RuntimeError(f"❌ Failed to load Excel file: {e}")
+
+# === Validate expected columns
 expected_columns = [
     "Unique ID", "Card Name", "Set Name", "Card Number",
     "Card ID", "Full Query", "Tier", "Status", "High Demand Boost"
 ]
 
-# Validate columns
 for col in expected_columns:
     if col not in df.columns:
-        raise ValueError(f"Missing required column: {col}")
+        raise ValueError(f"❌ Missing required column: {col}")
 
-# Map rows into MasterCard models
+# === Map rows into MasterCard models
 cards_to_insert = []
 for _, row in df.iterrows():
     card = MasterCard(
@@ -40,15 +47,19 @@ for _, row in df.iterrows():
         query=row["Full Query"],
         tier=str(row["Tier"]) if pd.notna(row["Tier"]) else None,
         status=row["Status"],
-        high_demand_boost=str(row["High Demand Boost"]) if pd.notna(row["High Demand Boost"]) else None
+        high_demand_boost=str(row["High Demand Boost"]) if pd.notna(row["High Demand Boost"]) else None,
     )
     cards_to_insert.append(card)
 
-# Insert into the database
-print(f"Inserting {len(cards_to_insert)} cards...")
-SQLModel.metadata.create_all(engine)
-with Session(engine) as session:
-    session.add_all(cards_to_insert)
-    session.commit()
+# === Insert into the database
+print(f"📥 Preparing to insert {len(cards_to_insert)} cards...")
 
-print("✅ All cards uploaded successfully!")
+SQLModel.metadata.create_all(engine)
+
+try:
+    with Session(engine) as session:
+        session.add_all(cards_to_insert)
+        session.commit()
+    print("✅ All cards uploaded successfully.")
+except Exception as e:
+    print(f"❌ Upload failed: {e}")
