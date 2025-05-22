@@ -2,11 +2,13 @@ import requests
 from bs4 import BeautifulSoup
 import time
 import json
+import pandas as pd
 
 # === CONFIG ===
 DRY_RUN = True
 AUDIT_MODE = True
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
+INPUT_CSV = "data/scraper_batch_input.csv"
 
 # === SCRAPE FUNCTION ===
 def scrape_ebay_sold(query):
@@ -19,10 +21,10 @@ def scrape_ebay_sold(query):
         '_ipg': '200',         # Max items per page
         '_dmd': '1',           # Gallery view
     }
-    
+
     response = requests.get(base_url, headers=HEADERS, params=params)
     soup = BeautifulSoup(response.text, 'html.parser')
-    
+
     listings = soup.select("li.s-item")
     results = []
     audit_log = {
@@ -37,7 +39,7 @@ def scrape_ebay_sold(query):
         title_el = item.select_one(".s-item__title")
         price_el = item.select_one(".s-item__price")
         link_el = item.select_one(".s-item__link")
-        
+
         if not title_el or not price_el:
             audit_log['excluded'].append({
                 'reason': 'Missing title or price',
@@ -60,7 +62,6 @@ def scrape_ebay_sold(query):
             })
             continue
 
-        # === FILTER LOGIC ===
         if "lot" in title.lower() or "bundle" in title.lower():
             audit_log['excluded'].append({
                 'reason': 'Likely bundle',
@@ -70,7 +71,6 @@ def scrape_ebay_sold(query):
             })
             continue
 
-        # === PASSED ===
         result = {
             'title': title,
             'price': price,
@@ -79,7 +79,6 @@ def scrape_ebay_sold(query):
         audit_log['included'].append(result)
         results.append(price)
 
-    # === AGGREGATE ===
     if results:
         audit_log['summary'] = {
             'count': len(results),
@@ -90,7 +89,6 @@ def scrape_ebay_sold(query):
     else:
         audit_log['summary'] = None
 
-    # === DRY RUN LOG ===
     if DRY_RUN and AUDIT_MODE:
         timestamp = int(time.time())
         filename = f"audit_ebay_sold_{query.replace(' ', '_')}_{timestamp}.json"
@@ -100,9 +98,11 @@ def scrape_ebay_sold(query):
 
     return audit_log
 
-# === EXAMPLE ===
+# === BATCH MODE ===
 if __name__ == "__main__":
-    test_query = "Gengar Skyridge 10/144"
-    result = scrape_ebay_sold(test_query)
-    print(json.dumps(result, indent=2))
+    df = pd.read_csv(INPUT_CSV)
+    for _, row in df.iterrows():
+        q = row['query']
+        print(f"\n\n=== Running eBay SOLD scrape for: {q} ===")
+        scrape_ebay_sold(q)
 
