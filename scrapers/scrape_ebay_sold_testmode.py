@@ -9,7 +9,7 @@ from sqlmodel import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from models.models import MasterCard
 from utils import filter_outliers, calculate_median, calculate_average
-from scraper import parse_ebay_sold_page
+from archive.scraper import parse_ebay_sold_page
 import json
 
 # === Load .env config
