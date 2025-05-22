@@ -22,11 +22,10 @@ if not DATABASE_URL:
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-BATCH_SIZE = 5  # limit for testing
+BATCH_SIZE = 25  # Increased for deeper testing
 
 async def test_scrape_ebay_sold():
     async with async_session() as session:
-        # Get sample cards to test
         result = await session.execute(
             select(MasterCard).limit(BATCH_SIZE)
         )
@@ -41,13 +40,27 @@ async def test_scrape_ebay_sold():
                 print(f"❌ Scrape error: {e}")
                 continue
 
+            if not results:
+                print(f"⚠️ No results found for: {card.query}")
+
             grouped = {}
+            exclusion_log = []
+
             for item in results:
                 sold_date = item.get("sold_date")
                 price = item.get("price")
-                if not sold_date or price is None:
+                if not sold_date:
+                    exclusion_log.append({"reason": "no sold date", "title": item.get("title", "")})
+                    continue
+                if price is None:
+                    exclusion_log.append({"reason": "no price", "title": item.get("title", "")})
                     continue
                 grouped.setdefault(sold_date, []).append(price)
+
+            if exclusion_log:
+                print("🧹 Excluded Listings:")
+                for ex in exclusion_log:
+                    print(f"   - {ex['reason']}: {ex['title']}")
 
             for sold_date, prices in grouped.items():
                 filtered = filter_outliers(prices)
@@ -59,10 +72,10 @@ async def test_scrape_ebay_sold():
                     "median": calculate_median(filtered),
                     "average": calculate_average(filtered),
                     "raw_prices": prices,
-                    "filtered": filtered
+                    "filtered": filtered,
+                    "exclusions": exclusion_log
                 }
 
-                # Insert result into test table
                 try:
                     await session.execute(
                         text("""
