@@ -1,8 +1,29 @@
-import asyncio
-from db import get_session
-from models import MasterCard, TrendTracker, SmartSuggestion
-from sqlalchemy import select, delete
+# generate_smart_suggestions.py
+# ✅ Generates suggested card purchases based on price gap and trend score
 
+import asyncio
+import os
+from dotenv import load_dotenv
+from sqlmodel import SQLModel, select, delete
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
+from models import MasterCard, TrendTracker, SmartSuggestion
+
+# === Load .env config ===
+load_dotenv()
+
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL not set")
+
+engine = create_async_engine(DATABASE_URL, echo=False)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+async def get_session() -> AsyncSession:
+    async with async_session() as session:
+        yield session
+
+# === Define "hot" characters — extra weight for demand
 HOT_CHARACTERS = {
     "pikachu", "charizard", "eevee", "mewtwo", "mew", "charmander", "snorlax",
     "blastoise", "squirtle", "bulbasaur", "gengar", "ace", "raichu", "venusaur",
@@ -12,8 +33,13 @@ HOT_CHARACTERS = {
 def is_hot_character(name: str) -> bool:
     return any(char in name.lower() for char in HOT_CHARACTERS)
 
+# === Core logic
 async def generate_smart_suggestions():
-    async with get_session() as session:
+    async with async_session() as session:
+        # Clean previous suggestions
+        await session.execute(delete(SmartSuggestion))
+
+        # Load data
         trend_result = await session.execute(select(TrendTracker))
         trend_cards = trend_result.scalars().all()
 
@@ -25,6 +51,7 @@ async def generate_smart_suggestions():
         for trend in trend_cards:
             uid = str(trend.unique_id)
             card = master_map.get(uid)
+
             if not card or card.clean_avg_price is None or card.net_resale_value is None:
                 continue
 
@@ -33,7 +60,6 @@ async def generate_smart_suggestions():
             trend_symbol = trend.trend_stable or "⚠️"
             name = card.card_name or ""
             is_hot = is_hot_character(name)
-            status = "Unlisted"
 
             if clean_price < 0.80 or resale < 0.80:
                 continue
@@ -42,7 +68,6 @@ async def generate_smart_suggestions():
             target_sell = round(clean_price * 0.85, 2)
             target_buy = round(clean_price * 0.75 * (0.9 if trend_symbol == "📉" else 1), 2)
 
-            # ✅ Expanded buyer logic only
             if resale >= 20 and clean_price <= resale * 0.90:
                 action = "Buy Now"
             elif resale >= 10 and clean_price <= resale * 0.95:
@@ -58,32 +83,30 @@ async def generate_smart_suggestions():
             elif resale >= 1.25 and clean_price <= 1.25:
                 action = "Buy for Bundle"
             elif 4 <= resale < 7 and is_hot:
-                action = "Collector Pick"
-            elif resale < 4 and is_hot:
-                action = "Collector Pick"
-            elif trend_symbol == "➡️" and is_hot and resale > 2 and clean_price < resale:
-                action = "Collector Pick"
+                action = "Watch"
 
-            if action:
-                suggestions.append(SmartSuggestion(
-                    unique_id=uid,
-                    card_name=card.card_name,
-                    set_name=card.set_name,
-                    card_number=card.card_number,
-                    card_status=status,
-                    clean_price=clean_price,
-                    target_sell=target_sell,
-                    target_buy=target_buy,
-                    suggested_action=action,
-                    trend=trend_symbol,
-                    resale_value=resale
-                ))
-                print(f"✅ UID {uid} → {action} | resale={resale}, avg={clean_price}, trend={trend_symbol}")
+            if not action:
+                continue
 
-        await session.execute(delete(SmartSuggestion))
+            suggestion = SmartSuggestion(
+                unique_id=uid,
+                card_name=card.card_name,
+                set_name=card.set_name,
+                card_number=card.card_number or "N/A",
+                card_status=card.status or "Unknown",
+                clean_price=clean_price,
+                target_sell=target_sell,
+                target_buy=target_buy,
+                suggested_action=action,
+                trend=trend_symbol,
+                resale_value=resale
+            )
+            suggestions.append(suggestion)
+
         session.add_all(suggestions)
         await session.commit()
-        print(f"✅ Smart Suggestions v3.4 (buyers only) generated for {len(suggestions)} cards.")
+        print(f"✅ {len(suggestions)} smart suggestions generated.")
 
+# === Run
 if __name__ == "__main__":
     asyncio.run(generate_smart_suggestions())
