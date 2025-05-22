@@ -3,12 +3,19 @@ from bs4 import BeautifulSoup
 import time
 import json
 import pandas as pd
+import psycopg2
+import os
 
 # === CONFIG ===
 DRY_RUN = True
 AUDIT_MODE = True
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
 INPUT_CSV = "Data/Scraper_Batch_Input.csv"
+
+# === DB CONNECTION ===
+DB_URL = os.getenv("DATABASE_URL")
+conn = psycopg2.connect(DB_URL)
+cursor = conn.cursor()
 
 # === SCRAPE FUNCTION ===
 def scrape_ebay_sold(query):
@@ -86,26 +93,36 @@ def scrape_ebay_sold(query):
             'high': max(results),
             'avg': round(sum(results)/len(results), 2)
         }
+        avg_price = audit_log['summary']['avg']
     else:
         audit_log['summary'] = None
+        avg_price = None
 
     if DRY_RUN and AUDIT_MODE:
-        timestamp = int(time.time())
-        safe_query = query.replace(' ', '_').replace('/', '-')
-        filename = f"audit_ebay_sold_{safe_query}_{timestamp}.json"
-        with open(filename, 'w') as f:
-            json.dump(audit_log, f, indent=2)
-        print(f"[AUDIT LOG SAVED] {filename}")
+        try:
+            cursor.execute("""
+                INSERT INTO scraper_test_results (source, query, included_count, excluded_count, avg_price, raw_json)
+                VALUES (%s, %s, %s, %s, %s, %s)
+            """, (
+                'ebay_sold',
+                query,
+                len(audit_log['included']),
+                len(audit_log['excluded']),
+                avg_price,
+                json.dumps(audit_log)
+            ))
+            conn.commit()
+            print(f"[DB LOG SAVED] {query}")
+        except Exception as db_err:
+            print(f"❌ DB INSERT FAILED for {query}: {db_err}")
 
     return audit_log
 
-# === BATCH MODE (LIMITED TO 5 FOR STABILITY) ===
+# === BATCH MODE WITH ERROR LOGGING ===
 if __name__ == "__main__":
     df = pd.read_csv(INPUT_CSV)
-   df = pd.read_csv(INPUT_CSV)
-test_df = df.head(5)
-for i, row in test_df.iterrows():
-
+    test_df = df.head(5)
+    for i, row in test_df.iterrows():
         q = row['query']
         print(f"\n[{i+1}/{len(test_df)}] Scraping: {q}")
         try:
