@@ -1,6 +1,6 @@
 # batch_manager.py
 
-from models import MasterCard
+from models.models import MasterCard
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
