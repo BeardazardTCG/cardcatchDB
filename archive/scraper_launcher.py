@@ -2,7 +2,7 @@
 
 import asyncio
 from batch_manager import BatchManager
-from models import MasterCard
+from models.models import MasterCard
 from sqlalchemy.ext.asyncio import AsyncSession
 
 class ScraperLauncher:
