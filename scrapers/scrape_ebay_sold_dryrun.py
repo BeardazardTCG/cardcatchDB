@@ -117,7 +117,6 @@ def scrape_ebay_sold(query):
             print(f"❌ DB INSERT FAILED for {query}: {db_err}")
 
     return audit_log
-
 # === BATCH MODE WITH ERROR LOGGING ===
 if __name__ == "__main__":
     df = pd.read_csv(INPUT_CSV)
@@ -129,3 +128,4 @@ if __name__ == "__main__":
             scrape_ebay_sold(q)
         except Exception as e:
             print(f"❌ FAILED: {q} — {e}")
+
