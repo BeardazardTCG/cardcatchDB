@@ -22,7 +22,7 @@ if not DATABASE_URL:
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-BATCH_SIZE = 25  # Increased for deeper testing
+BATCH_SIZE = 25  # Still in deeper test mode
 
 async def test_scrape_ebay_sold():
     async with async_session() as session:
@@ -49,18 +49,22 @@ async def test_scrape_ebay_sold():
             for item in results:
                 sold_date = item.get("sold_date")
                 price = item.get("price")
+                title = item.get("title", "")
+                url = item.get("url", "N/A")
+
                 if not sold_date:
-                    exclusion_log.append({"reason": "no sold date", "title": item.get("title", "")})
+                    exclusion_log.append({"reason": "no sold date", "title": title, "url": url})
                     continue
                 if price is None:
-                    exclusion_log.append({"reason": "no price", "title": item.get("title", "")})
+                    exclusion_log.append({"reason": "no price", "title": title, "url": url})
                     continue
+
                 grouped.setdefault(sold_date, []).append(price)
 
             if exclusion_log:
                 print("🧹 Excluded Listings:")
                 for ex in exclusion_log:
-                    print(f"   - {ex['reason']}: {ex['title']}")
+                    print(f"   - {ex['reason']}: {ex['title']} ({ex['url']})")
 
             for sold_date, prices in grouped.items():
                 filtered = filter_outliers(prices)
