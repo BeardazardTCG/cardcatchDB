@@ -1,6 +1,7 @@
 import requests
 import time
 import json
+import pandas as pd
 
 # === CONFIG ===
 DRY_RUN = True
@@ -9,23 +10,22 @@ HEADERS = {
     'Accept': 'application/json',
     'User-Agent': 'CardCatch-Test-Agent'
 }
-
-# Simulated API key placeholder (replace with env variable in real usage)
 TCG_API_KEY = "your_api_key_here"
+INPUT_CSV = "data/scraper_batch_input.csv"
 
-# === TCGPlayer Scraper Function ===
+# === SCRAPE FUNCTION ===
 def fetch_tcg_prices(query):
     base_url = f"https://api.tcgplayer.com/catalog/products"
     headers = HEADERS.copy()
     headers['Authorization'] = f"Bearer {TCG_API_KEY}"
-    
+
     search_params = {
         'productName': query,
         'limit': 1
     }
 
     response = requests.get(base_url, headers=headers, params=search_params)
-    
+
     if response.status_code != 200:
         return {
             'query': query,
@@ -52,7 +52,6 @@ def fetch_tcg_prices(query):
     pricing_data = pricing_response.json()
     prices = pricing_data.get('results', [])
 
-    # Filter market/low/mid pricing
     market, low, mid = None, None, None
     for price in prices:
         if price.get('subTypeName') == 'Normal':
@@ -70,7 +69,6 @@ def fetch_tcg_prices(query):
         'url': f"https://www.tcgplayer.com/product/{product_id}"
     }
 
-    # === DRY RUN LOG ===
     if DRY_RUN and AUDIT_MODE:
         timestamp = int(time.time())
         filename = f"audit_tcg_{query.replace(' ', '_')}_{timestamp}.json"
@@ -80,8 +78,10 @@ def fetch_tcg_prices(query):
 
     return result
 
-# === EXAMPLE ===
+# === BATCH MODE ===
 if __name__ == "__main__":
-    test_query = "Gengar Skyridge 10/144"
-    result = fetch_tcg_prices(test_query)
-    print(json.dumps(result, indent=2))
+    df = pd.read_csv(INPUT_CSV)
+    for _, row in df.iterrows():
+        q = row['query']
+        print(f"\n\n=== Running TCG scrape for: {q} ===")
+        fetch_tcg_prices(q)
