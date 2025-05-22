@@ -1,24 +1,37 @@
+# upload_master_cards_api.py
+# ✅ Clean upload script — sends master card data to your live API
+
+import os
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 
-# Your live Render API endpoint
+# === Load .env values ===
+load_dotenv()
 API_URL = "https://cardcatchdb.onrender.com/bulk-upsert-master-cards"
+API_KEY = os.getenv("API_KEY")
 
-# Read the Excel file
-df = pd.read_excel("CardBrain_Master.xlsx", sheet_name="Master Card Library")
+if not API_KEY:
+    raise RuntimeError("❌ API_KEY not found in .env")
 
-# Expected columns
+# === Excel source file
+EXCEL_FILE = "CardBrain_Master.xlsx"
+SHEET_NAME = "Master Card Library"
+
+# === Load Excel data
+df = pd.read_excel(EXCEL_FILE, sheet_name=SHEET_NAME)
+
+# === Validate required columns
 expected_columns = [
     "Unique ID", "Card Name", "Set Name", "Card Number",
     "Card ID", "Full Query", "Tier", "Status", "High Demand Boost"
 ]
 
-# Validate columns
 for col in expected_columns:
     if col not in df.columns:
-        raise ValueError(f"Missing required column: {col}")
+        raise ValueError(f"❌ Missing required column: {col}")
 
-# Prepare cards
+# === Prepare cards for upload
 cards = []
 for _, row in df.iterrows():
     try:
@@ -35,27 +48,24 @@ for _, row in df.iterrows():
         }
         cards.append(card)
     except Exception as e:
-        print(f"❌ Skipping card due to error: {e}")
+        print(f"❌ Skipping row due to error: {e}")
 
-# Upload in chunks
+# === Upload in chunks
 def upload_cards(cards):
-    chunk_size = 75 # Keep it small and safe
+    chunk_size = 75
+    headers = {"x-api-key": API_KEY}
     for i in range(0, len(cards), chunk_size):
         chunk = cards[i:i+chunk_size]
         try:
-            response = requests.post(API_URL, json=chunk)
+            response = requests.post(API_URL, json=chunk, headers=headers)
             if response.status_code == 200:
-                print(f"✅ Uploaded/Updated {len(chunk)} cards.")
+                print(f"✅ Uploaded {len(chunk)} cards.")
             else:
-                print(f"❌ Error for batch {i//chunk_size+1}: {response.text}")
+                print(f"❌ Error on batch {i//chunk_size + 1}: {response.text}")
         except Exception as e:
-            print(f"❌ Failed to upload batch {i//chunk_size+1} due to error: {e}")
+            print(f"❌ Failed to upload batch {i//chunk_size + 1} due to error: {e}")
 
+# === Run
 if __name__ == "__main__":
-    print(f"Preparing to upload {len(cards)} cards...")
-    upload_cards(cards)
-
-
-if __name__ == "__main__":
-    print(f"Preparing to upload {len(cards)} cards...")
+    print(f"📦 Preparing to upload {len(cards)} cards to CardCatch API...")
     upload_cards(cards)
