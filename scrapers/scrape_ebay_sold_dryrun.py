@@ -8,7 +8,7 @@ import pandas as pd
 DRY_RUN = True
 AUDIT_MODE = True
 HEADERS = {'User-Agent': 'Mozilla/5.0'}
-INPUT_CSV = "data/scraper_batch_input.csv"
+INPUT_CSV = "Data/Scraper_Batch_Input.csv"
 
 # === SCRAPE FUNCTION ===
 def scrape_ebay_sold(query):
