@@ -11,11 +11,10 @@ import os
 import httpx
 import asyncio
 
-# Internal imports
-from models import MasterCard
+from models.models import MasterCard
 from batch_manager import BatchManager
-from scraper_launcher import ScraperLauncher
-from scraper import parse_ebay_sold_page, parse_ebay_active_page
+from archive.scraper_launcher import ScraperLauncher
+from scrapers.parse_ebay_pages import parse_ebay_sold_page, parse_ebay_active_page
 
 # Load .env environment variables
 load_dotenv()
