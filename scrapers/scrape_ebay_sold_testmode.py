@@ -1,8 +1,8 @@
 import sys, os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import os
 import asyncio
+import json
 from datetime import datetime
 from dotenv import load_dotenv
 from sqlmodel import select
@@ -10,8 +10,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy import text
 from models.models import MasterCard
 from utils import filter_outliers, calculate_median, calculate_average
-from archive.scraper import parse_ebay_sold_page
-import json
+from archive.scraper import parse_ebay_sold_page as original_parse
 
 # === Load .env config
 load_dotenv()
@@ -24,18 +23,39 @@ async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 BATCH_SIZE = 25
 
+# === PATCH parse_ebay_sold_page inline with relaxed filtering
+def patched_parse(query, max_items=30):
+    results = original_parse(query, max_items=max_items)
+    character, card_number, *_ = query.lower().split()
+    card_number_digits = ''.join(filter(str.isdigit, card_number))
+    
+    filtered = []
+    for r in results:
+        title = r.get("title", "").lower()
+        title_digits = ''.join(filter(str.isdigit, title))
+
+        if not any(c in title for c in [character, character.replace('-', ''), character.replace('-', ' ')]):
+            continue
+        if not any(part in title_digits for part in [
+            card_number_digits,
+            card_number_digits[-3:],
+            card_number_digits[-2:],
+            card_number_digits.replace("0", "")
+        ]):
+            continue
+        filtered.append(r)
+    return filtered
+
 async def test_scrape_ebay_sold():
     async with async_session() as session:
-        result = await session.execute(
-            select(MasterCard).limit(BATCH_SIZE)
-        )
+        result = await session.execute(select(MasterCard).limit(BATCH_SIZE))
         cards = result.scalars().all()
         print(f"🧪 Testing {len(cards)} cards...")
 
         for card in cards:
             print(f"\n🔍 {card.query}")
             try:
-                results = parse_ebay_sold_page(card.query, max_items=30)
+                results = patched_parse(card.query, max_items=30)
             except Exception as e:
                 print(f"❌ Scrape error: {e}")
                 continue
