@@ -21,7 +21,7 @@ engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 # === Load test queries from file
-QUERY_FILE_PATH = os.path.join(os.path.dirname(__file__), "../charizard_test_queries.txt")
+QUERY_FILE_PATH = os.path.join(os.path.dirname(__file__), "charizard_test_queries.txt")
 with open(QUERY_FILE_PATH, "r") as f:
     TEST_QUERIES = [line.strip() for line in f if line.strip()]
 
