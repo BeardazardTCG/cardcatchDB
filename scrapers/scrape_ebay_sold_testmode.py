@@ -8,9 +8,8 @@ from dotenv import load_dotenv
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import text
-from models.models import MasterCard
 from utils import filter_outliers, calculate_median, calculate_average
-from archive.scraper import parse_ebay_sold_page as original_parse
+from archive.scraper import parse_ebay_sold_page
 
 # === Load .env config
 load_dotenv()
@@ -21,95 +20,44 @@ if not DATABASE_URL:
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-# === Normalise bad queries
-def clean_query(raw_query):
-    return raw_query.lower().replace("-", " ").replace("/", " ")
+# === Load test queries from file
+QUERY_FILE_PATH = os.path.join(os.path.dirname(__file__), "../charizard_test_queries.txt")
+with open(QUERY_FILE_PATH, "r") as f:
+    TEST_QUERIES = [line.strip() for line in f if line.strip()]
 
-# === Filtering-matched parser
-def patched_parse(query, max_items=30):
-    results = original_parse(query, max_items=max_items)
-    character, card_number, *_ = query.lower().split()
-    card_number_digits = ''.join(filter(str.isdigit, card_number))
+# === Keyword exclusions
+EXCLUSION_KEYWORDS = [
+    "psa", "cgc", "bgs", "ace", "graded", "gem mint",
+    "bulk", "lot", "bundle", "set of", "collection",
+    "spanish", "german", "french", "japanese", "italian", "chinese", "portuguese",
+    "coin", "pin", "promo tin", "jumbo"
+]
 
-    filtered = []
-    for r in results:
-        title = r.get("title", "").lower()
-        title_digits = ''.join(filter(str.isdigit, title))
-
-        if not any(c in title for c in [character, character.replace('-', ''), character.replace('-', ' ')]):
-            continue
-        if not any(part in title_digits for part in [
-            card_number_digits,
-            card_number_digits[-3:],
-            card_number_digits[-2:],
-            card_number_digits.replace("0", "")
-        ]):
-            continue
-        filtered.append(r)
-    return filtered
-
-async def test_scrape_batch():
+async def run_scrape_tests():
     async with async_session() as session:
-        result = await session.execute(
-            select(MasterCard).where(MasterCard.query.in_([
-                "charizard ex generations 11 083",
-                "pikachu scarlet & violet black star promos 27 075",
-                "snorlax skyridge 100 144",
-                "pikachu skyridge 84 144",
-                "shining mewtwo neo destiny 109 105",
-                "pikachu wizards black star promos",
-                "shining charizard neo destiny 107 105",
-                "eevee aquapolis 75 144",
-                "eevee skyridge 54 144",
-                "dark raichu team rocket 83 082",
-                "zapdos aquapolis 44 144",
-                "vaporeon skyridge 33 144",
-                "raichu skyridge 27 144",
-                "eevee team rocket 55 082",
-                "dark vaporeon team rocket 45 082",
-                "gengar skyridge 10 144",
-                "zapdos generations 29 083",
-                "dark jolteon team rocket 38 082",
-                "jolteon ex generations 28 083",
-                "articuno skyridge 4 144",
-                "pikachu generations 26 083",
-                "articuno generations 25 083",
-                "vaporeon ex generations 24 083",
-                "snorlax call of legends 33 095",
-                "m blastoise ex generations 18 083"
-            ]))
-        )
-        cards = result.scalars().all()
-        print(f"🧪 Testing {len(cards)} cards...")
-
-        for card in cards:
-            cleaned_query = clean_query(card.query)
-            print(f"\n🔍 {cleaned_query}")
+        for query in TEST_QUERIES:
+            print(f"\n🔍 Running filtered scrape for: {query}")
             try:
-                results = patched_parse(cleaned_query, max_items=30)
+                results = parse_ebay_sold_page(query, max_items=30)
             except Exception as e:
-                print(f"❌ Scrape error: {e}")
+                print(f"❌ Scrape error for '{query}': {e}")
                 continue
 
             raw_prices = []
             exclusions = []
-
-            exclusion_keywords = [
-                "psa", "cgc", "bgs", "ace", "graded", "gem mint",
-                "bulk", "lot", "bundle", "set of", "collection",
-                "spanish", "german", "french", "japanese", "italian", "chinese", "portuguese",
-                "coin", "pin", "promo tin", "jumbo"
-            ]
+            used_urls = []
 
             for item in results:
                 title = item.get("title", "").lower()
                 price = item.get("price")
                 sold_date = item.get("sold_date")
-                url = item.get("url", "N/A")
+                url = item.get("url")
+                used_urls.append(url)
 
-                if any(kw in title for kw in exclusion_keywords):
+                if any(kw in title for kw in EXCLUSION_KEYWORDS):
                     exclusions.append({"reason": "excluded keyword", "title": title, "url": url})
                     continue
+
                 if price is None or not sold_date:
                     exclusions.append({"reason": "missing data", "title": title, "url": url})
                     continue
@@ -118,13 +66,14 @@ async def test_scrape_batch():
 
             if not raw_prices:
                 summary = {
-                    "query": cleaned_query,
+                    "query": query,
                     "raw_count": 0,
                     "filtered_count": 0,
                     "median": None,
                     "average": None,
                     "raw_prices": [],
                     "filtered": [],
+                    "urls": used_urls,
                     "exclusions": exclusions
                 }
 
@@ -136,7 +85,7 @@ async def test_scrape_batch():
                         """),
                         {
                             "source": "ebay_sold",
-                            "query": cleaned_query,
+                            "query": query,
                             "included_count": 0,
                             "excluded_count": len(exclusions),
                             "avg_price": None,
@@ -144,23 +93,25 @@ async def test_scrape_batch():
                         }
                     )
                     await session.commit()
-                    print(f"📄 Logged exclusions only for: {cleaned_query}")
+                    print(f"📄 Logged exclusions only for: {query}")
                 except Exception as e:
                     print(f"❌ DB error (exclusion only): {e}")
                 continue
 
+            # === Charizard filtering logic ===
             filtered_step1 = filter_outliers(raw_prices)
             median_val = calculate_median(filtered_step1)
             final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= 0.4]
 
             summary = {
-                "query": cleaned_query,
+                "query": query,
                 "raw_count": len(raw_prices),
                 "filtered_count": len(final_filtered),
                 "median": calculate_median(final_filtered),
                 "average": calculate_average(final_filtered),
                 "raw_prices": raw_prices,
                 "filtered": final_filtered,
+                "urls": used_urls,
                 "exclusions": exclusions
             }
 
@@ -172,7 +123,7 @@ async def test_scrape_batch():
                     """),
                     {
                         "source": "ebay_sold",
-                        "query": cleaned_query,
+                        "query": query,
                         "included_count": len(final_filtered),
                         "excluded_count": len(raw_prices) - len(final_filtered),
                         "avg_price": calculate_average(final_filtered),
@@ -180,10 +131,10 @@ async def test_scrape_batch():
                     }
                 )
                 await session.commit()
-                print(f"✅ Logged: {cleaned_query} ({len(final_filtered)} used)")
+                print(f"✅ Logged: {query} ({len(final_filtered)} used)")
             except Exception as e:
                 print(f"❌ DB error: {e}")
 
 if __name__ == "__main__":
-    asyncio.run(test_scrape_batch())
+    asyncio.run(run_scrape_tests())
 
