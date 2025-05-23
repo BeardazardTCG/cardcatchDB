@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup
 from sqlalchemy import (
     Column, String, Integer, Date, Text, MetaData, Table
 )
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import async_sessionmaker
 from dotenv import load_dotenv
@@ -44,14 +44,12 @@ mastercard_v2 = Table(
     Column("query", Text),
 )
 
-# === Card Number Cleaner ===
 def clean_card_number(raw):
     match = re.match(r"(\d+)[^\d]?(\d+)", raw)
     if match:
         return f"{int(match.group(1))}/{int(match.group(2))}"
     return raw
 
-# === Scrape Sets and Cards ===
 async def scrape():
     BASE_URL = "https://bulbapedia.bulbagarden.net"
     EXPANSIONS_URL = f"{BASE_URL}/wiki/List_of_Pok%C3%A9mon_Trading_Card_Game_expansions"
@@ -65,18 +63,14 @@ async def scrape():
             soup = BeautifulSoup(text, "html.parser")
 
         seen = set()
-set_links = []
+        set_links = []
 
-for a in soup.select("table.wikitable a[href^='/wiki/']"):
-    href = a.get("href")
-    text = a.text.strip()
-
-    # Must be a set page (excludes links to cards, etc.)
-    if href and "TCG" in href and href not in seen:
-        full_url = BASE_URL + href
-        seen.add(href)
-        set_links.append(full_url)
-
+        for a in soup.select("table.wikitable a[href^='/wiki/']"):
+            href = a.get("href")
+            if href and "TCG" in href and href not in seen:
+                full_url = BASE_URL + href
+                seen.add(href)
+                set_links.append(full_url)
 
         print(f"🔍 Found {len(set_links)} set links")
 
@@ -137,7 +131,6 @@ for a in soup.select("table.wikitable a[href^='/wiki/']"):
         print(f"📦 Total cards scraped: {len(all_cards)}")
         return all_cards
 
-# === Main Async Runner ===
 async def main():
     print("⚙️ Creating table if needed...")
     async with engine.begin() as conn:
@@ -159,7 +152,6 @@ async def main():
 
     print(f"✅ Done! {len(cards)} cards written to `mastercard_v2`")
 
-# === Entry ===
 if __name__ == "__main__":
     print("🟢 Script starting...")
     asyncio.run(main())
