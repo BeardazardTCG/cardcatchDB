@@ -60,7 +60,9 @@ async def scrape():
             if response.status != 200:
                 raise Exception(f"Failed to load set list page: {response.status}")
             text = await response.text()
-            soup = BeautifulSoup(text, "html.parser")
+           soup = BeautifulSoup(text, "html.parser")
+print("🧪 Page content sample:\n", soup.prettify()[:3000])  # Show first 3,000 chars
+
 
         seen = set()
         set_links = []
