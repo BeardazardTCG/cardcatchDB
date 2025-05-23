@@ -49,7 +49,7 @@ def run_charizard_test():
     refined = []
     median_val = calculate_median(filtered)
     for price in filtered:
-        if abs(price - median_val) / median_val <= 2:
+       if abs(price - median_val) / median_val <= 0.4:
             refined.append(price)
 
     print("\n📊 Final Filtered Stats:")
