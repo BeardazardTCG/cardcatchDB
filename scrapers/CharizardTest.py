@@ -1,3 +1,6 @@
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from archive.scraper import parse_ebay_sold_page
 from utils import filter_outliers, calculate_median, calculate_average
 
