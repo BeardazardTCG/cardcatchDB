@@ -23,7 +23,6 @@ if not DATABASE_URL:
 engine = create_async_engine(DATABASE_URL, echo=False)
 metadata = MetaData()
 
-# === Define DB Table ===
 mastercard_v2 = Table(
     "mastercard_v2", metadata,
     Column("id", Integer, primary_key=True),
@@ -60,9 +59,12 @@ async def scrape():
             if response.status != 200:
                 raise Exception(f"Failed to load set list page: {response.status}")
             text = await response.text()
-           soup = BeautifulSoup(text, "html.parser")
-print("🧪 Page content sample:\n", soup.prettify()[:3000])  # Show first 3,000 chars
+            soup = BeautifulSoup(text, "html.parser")
 
+        # DEBUG OUTPUT – first 3,000 chars of the parsed HTML
+        print("🧪 Page content preview:\n")
+        print(soup.prettify()[:3000])
+        print("\n🧪 End of preview\n")
 
         seen = set()
         set_links = []
