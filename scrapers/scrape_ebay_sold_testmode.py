@@ -1,176 +1,134 @@
-from bs4 import BeautifulSoup
-import requests
-import re
+import sys, os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+import os
+import asyncio
 from datetime import datetime
+from dotenv import load_dotenv
+from sqlmodel import select
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import text
+from models.models import MasterCard
+from utils import filter_outliers, calculate_median, calculate_average
+from archive.scraper import parse_ebay_sold_page
+import json
 
-def extract_sold_date(item):
-    spans = item.find_all("span")
-    for span in spans:
-        text = span.get_text(strip=True)
-        if text.lower().startswith("sold"):
-            match = re.search(r"Sold\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
-            if match:
+# === Load .env config
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL not set")
+
+engine = create_async_engine(DATABASE_URL, echo=False)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
+
+BATCH_SIZE = 25
+
+async def test_scrape_ebay_sold():
+    async with async_session() as session:
+        result = await session.execute(
+            select(MasterCard).limit(BATCH_SIZE)
+        )
+        cards = result.scalars().all()
+        print(f"🧪 Testing {len(cards)} cards...")
+
+        for card in cards:
+            print(f"\n🔍 {card.query}")
+            try:
+                results = parse_ebay_sold_page(card.query, max_items=30)
+            except Exception as e:
+                print(f"❌ Scrape error: {e}")
+                continue
+
+            grouped = {}
+            exclusion_log = []
+
+            for item in results:
+                sold_date = item.get("sold_date")
+                price = item.get("price")
+                title = item.get("title", "")
+                url = item.get("url", "N/A")
+
+                if not sold_date:
+                    exclusion_log.append({"reason": "no sold date", "title": title, "url": url})
+                    continue
+                if price is None:
+                    exclusion_log.append({"reason": "no price", "title": title, "url": url})
+                    continue
+
+                grouped.setdefault(sold_date, []).append(price)
+
+            if exclusion_log:
+                print("🧹 Excluded Listings:")
+                for ex in exclusion_log:
+                    print(f"   - {ex['reason']}: {ex['title']} ({ex['url']})")
+
+            if not grouped:
+                summary = {
+                    "query": card.query,
+                    "raw_count": 0,
+                    "filtered_count": 0,
+                    "median": None,
+                    "average": None,
+                    "raw_prices": [],
+                    "filtered": [],
+                    "exclusions": exclusion_log
+                }
+
                 try:
-                    return datetime.strptime(match.group(0)[5:], "%d %b %Y").date()
-                except ValueError:
-                    return None
-    return None
+                    await session.execute(
+                        text("""
+                        INSERT INTO scraper_test_results (source, query, included_count, excluded_count, avg_price, raw_json)
+                        VALUES (:source, :query, :included_count, :excluded_count, :avg_price, :raw_json)
+                        """),
+                        {
+                            "source": "ebay_sold",
+                            "query": card.query,
+                            "included_count": 0,
+                            "excluded_count": 0,
+                            "avg_price": None,
+                            "raw_json": json.dumps(summary)
+                        }
+                    )
+                    await session.commit()
+                    print(f"📄 Logged exclusions only for: {card.query}")
+                except Exception as e:
+                    print(f"❌ DB error (exclusion only): {e}")
+                continue
 
-def parse_character_set_and_number(query):
-    parts = query.split()
-    character = parts[0] if parts else ""
-    set_name = ""
+            for sold_date, prices in grouped.items():
+                filtered = filter_outliers(prices)
+                summary = {
+                    "query": card.query,
+                    "date": sold_date,
+                    "raw_count": len(prices),
+                    "filtered_count": len(filtered),
+                    "median": calculate_median(filtered),
+                    "average": calculate_average(filtered),
+                    "raw_prices": prices,
+                    "filtered": filtered,
+                    "exclusions": exclusion_log
+                }
 
-    known_rarities = ["ex", "v", "vmax", "vstar", "gx", "illustration", "rare", "promo", "ultra"]
-    filtered = [p for p in parts if not re.match(r"\d+/\d+", p) and p.lower() not in known_rarities]
-    if len(filtered) > 1:
-        set_name = " ".join(filtered[1:])
+                try:
+                    await session.execute(
+                        text("""
+                        INSERT INTO scraper_test_results (source, query, included_count, excluded_count, avg_price, raw_json)
+                        VALUES (:source, :query, :included_count, :excluded_count, :avg_price, :raw_json)
+                        """),
+                        {
+                            "source": "ebay_sold",
+                            "query": card.query,
+                            "included_count": len(filtered),
+                            "excluded_count": len(prices) - len(filtered),
+                            "avg_price": calculate_average(filtered),
+                            "raw_json": json.dumps(summary)
+                        }
+                    )
+                    await session.commit()
+                    print(f"✅ Logged: {card.query} ({len(filtered)} used)")
+                except Exception as e:
+                    print(f"❌ DB error: {e}")
 
-    match = re.search(r"\d+/\d+", query)
-    card_number = match.group(0) if match else ""
-
-    return character.lower(), set_name, card_number
-
-def parse_ebay_sold_page(query, max_items=100):
-    character, set_name, card_number = parse_character_set_and_number(query)
-    card_number_digits = re.sub(r"[^\d]", "", card_number)
-
-    url = "https://www.ebay.co.uk/sch/i.html"
-    safe_query = f"{character} {card_number.replace('/', ' ')} {set_name}"
-    params = {
-        "_nkw": safe_query,
-        "LH_Sold": "1",
-        "LH_Complete": "1",
-        "LH_PrefLoc": "1",
-        "_dmd": "2",
-        "_ipg": "120",
-        "_sop": "13",
-        "_dcat": "183454",
-        "Graded": "No"
-    }
-
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-GB,en;q=0.9"
-    }
-
-    try:
-        resp = requests.get(url, params=params, headers=headers, timeout=10)
-        print("✅ Fetched from:", resp.url)
-        soup = BeautifulSoup(resp.text, "html.parser")
-    except Exception as e:
-        print("Scraper error:", e)
-        return []
-
-    results = []
-    count = 0
-
-    for item in soup.select(".s-item"):
-        if count >= max_items:
-            break
-
-        title_tag = item.select_one(".s-item__title")
-        price_tag = item.select_one(".s-item__price")
-        sold_date = extract_sold_date(item)
-
-        if not title_tag or not price_tag or not sold_date:
-            continue
-
-        title = title_tag.text.strip()
-        title_lower = title.lower()
-        title_digits = re.sub(r"[^\d]", "", title)
-
-        if not any(part in title_digits for part in [card_number_digits, card_number_digits[-2:], card_number_digits[-3:]]):
-            continue
-        if character not in title_lower:
-            continue
-
-        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
-        try:
-            price_float = float(price_clean)
-        except ValueError:
-            continue
-
-        results.append({
-            "character": character.title(),
-            "set": set_name,
-            "title": title,
-            "price": price_float,
-            "sold_date": str(sold_date),
-            "url": resp.url
-        })
-        count += 1
-
-    return results
-
-def parse_ebay_active_page(query, max_items=30):
-    character, set_name, card_number = parse_character_set_and_number(query)
-    card_number_digits = re.sub(r"[^\d]", "", card_number)
-
-    url = "https://www.ebay.co.uk/sch/i.html"
-    safe_query = f"{character} {card_number.replace('/', ' ')} {set_name}"
-    params = {
-        "_nkw": safe_query,
-        "LH_BIN": "1",
-        "LH_PrefLoc": "1",
-        "_ipg": "120",
-        "_sop": "12",
-        "_dcat": "183454",
-        "Graded": "No"
-    }
-
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-GB,en;q=0.9"
-    }
-
-    try:
-        resp = requests.get(url, params=params, headers=headers, timeout=10)
-        soup = BeautifulSoup(resp.text, "html.parser")
-    except Exception as e:
-        print("Active scrape error:", e)
-        return []
-
-    results = []
-    count = 0
-
-    for item in soup.select(".s-item"):
-        if count >= max_items:
-            break
-
-        title_tag = item.select_one(".s-item__title")
-        price_tag = item.select_one(".s-item__price")
-        link_tag = item.select_one(".s-item__link")
-
-        if not title_tag or not price_tag:
-            continue
-
-        title = title_tag.text.strip()
-        title_lower = title.lower()
-        title_digits = re.sub(r"[^\d]", "", title)
-        url = link_tag['href'] if link_tag else ""
-
-        if any(term in title_lower for term in ["proxy", "lot", "damaged", "jumbo", "binder", "custom"]):
-            continue
-        if character and character.lower() not in title_lower:
-            continue
-        if card_number_digits and not any(part in title_digits for part in [card_number_digits, card_number_digits[-2:], card_number_digits[-3:]]):
-            continue
-
-        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
-        try:
-            price_float = float(price_clean)
-        except ValueError:
-            continue
-
-        results.append({
-            "character": character.title(),
-            "set": set_name,
-            "title": title,
-            "price": price_float,
-            "url": url,
-            "listing_date": str(datetime.today().date())
-        })
-        count += 1
-
-    return results
+if __name__ == "__main__":
+    asyncio.run(test_scrape_ebay_sold())
