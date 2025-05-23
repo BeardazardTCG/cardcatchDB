@@ -53,7 +53,11 @@ async def scrape():
     BASE_URL = "https://bulbapedia.bulbagarden.net"
     EXPANSIONS_URL = f"{BASE_URL}/wiki/List_of_Pok%C3%A9mon_Trading_Card_Game_expansions"
 
-    async with aiohttp.ClientSession() as session:
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+    }
+
+    async with aiohttp.ClientSession(headers=headers) as session:
         print("🌐 Fetching set list page...")
         async with session.get(EXPANSIONS_URL) as response:
             if response.status != 200:
