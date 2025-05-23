@@ -25,9 +25,10 @@ QUERY_FILE_PATH = os.path.join(os.path.dirname(__file__), "charizard_test_querie
 with open(QUERY_FILE_PATH, "r") as f:
     TEST_QUERIES = [line.strip() for line in f if line.strip()]
 
-# === Keyword exclusions
+# === Keyword exclusions (expanded for graded detection)
 EXCLUSION_KEYWORDS = [
-    "psa", "cgc", "bgs", "ace", "graded", "gem mint",
+    "psa", "psa ", "psa-", "psa:",
+    "cgc", "bgs", "ace", "graded", "gem mint",
     "bulk", "lot", "bundle", "set of", "collection",
     "spanish", "german", "french", "japanese", "italian", "chinese", "portuguese",
     "coin", "pin", "promo tin", "jumbo"
@@ -101,7 +102,8 @@ async def run_scrape_tests():
             # === Charizard filtering logic ===
             filtered_step1 = filter_outliers(raw_prices)
             median_val = calculate_median(filtered_step1)
-            final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= 0.4]
+            band = 0.5 if median_val > 10 else 0.4
+            final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= band]
 
             summary = {
                 "query": query,
@@ -137,4 +139,3 @@ async def run_scrape_tests():
 
 if __name__ == "__main__":
     asyncio.run(run_scrape_tests())
-
