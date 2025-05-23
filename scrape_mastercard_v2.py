@@ -57,7 +57,10 @@ async def scrape():
     EXPANSIONS_URL = f"{BASE_URL}/wiki/List_of_Pok%C3%A9mon_Trading_Card_Game_expansions"
 
     async with aiohttp.ClientSession() as session:
+        print("🌐 Fetching set list page...")
         async with session.get(EXPANSIONS_URL) as response:
+            if response.status != 200:
+                raise Exception(f"Failed to load set list page: {response.status}")
             text = await response.text()
             soup = BeautifulSoup(text, "html.parser")
 
@@ -72,13 +75,23 @@ async def scrape():
         all_cards = []
 
         for link in set_links:
+            print(f"📥 Scraping set page: {link}")
             async with session.get(link) as page:
+                if page.status != 200:
+                    print(f"❌ Failed to load set page: {link}")
+                    continue
                 html = await page.text()
                 set_soup = BeautifulSoup(html, "html.parser")
 
-            title = set_soup.find("h1").text.replace("(TCG)", "").strip()
+            title_tag = set_soup.find("h1")
+            if not title_tag:
+                print("❌ Missing <h1> title")
+                continue
+
+            title = title_tag.text.replace("(TCG)", "").strip()
             table = set_soup.find("table", {"class": "wikitable"})
             if not table:
+                print(f"⚠️ No card table found in set: {title}")
                 continue
 
             rows = table.find_all("tr")[1:]
@@ -93,7 +106,7 @@ async def scrape():
                 query = f"{card_name} {title} {card_number.replace('/', ' ')}"
                 unique_id = f"{title}_{card_number}"
 
-                print(f"✅ Added card: {card_name} ({card_number}) from {title}")
+                print(f"➕ Card: {card_name} ({card_number}) in {title}")
 
                 all_cards.append({
                     "unique_id": unique_id,
@@ -113,15 +126,19 @@ async def scrape():
                     "query": query,
                 })
 
+        print(f"📦 Total cards scraped: {len(all_cards)}")
         return all_cards
 
 # === Main Async Runner ===
 async def main():
+    print("⚙️ Creating table if needed...")
     async with engine.begin() as conn:
         await conn.run_sync(metadata.create_all)
 
+    print("🚀 Starting full scrape process...")
     cards = await scrape()
 
+    print("📤 Inserting into DB...")
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         for card in cards:
@@ -129,3 +146,13 @@ async def main():
                 index_elements=["unique_id"],
                 set_={"card_name": insert.excluded.card_name}
             )
+            await session.execute(stmt)
+        await session.commit()
+
+    print(f"✅ Done! {len(cards)} cards written to `mastercard_v2`")
+
+# === Entry ===
+if __name__ == "__main__":
+    print("🟢 Script starting...")
+    asyncio.run(main())
+    print("🏁 Script finished cleanly.")
