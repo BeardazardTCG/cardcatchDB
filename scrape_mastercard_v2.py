@@ -64,11 +64,19 @@ async def scrape():
             text = await response.text()
             soup = BeautifulSoup(text, "html.parser")
 
-        set_links = [
-            BASE_URL + a["href"]
-            for a in soup.select("table.wikitable a[href^='/wiki/']")
-            if ")_(TCG)" in a["href"]
-        ]
+        seen = set()
+set_links = []
+
+for a in soup.select("table.wikitable a[href^='/wiki/']"):
+    href = a.get("href")
+    text = a.text.strip()
+
+    # Must be a set page (excludes links to cards, etc.)
+    if href and "TCG" in href and href not in seen:
+        full_url = BASE_URL + href
+        seen.add(href)
+        set_links.append(full_url)
+
 
         print(f"🔍 Found {len(set_links)} set links")
 
