@@ -1,23 +1,29 @@
 import os
 import re
-import requests
-from bs4 import BeautifulSoup
+import asyncio
 from datetime import datetime
-from sqlalchemy import create_engine, Column, String, Integer, Date, Text, MetaData, Table
+
+import aiohttp
+from bs4 import BeautifulSoup
+from sqlalchemy import (
+    Column, String, Integer, Date, Text, MetaData, Table
+)
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from dotenv import load_dotenv
 
-# === Load .env for DATABASE_URL ===
+# === Load environment ===
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set in environment")
 
-engine = create_engine(DATABASE_URL)
+engine = create_async_engine(DATABASE_URL, echo=False)
 metadata = MetaData()
 
-# === Define table ===
+# === Define DB Table ===
 mastercard_v2 = Table(
     "mastercard_v2", metadata,
     Column("id", Integer, primary_key=True),
@@ -38,77 +44,90 @@ mastercard_v2 = Table(
     Column("query", Text),
 )
 
-# === Create the table if it doesn't exist ===
-metadata.create_all(engine)
-
-# === Scrape Bulbapedia expansions page ===
-BASE_URL = "https://bulbapedia.bulbagarden.net"
-EXPANSIONS_URL = f"{BASE_URL}/wiki/List_of_Pok%C3%A9mon_Trading_Card_Game_expansions"
-response = requests.get(EXPANSIONS_URL)
-soup = BeautifulSoup(response.text, "html.parser")
-
-# === Extract all English set links ===
-set_links = []
-for a in soup.select("table.wikitable a[href^='/wiki/']"):
-    href = a.get("href")
-    if href and ")_(TCG)" in href:
-        set_links.append(BASE_URL + href)
-
-# === Helper to clean card number ===
+# === Card Number Cleaner ===
 def clean_card_number(raw):
     match = re.match(r"(\d+)[^\d]?(\d+)", raw)
     if match:
         return f"{int(match.group(1))}/{int(match.group(2))}"
     return raw
 
-# === Scrape each set page for cards ===
-cards = []
+# === Scrape Sets and Cards ===
+async def scrape():
+    BASE_URL = "https://bulbapedia.bulbagarden.net"
+    EXPANSIONS_URL = f"{BASE_URL}/wiki/List_of_Pok%C3%A9mon_Trading_Card_Game_expansions"
 
-for link in set_links:
-    set_page = requests.get(link)
-    set_soup = BeautifulSoup(set_page.text, "html.parser")
+    async with aiohttp.ClientSession() as session:
+        async with session.get(EXPANSIONS_URL) as response:
+            text = await response.text()
+            soup = BeautifulSoup(text, "html.parser")
 
-    title = set_soup.find("h1").text.replace("(TCG)", "").strip()
-    table = set_soup.find("table", {"class": "wikitable"})
-    if not table:
-        continue
+        # === Find English set links ===
+        set_links = [
+            BASE_URL + a["href"]
+            for a in soup.select("table.wikitable a[href^='/wiki/']")
+            if ")_(TCG)" in a["href"]
+        ]
 
-    rows = table.find_all("tr")[1:]  # Skip header
+        all_cards = []
 
-    for row in rows:
-        cols = row.find_all("td")
-        if len(cols) < 2:
-            continue
+        for link in set_links:
+            async with session.get(link) as page:
+                html = await page.text()
+                set_soup = BeautifulSoup(html, "html.parser")
 
-        card_number_raw = cols[0].text.strip()
-        card_name = cols[1].text.strip()
+            title = set_soup.find("h1").text.replace("(TCG)", "").strip()
+            table = set_soup.find("table", {"class": "wikitable"})
+            if not table:
+                continue
 
-        card_number = clean_card_number(card_number_raw)
-        query = f"{card_name} {title} {card_number.replace('/', ' ')}"
-        unique_id = f"{title}_{card_number}"
+            rows = table.find_all("tr")[1:]
+            for row in rows:
+                cols = row.find_all("td")
+                if len(cols) < 2:
+                    continue
 
-        cards.append({
-            "unique_id": unique_id,
-            "card_name": card_name,
-            "card_number": card_number,
-            "card_number_raw": card_number_raw,
-            "rarity": None,
-            "type": None,
-            "artist": None,
-            "language": "en",
-            "set_name": title,
-            "set_code": None,
-            "release_date": None,
-            "series": None,
-            "set_logo_url": None,
-            "set_symbol_url": None,
-            "query": query,
-        })
+                card_number_raw = cols[0].text.strip()
+                card_name = cols[1].text.strip()
+                card_number = clean_card_number(card_number_raw)
+                query = f"{card_name} {title} {card_number.replace('/', ' ')}"
+                unique_id = f"{title}_{card_number}"
 
-# === Insert into DB ===
-with engine.begin() as conn:
-    for card in cards:
-        stmt = insert(mastercard_v2).values(card).on_conflict_do_nothing()
-        conn.execute(stmt)
+                all_cards.append({
+                    "unique_id": unique_id,
+                    "card_name": card_name,
+                    "card_number": card_number,
+                    "card_number_raw": card_number_raw,
+                    "rarity": None,
+                    "type": None,
+                    "artist": None,
+                    "language": "en",
+                    "set_name": title,
+                    "set_code": None,
+                    "release_date": None,
+                    "series": None,
+                    "set_logo_url": None,
+                    "set_symbol_url": None,
+                    "query": query,
+                })
 
-print(f"✅ Inserted {len(cards)} cards into mastercard_v2")
+        return all_cards
+
+# === Main Async Runner ===
+async def main():
+    async with engine.begin() as conn:
+        await conn.run_sync(metadata.create_all)
+
+    cards = await scrape()
+
+    async_session = async_sessionmaker(engine, expire_on_commit=False)
+    async with async_session() as session:
+        for card in cards:
+            stmt = insert(mastercard_v2).values(card).on_conflict_do_nothing()
+            await session.execute(stmt)
+        await session.commit()
+
+    print(f"✅ Inserted {len(cards)} cards into mastercard_v2")
+
+# === Entry ===
+if __name__ == "__main__":
+    asyncio.run(main())
