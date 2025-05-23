@@ -23,12 +23,16 @@ async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 BATCH_SIZE = 25
 
-# === PATCH parse_ebay_sold_page inline with relaxed filtering
+# === Normalise bad queries
+def clean_query(raw_query):
+    return raw_query.lower().replace("-", " ").replace("/", " ")
+
+# === Patched parsing with relaxed fuzzy matching
 def patched_parse(query, max_items=30):
     results = original_parse(query, max_items=max_items)
     character, card_number, *_ = query.lower().split()
     card_number_digits = ''.join(filter(str.isdigit, card_number))
-    
+
     filtered = []
     for r in results:
         title = r.get("title", "").lower()
@@ -53,9 +57,10 @@ async def test_scrape_ebay_sold():
         print(f"🧪 Testing {len(cards)} cards...")
 
         for card in cards:
-            print(f"\n🔍 {card.query}")
+            cleaned_query = clean_query(card.query)
+            print(f"\n🔍 {cleaned_query}")
             try:
-                results = patched_parse(card.query, max_items=30)
+                results = patched_parse(cleaned_query, max_items=30)
             except Exception as e:
                 print(f"❌ Scrape error: {e}")
                 continue
@@ -85,7 +90,7 @@ async def test_scrape_ebay_sold():
 
             if not grouped:
                 summary = {
-                    "query": card.query,
+                    "query": cleaned_query,
                     "raw_count": 0,
                     "filtered_count": 0,
                     "median": None,
@@ -103,7 +108,7 @@ async def test_scrape_ebay_sold():
                         """),
                         {
                             "source": "ebay_sold",
-                            "query": card.query,
+                            "query": cleaned_query,
                             "included_count": 0,
                             "excluded_count": 0,
                             "avg_price": None,
@@ -111,7 +116,7 @@ async def test_scrape_ebay_sold():
                         }
                     )
                     await session.commit()
-                    print(f"📄 Logged exclusions only for: {card.query}")
+                    print(f"📄 Logged exclusions only for: {cleaned_query}")
                 except Exception as e:
                     print(f"❌ DB error (exclusion only): {e}")
                 continue
@@ -119,7 +124,7 @@ async def test_scrape_ebay_sold():
             for sold_date, prices in grouped.items():
                 filtered = filter_outliers(prices)
                 summary = {
-                    "query": card.query,
+                    "query": cleaned_query,
                     "date": sold_date,
                     "raw_count": len(prices),
                     "filtered_count": len(filtered),
@@ -138,7 +143,7 @@ async def test_scrape_ebay_sold():
                         """),
                         {
                             "source": "ebay_sold",
-                            "query": card.query,
+                            "query": cleaned_query,
                             "included_count": len(filtered),
                             "excluded_count": len(prices) - len(filtered),
                             "avg_price": calculate_average(filtered),
@@ -146,7 +151,7 @@ async def test_scrape_ebay_sold():
                         }
                     )
                     await session.commit()
-                    print(f"✅ Logged: {card.query} ({len(filtered)} used)")
+                    print(f"✅ Logged: {cleaned_query} ({len(filtered)} used)")
                 except Exception as e:
                     print(f"❌ DB error: {e}")
 
