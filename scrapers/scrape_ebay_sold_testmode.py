@@ -25,7 +25,7 @@ async_session = async_sessionmaker(engine, expire_on_commit=False)
 def clean_query(raw_query):
     return raw_query.lower().replace("-", " ").replace("/", " ")
 
-# === Custom logic-matching Charizard test
+# === Filtering-matched parser
 def patched_parse(query, max_items=30):
     results = original_parse(query, max_items=max_items)
     character, card_number, *_ = query.lower().split()
@@ -50,7 +50,35 @@ def patched_parse(query, max_items=30):
 
 async def test_scrape_batch():
     async with async_session() as session:
-        result = await session.execute(select(MasterCard).limit(149))
+        result = await session.execute(
+            select(MasterCard).where(MasterCard.query.in_([
+                "charizard ex generations 11 083",
+                "pikachu scarlet & violet black star promos 27 075",
+                "snorlax skyridge 100 144",
+                "pikachu skyridge 84 144",
+                "shining mewtwo neo destiny 109 105",
+                "pikachu wizards black star promos",
+                "shining charizard neo destiny 107 105",
+                "eevee aquapolis 75 144",
+                "eevee skyridge 54 144",
+                "dark raichu team rocket 83 082",
+                "zapdos aquapolis 44 144",
+                "vaporeon skyridge 33 144",
+                "raichu skyridge 27 144",
+                "eevee team rocket 55 082",
+                "dark vaporeon team rocket 45 082",
+                "gengar skyridge 10 144",
+                "zapdos generations 29 083",
+                "dark jolteon team rocket 38 082",
+                "jolteon ex generations 28 083",
+                "articuno skyridge 4 144",
+                "pikachu generations 26 083",
+                "articuno generations 25 083",
+                "vaporeon ex generations 24 083",
+                "snorlax call of legends 33 095",
+                "m blastoise ex generations 18 083"
+            ]))
+        )
         cards = result.scalars().all()
         print(f"🧪 Testing {len(cards)} cards...")
 
@@ -121,7 +149,6 @@ async def test_scrape_batch():
                     print(f"❌ DB error (exclusion only): {e}")
                 continue
 
-            # === Charizard filtering logic
             filtered_step1 = filter_outliers(raw_prices)
             median_val = calculate_median(filtered_step1)
             final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= 0.4]
@@ -159,3 +186,4 @@ async def test_scrape_batch():
 
 if __name__ == "__main__":
     asyncio.run(test_scrape_batch())
+
