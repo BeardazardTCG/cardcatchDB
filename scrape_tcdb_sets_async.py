@@ -70,7 +70,7 @@ async def parse_sets(session, page_num):
 
         set_name = link.text.strip()
         set_url = BASE_URL + link['href']
-        set_code = re.search(r/sid/(\d+), link['href'])
+        set_code = re.search(r"sid/(\d+)", link['href'])
         set_id = set_code.group(1) if set_code else None
         year_text = cols[1].text.strip()
 
