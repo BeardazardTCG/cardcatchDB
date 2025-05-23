@@ -61,12 +61,13 @@ async def scrape():
             text = await response.text()
             soup = BeautifulSoup(text, "html.parser")
 
-        # === Find English set links ===
         set_links = [
             BASE_URL + a["href"]
             for a in soup.select("table.wikitable a[href^='/wiki/']")
             if ")_(TCG)" in a["href"]
         ]
+
+        print(f"🔍 Found {len(set_links)} set links")
 
         all_cards = []
 
@@ -91,6 +92,8 @@ async def scrape():
                 card_number = clean_card_number(card_number_raw)
                 query = f"{card_name} {title} {card_number.replace('/', ' ')}"
                 unique_id = f"{title}_{card_number}"
+
+                print(f"✅ Added card: {card_name} ({card_number}) from {title}")
 
                 all_cards.append({
                     "unique_id": unique_id,
@@ -122,12 +125,7 @@ async def main():
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         for card in cards:
-            stmt = insert(mastercard_v2).values(card).on_conflict_do_nothing()
-            await session.execute(stmt)
-        await session.commit()
-
-    print(f"✅ Inserted {len(cards)} cards into mastercard_v2")
-
-# === Entry ===
-if __name__ == "__main__":
-    asyncio.run(main())
+            stmt = insert(mastercard_v2).values(card).on_conflict_do_update(
+                index_elements=["unique_id"],
+                set_={"card_name": insert.excluded.card_name}
+            )
