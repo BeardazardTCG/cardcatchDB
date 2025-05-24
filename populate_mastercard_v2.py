@@ -1,3 +1,4 @@
+# populate_mastercard_v2.py
 import requests
 import json
 from sqlalchemy import create_engine, Table, Column, String, Integer, Boolean, MetaData
@@ -87,7 +88,7 @@ def populate():
                         "set_name": s['name'],
                         "set_code": set_code,
                         "release_date": s.get('releaseDate'),
-                        "series": s.get('series'),
+                        # "series": s.get('series'),  # Removed to match table structure
                         "set_logo_url": s['images'].get('logo'),
                         "set_symbol_url": s['images'].get('symbol'),
                         "query": f"{c['name']} {s['name']} {c['number']}",
