@@ -1,6 +1,3 @@
-print("🛠 Card fetch started...")
-
-
 import requests
 import json
 import time
@@ -14,7 +11,7 @@ def fetch_cards_for_set(set_id):
     page_size = 250
 
     while True:
-        url = f"https://api.pokemontcg.io/v2/cards?q=set:{set_id}&page={page}&pageSize={page_size}"
+        url = f"https://api.pokemontcg.io/v2/cards?set.id={set_id}&page={page}&pageSize={page_size}"
         try:
             response = requests.get(url, headers=HEADERS)
             if response.status_code == 404:
@@ -46,6 +43,12 @@ if __name__ == "__main__":
         cards = fetch_cards_for_set(sid)
         if cards:
             card_dump[sid] = cards
+
+    with open("all_cards_by_set.json", "w") as f:
+        json.dump(card_dump, f, indent=2)
+
+    print(f"✅ Fetched cards for {len(card_dump)} sets.")
+
 
     with open("all_cards_by_set.json", "w") as f:
         json.dump(card_dump, f, indent=2)
