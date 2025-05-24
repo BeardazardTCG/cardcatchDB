@@ -27,35 +27,30 @@ def convert_date(s):
         return None
 
 async def fetch_json(session, url):
-    try:
-        async with session.get(url, headers=HEADERS) as resp:
-            resp.raise_for_status()
-            return await resp.json()
-    except Exception as e:
-        print(f"Failed to fetch URL {url}: {e}")
-        return {}
+    async with session.get(url, headers=HEADERS) as resp:
+        resp.raise_for_status()
+        return await resp.json()
 
 async def fetch_all_sets(session):
-    data = await fetch_json(session, "https://api.pokemontcg.io/v2/sets")
+    url = "https://api.pokemontcg.io/v2/sets"
+    data = await fetch_json(session, url)
     return data.get("data", [])
 
-async def fetch_cards(session, set_id):
-    data = await fetch_json(session, f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}&pageSize=250")
-    return data.get("data", [])
-
-def is_secret_card(card):
-    number = card.get("number", "")
-    rarity = card.get("rarity", "").lower() if card.get("rarity") else ""
-    if rarity and ("secret" in rarity or "promo" in rarity):
-        return True
-    if "/" in number:
-        num_part, total_part = number.split("/")
-        try:
-            if int(num_part) > int(total_part):
-                return True
-        except ValueError:
-            return True
-    return False
+async def fetch_all_cards_for_set(session, set_id):
+    cards = []
+    page = 1
+    page_size = 250
+    while True:
+        url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}&page={page}&pageSize={page_size}"
+        data = await fetch_json(session, url)
+        batch = data.get("data", [])
+        if not batch:
+            break
+        cards.extend(batch)
+        if len(batch) < page_size:
+            break
+        page += 1
+    return cards
 
 async def insert_card(db_session: AsyncSession, card, release_date):
     data = {
@@ -95,38 +90,42 @@ async def insert_card(db_session: AsyncSession, card, release_date):
             )
             ON CONFLICT (unique_id) DO NOTHING
         """), data)
+        await db_session.commit()
+        print(f"Inserted card {card['name']} ({card['id']})")
+        return True
     except Exception as e:
         print(f"Failed to insert card {card['id']}: {e}")
+        return False
 
 async def main():
+    total_cards = 0
+    successful_inserts = 0
+    failed_inserts = 0
+
     async with async_session() as db_session, aiohttp.ClientSession() as http_session:
         sets = await fetch_all_sets(http_session)
         print(f"Total sets to process: {len(sets)}")
 
-        processed = 0
         for s in sets:
             set_id = s["id"]
             set_name = s["name"]
             release_date = convert_date(s.get("releaseDate"))
             print(f"Processing set {set_name} ({set_id}), release date: {release_date}")
 
-            cards = await fetch_cards(http_session, set_id)
-            cards = [c for c in cards if not is_secret_card(c)]
-            print(f"  Found {len(cards)} cards (excluding secret cards)")
+            cards = await fetch_all_cards_for_set(http_session, set_id)
+            print(f"  Found {len(cards)} cards")
 
             for card in cards:
-                await insert_card(db_session, card, release_date)
+                total_cards += 1
+                if await insert_card(db_session, card, release_date):
+                    successful_inserts += 1
+                else:
+                    failed_inserts += 1
 
-            processed += 1
-
-            if processed % 10 == 0:
-                await db_session.commit()
-                print(f"Committed after processing {processed} sets.")
-                await asyncio.sleep(1)  # brief pause to avoid rate limits
-
-        # Commit any remaining inserts
-        await db_session.commit()
-        print(f"Finished processing {processed} sets.")
+        print(f"Finished processing {len(sets)} sets.")
+        print(f"Total cards processed: {total_cards}")
+        print(f"Successful inserts: {successful_inserts}")
+        print(f"Failed inserts: {failed_inserts}")
 
 if __name__ == "__main__":
     asyncio.run(main())
