@@ -1,6 +1,4 @@
-import requests
-import json
-import time
+import requests, json, time
 
 API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
 HEADERS = {'X-Api-Key': API_KEY}
@@ -11,16 +9,22 @@ def fetch_cards_for_set(set_id):
     page_size = 250
 
     while True:
-       url = f"https://api.pokemontcg.io/v2/cards?q=set:{set_id}&page={page}&pageSize=250"
-        response = requests.get(url, headers=HEADERS)
-        response.raise_for_status()
-        data = response.json()['data']
-        all_cards.extend(data)
-
-        if len(data) < page_size:
+        url = f"https://api.pokemontcg.io/v2/cards?q=set:{set_id}&page={page}&pageSize={page_size}"
+        try:
+            response = requests.get(url, headers=HEADERS)
+            if response.status_code == 404:
+                print(f"❌ Failed on {set_id}: 404 Not Found")
+                return []
+            response.raise_for_status()
+            data = response.json()['data']
+            all_cards.extend(data)
+            if len(data) < page_size:
+                break
+            page += 1
+            time.sleep(0.1)
+        except Exception as e:
+            print(f"❌ Error on {set_id}: {e}")
             break
-        page += 1
-        time.sleep(0.1)
 
     return all_cards
 
@@ -32,11 +36,9 @@ if __name__ == "__main__":
     for s in sets:
         sid = s['id']
         print(f"📦 Fetching cards for set: {s['name']} ({sid})")
-        try:
-            cards = fetch_cards_for_set(sid)
+        cards = fetch_cards_for_set(sid)
+        if cards:
             card_dump[sid] = cards
-        except Exception as e:
-            print(f"❌ Failed on {sid}: {e}")
 
     with open("all_cards_by_set.json", "w") as f:
         json.dump(card_dump, f, indent=2)
