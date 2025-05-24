@@ -1,101 +1,93 @@
+import os
 import requests
-import json
+import psycopg2
 from datetime import datetime
-from sqlalchemy import create_engine, MetaData, Table, insert
-from sqlalchemy.exc import SQLAlchemyError
+from dotenv import load_dotenv
 
-# CONFIG
-API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
-DB_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
-HEADERS = {'X-Api-Key': API_KEY}
+load_dotenv()
 
-# Setup
-engine = create_engine(DB_URL)
-metadata = MetaData()
-metadata.reflect(bind=engine)
-table = metadata.tables.get("mastercard_v2")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL not set")
 
-if table is None:
-    print("❌ ERROR: 'mastercard_v2' table not found.")
-    exit(1)
+conn = psycopg2.connect(DATABASE_URL)
+cur = conn.cursor()
 
-def fetch_sets():
-    print("🔍 Fetching sets...")
-    res = requests.get("https://api.pokemontcg.io/v2/sets", headers=HEADERS)
-    res.raise_for_status()
-    sets = res.json()['data']
-    return [s for s in sets if s.get('printedTotal')]
+HEADERS = {
+    "User-Agent": "Mozilla/5.0"
+}
+
+def fetch_all_sets():
+    return [{"id": "base1", "name": "Base", "releaseDate": "1999/01/09"}]  # Replace with actual source
 
 def fetch_cards(set_id):
-    url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}"
+    url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}&pageSize=250"
     res = requests.get(url, headers=HEADERS)
-    res.raise_for_status()
-    return res.json()['data']
+    return res.json().get("data", []) if res.ok else []
 
-def parse_date(date_str):
+def convert_date(s):
     try:
-        return datetime.strptime(date_str, "%Y/%m/%d").date()
-    except Exception:
-        try:
-            return datetime.strptime(date_str, "%Y-%m-%d").date()
-        except:
-            return None
+        return datetime.strptime(s.replace("/", "-"), "%Y-%m-%d").date()
+    except:
+        return None
 
-def populate():
-    print("✅ Starting card population...")
-    sets = fetch_sets()
-    print(f"✅ {len(sets)} valid sets found.")
-    conn = engine.connect()
-    inserted_total = 0
+def null_or_json(value):
+    return None if not value else value
 
-    for s in sets:
-        set_id = s['id']
-        set_code = s.get('ptcgoCode') or s['id']
-        print(f"📦 {s['name']} ({set_id})")
+def run():
+    for s in fetch_all_sets():
+        set_id = s["id"]
+        set_name = s["name"]
+        release_date = convert_date(s.get("releaseDate"))
 
-        try:
-            cards = fetch_cards(set_id)
-        except Exception as e:
-            print(f"❌ Failed to fetch cards for {set_id}: {e}")
-            continue
+        print(f"📦 {set_name} ({set_id})")
 
-        for c in cards:
+        for card in fetch_cards(set_id):
             try:
-                row = {
-                    "unique_id": c['id'],
-                    "card_name": c['name'],
-                    "set_name": s['name'],
-                    "card_number": f"{c['number']}/{s['printedTotal']}",
-                    "card_number_raw": c['number'],
-                    "query": f"{c['name']} {s['name']} {c['number']}",
-                    "set_code": set_code,
-                    "set_id": set_id,
-                    "supertype": c.get('supertype'),
-                    "subtypes": ", ".join(c.get('subtypes', [])) if c.get('subtypes') else None,
-                    "rarity": c.get('rarity'),
-                    "artist": c.get('artist'),
-                    "types": ", ".join(c.get('types', [])) if c.get('types') else None,
-                    "type": c.get('types', [None])[0] if c.get('types') else None,
-                    "release_date": parse_date(s.get('releaseDate')) if s.get('releaseDate') else None,
-                    "language": "en",
+                data = {
+                    "unique_id": card["id"],
+                    "card_name": card["name"],
+                    "card_number": card["number"],
+                    "card_number_raw": card["number"].split("/")[0],
+                    "rarity": card.get("rarity"),
+                    "type": card.get("types", [None])[0] if card.get("types") else None,
+                    "artist": card.get("artist"),
+                    "language": card.get("language", "en"),
+                    "set_name": card["set"]["name"],
+                    "set_code": card["set"].get("ptcgoCode") or card["set"]["id"],
+                    "release_date": release_date,
+                    "set_logo_url": card["set"]["images"]["logo"],
+                    "set_symbol_url": card["set"]["images"]["symbol"],
+                    "query": f"{card['name']} {card['set']['name']} {card['number'].split('/')[0]}",
+                    "set_id": card["set"]["id"],
+                    "types": card.get("types"),
                     "hot_character": False,
-                    "card_image_url": c.get('images', {}).get('small'),
-                    "set_logo_url": s['images'].get('logo'),
-                    "set_symbol_url": s['images'].get('symbol'),
+                    "card_image_url": card["images"]["small"],
+                    "subtypes": card.get("subtypes"),
+                    "supertype": card.get("supertype")
                 }
 
-                stmt = insert(table).values(**row).prefix_with("ON CONFLICT (unique_id) DO NOTHING")
-                conn.execute(stmt)
-                inserted_total += 1
+                cur.execute("""
+                    INSERT INTO mastercard_v2 (
+                        unique_id, card_name, card_number, card_number_raw, rarity,
+                        type, artist, language, set_name, set_code,
+                        release_date, set_logo_url, set_symbol_url, query, set_id,
+                        types, hot_character, card_image_url, subtypes, supertype
+                    ) VALUES (
+                        %(unique_id)s, %(card_name)s, %(card_number)s, %(card_number_raw)s, %(rarity)s,
+                        %(type)s, %(artist)s, %(language)s, %(set_name)s, %(set_code)s,
+                        %(release_date)s, %(set_logo_url)s, %(set_symbol_url)s, %(query)s, %(set_id)s,
+                        %(types)s, %(hot_character)s, %(card_image_url)s, %(subtypes)s, %(supertype)s
+                    ) ON CONFLICT (unique_id) DO NOTHING
+                """, data)
+                conn.commit()
 
-            except SQLAlchemyError as db_err:
-                print(f"⚠️ Insert error for {c.get('id', 'unknown')}: {db_err}")
-                continue
+            except Exception as e:
+                conn.rollback()
+                print(f"❌ Failed insert for {card['id']}: {e}")
 
+    cur.close()
     conn.close()
-    print(f"\n✅ Finished. Inserted {inserted_total} cards into mastercard_v2.")
 
 if __name__ == "__main__":
-    print("🚀 Script started")
-    populate()
-
+    run()
