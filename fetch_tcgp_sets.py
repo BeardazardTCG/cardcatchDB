@@ -12,6 +12,10 @@ def fetch_all_sets():
 
     english_sets = []
     for s in sets:
+        # Skip sets without valid card count
+        if not s.get('printedTotal') or s['printedTotal'] == 0:
+            continue
+
         english_sets.append({
             'id': s['id'],
             'name': s['name'],
@@ -21,10 +25,11 @@ def fetch_all_sets():
             'logo_url': s['images']['logo'],
             'symbol_url': s['images']['symbol']
         })
+
     return english_sets
 
 if __name__ == "__main__":
     sets = fetch_all_sets()
     with open('english_sets.json', 'w') as f:
         json.dump(sets, f, indent=2)
-    print(f"✅ Saved {len(sets)} English sets to english_sets.json")
+    print(f"✅ Saved {len(sets)} valid English sets to english_sets.json")
