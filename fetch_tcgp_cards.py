@@ -11,7 +11,7 @@ def fetch_cards_for_set(set_id):
     page_size = 250
 
     while True:
-        url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}&page={page}&pageSize={page_size}"
+       url = f"https://api.pokemontcg.io/v2/cards?q=set:{set_id}&page={page}&pageSize=250"
         response = requests.get(url, headers=HEADERS)
         response.raise_for_status()
         data = response.json()['data']
