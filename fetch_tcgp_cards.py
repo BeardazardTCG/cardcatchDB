@@ -1,4 +1,6 @@
-import requests, json, time
+import requests
+import json
+import time
 
 API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
 HEADERS = {'X-Api-Key': API_KEY}
@@ -18,8 +20,10 @@ def fetch_cards_for_set(set_id):
             response.raise_for_status()
             data = response.json()['data']
             all_cards.extend(data)
+
             if len(data) < page_size:
                 break
+
             page += 1
             time.sleep(0.1)
         except Exception as e:
