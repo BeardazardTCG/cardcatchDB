@@ -1,5 +1,3 @@
-print("🚀 Script started")
-
 import requests
 import json
 from sqlalchemy import create_engine, MetaData, Table, insert
@@ -14,25 +12,21 @@ metadata = MetaData()
 metadata.reflect(bind=engine)
 table = metadata.tables["mastercard_v2"]
 
-# --- FETCH SETS ---
 def fetch_sets():
     print("🔍 Fetching sets...")
     res = requests.get("https://api.pokemontcg.io/v2/sets", headers=HEADERS)
     res.raise_for_status()
     sets = res.json()['data']
-    sets = [s for s in sets if s.get('printedTotal')]
-    print(f"✅ {len(sets)} sets found.")
-    return sets
+    return [s for s in sets if s.get('printedTotal')]
 
-# --- FETCH CARDS ---
 def fetch_cards(set_id):
     url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}"
     res = requests.get(url, headers=HEADERS)
     res.raise_for_status()
     return res.json()['data']
 
-# --- RUNNER ---
 def populate():
+    print("✅ Running populate()")
     sets = fetch_sets()
     total = 0
     conn = engine.connect()
@@ -41,7 +35,6 @@ def populate():
         set_id = s['id']
         set_code = s.get('ptcgoCode') or s['id']
         print(f"📦 {s['name']} ({set_id})")
-
         try:
             cards = fetch_cards(set_id)
         except Exception as e:
@@ -82,7 +75,6 @@ def populate():
     conn.close()
     print(f"✅ Inserted {total} cards into mastercard_v2")
 
-# --- RUN ---
 if __name__ == "__main__":
-    print("✅ Running populate()")
+    print("🚀 Script started")
     populate()
