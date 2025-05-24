@@ -1,6 +1,7 @@
 import requests
 import json
-from sqlalchemy import create_engine, MetaData, Table, insert
+from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy.dialects.postgresql import insert
 
 # --- CONFIG ---
 API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
