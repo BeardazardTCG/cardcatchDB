@@ -1,3 +1,4 @@
+# populate_mastercard_v2.py
 import requests
 import json
 from sqlalchemy import create_engine, MetaData, Table
@@ -10,8 +11,13 @@ HEADERS = {'X-Api-Key': API_KEY}
 
 # --- DB SETUP ---
 engine = create_engine(DB_URL)
-metadata = MetaData()
+metadata = MetaData(schema="public")
 metadata.reflect(bind=engine)
+
+if "mastercard_v2" not in metadata.tables:
+    print("❌ ERROR: 'mastercard_v2' table not found in 'public' schema.")
+    exit()
+
 table = metadata.tables["mastercard_v2"]
 
 # --- FETCH SETS ---
@@ -37,7 +43,7 @@ def populate():
     sets = fetch_sets()
     total_inserted = 0
 
-    with engine.begin() as conn:  # ensures commit
+    with engine.begin() as conn:
         for s in sets:
             set_id = s['id']
             set_code = s.get('ptcgoCode') or s['id']
