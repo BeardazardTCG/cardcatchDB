@@ -11,8 +11,8 @@ def load_cards():
 
 def insert_cards():
     engine = create_engine(DATABASE_URL)
-    metadata = MetaData(bind=engine)
-    metadata.reflect()
+    metadata = MetaData()
+    metadata.reflect(bind=engine)
 
     table = metadata.tables['mastercard_v2']
     conn = engine.connect()
