@@ -20,10 +20,12 @@ def insert_cards():
     cards = load_cards()
     inserted = 0
 
-    for card in cards:
+    for i, card in enumerate(cards, 1):
         stmt = insert(table).values(**card).on_conflict_do_nothing()
         conn.execute(stmt)
         inserted += 1
+        if i % 100 == 0:
+            print(f"Inserted {i} cards...")
 
     conn.close()
     print(f"✅ Inserted {inserted} cards into mastercard_v2")
