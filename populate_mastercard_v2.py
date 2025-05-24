@@ -1,6 +1,6 @@
 import requests
 from sqlmodel import SQLModel, Session, create_engine
-from models import MasterCardV2  # make sure this matches your model filename
+from models.models import MasterCardV2
 from sqlalchemy.exc import SQLAlchemyError
 
 # --- CONFIG ---
