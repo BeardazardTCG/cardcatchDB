@@ -1,45 +1,25 @@
-# populate_mastercard_v2.py
-import requests
+# async_populate_mastercard_v2.py
+import os
 import json
-from sqlalchemy import create_engine, Table, Column, String, Integer, Boolean, MetaData
-from sqlalchemy.dialects.postgresql import insert
+import asyncio
+import requests
+from datetime import datetime
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy import text
+from dotenv import load_dotenv
 
-# --- CONFIG ---
+# === Load environment variables ===
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
 API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
-DB_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 HEADERS = {'X-Api-Key': API_KEY}
 
-# --- DB SETUP ---
-engine = create_engine(DB_URL)
-metadata = MetaData()
+# === Setup async DB session ===
+engine = create_async_engine(DATABASE_URL, echo=False)
+async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-table = Table(
-    "mastercard_v2",
-    metadata,
-    Column("id", Integer, primary_key=True),
-    Column("unique_id", String),
-    Column("card_name", String),
-    Column("set_name", String),
-    Column("card_number", String),
-    Column("card_number_raw", String),
-    Column("query", String),
-    Column("set_code", String),
-    Column("set_id", String),
-    Column("supertype", String),
-    Column("subtypes", String),
-    Column("rarity", String),
-    Column("artist", String),
-    Column("types", String),
-    Column("type", String),
-    Column("release_date", String),
-    Column("language", String),
-    Column("hot_character", Boolean),
-    Column("card_image_url", String),
-    Column("set_logo_url", String),
-    Column("set_symbol_url", String),
-)
-
-# --- FETCH SETS ---
+# === Fetch sets ===
 def fetch_sets():
     print("🔍 Fetching sets...")
     res = requests.get("https://api.pokemontcg.io/v2/sets", headers=HEADERS)
@@ -49,20 +29,19 @@ def fetch_sets():
     print(f"✅ {len(filtered)} valid sets found.")
     return filtered
 
-# --- FETCH CARDS FOR A SET ---
+# === Fetch cards ===
 def fetch_cards(set_id):
     url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}"
     res = requests.get(url, headers=HEADERS)
     res.raise_for_status()
     return res.json()['data']
 
-# --- MAIN INSERT FUNCTION ---
-def populate():
-    print("✅ Starting card population...")
+# === Insert logic ===
+async def populate():
     sets = fetch_sets()
     total_inserted = 0
 
-    with engine.begin() as conn:
+    async with async_session() as session:
         for s in sets:
             set_id = s['id']
             set_code = s.get('ptcgoCode') or s['id']
@@ -76,39 +55,53 @@ def populate():
 
             for c in cards:
                 try:
-                    row = {
+                    stmt = text("""
+                        INSERT INTO mastercard_v2 (
+                            unique_id, card_name, set_name, card_number, card_number_raw,
+                            query, set_code, set_id, supertype, subtypes,
+                            rarity, artist, types, type, release_date,
+                            language, hot_character, card_image_url,
+                            set_logo_url, set_symbol_url
+                        ) VALUES (
+                            :unique_id, :card_name, :set_name, :card_number, :card_number_raw,
+                            :query, :set_code, :set_id, :supertype, :subtypes,
+                            :rarity, :artist, :types, :type, :release_date,
+                            :language, :hot_character, :card_image_url,
+                            :set_logo_url, :set_symbol_url
+                        ) ON CONFLICT (unique_id) DO NOTHING;
+                    """)
+
+                    await session.execute(stmt, {
                         "unique_id": c['id'],
                         "card_name": c['name'],
+                        "set_name": s['name'],
                         "card_number": f"{c['number']}/{s['printedTotal']}",
                         "card_number_raw": c['number'],
-                        "rarity": c.get('rarity'),
-                        "type": c.get('types', [None])[0] if c.get('types') else None,
-                        "artist": c.get('artist'),
-                        "language": "en",
-                        "set_name": s['name'],
-                        "set_code": set_code,
-                        "release_date": s.get('releaseDate'),
-                        # "series": s.get('series'),  # Removed to match table structure
-                        "set_logo_url": s['images'].get('logo'),
-                        "set_symbol_url": s['images'].get('symbol'),
                         "query": f"{c['name']} {s['name']} {c['number']}",
+                        "set_code": set_code,
                         "set_id": set_id,
+                        "supertype": c.get('supertype'),
+                        "subtypes": json.dumps(c.get('subtypes')) if c.get('subtypes') else None,
+                        "rarity": c.get('rarity'),
+                        "artist": c.get('artist'),
                         "types": json.dumps(c.get('types')) if c.get('types') else None,
+                        "type": c.get('types', [None])[0] if c.get('types') else None,
+                        "release_date": s.get('releaseDate'),
+                        "language": "en",
                         "hot_character": False,
                         "card_image_url": c.get('images', {}).get('small'),
-                        "subtypes": json.dumps(c.get('subtypes')) if c.get('subtypes') else None,
-                        "supertype": c.get('supertype')
-                    }
-                    stmt = insert(table).values(**row).on_conflict_do_nothing()
-                    conn.execute(stmt)
+                        "set_logo_url": s['images'].get('logo'),
+                        "set_symbol_url": s['images'].get('symbol'),
+                    })
                     total_inserted += 1
                 except Exception as e:
-                    print(f"⚠️ Insert error for card {c.get('id', 'unknown')}: {e}")
+                    print(f"⚠️ Insert error for {c['id']}: {e}")
                     continue
 
-    print(f"\n✅ Inserted {total_inserted} cards into mastercard_v2")
+        await session.commit()
+        print(f"\n✅ Inserted {total_inserted} cards into mastercard_v2")
 
-# --- RUN ---
+# === RUN ===
 if __name__ == "__main__":
     print("🚀 Script started")
-    populate()
+    asyncio.run(populate())
