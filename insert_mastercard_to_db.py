@@ -3,7 +3,7 @@ from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.dialects.postgresql import insert
 
 # Replace with your DB URL
-DATABASE_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@postgres.railway.internal:5432/railway"
+DATABASE_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 
 def load_cards():
     with open("normalized_mastercard.json", "r") as f:
