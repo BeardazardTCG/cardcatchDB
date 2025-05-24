@@ -1,3 +1,5 @@
+print("🚀 Script started")
+
 import requests
 import json
 from sqlalchemy import create_engine, MetaData, Table, insert
@@ -82,5 +84,5 @@ def populate():
 
 # --- RUN ---
 if __name__ == "__main__":
-    print("🚀 Running populate script...")
+    print("✅ Running populate()")
     populate()
