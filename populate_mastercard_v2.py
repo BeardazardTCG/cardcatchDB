@@ -1,9 +1,10 @@
+# populate_mastercard_v2.py
 import requests
+import json
 from sqlmodel import SQLModel, Session, create_engine
-from models.models import MasterCardV2
 from sqlalchemy.exc import SQLAlchemyError
+from models.models import MasterCardV2
 
-# --- CONFIG ---
 API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
 DB_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 HEADERS = {'X-Api-Key': API_KEY}
@@ -12,19 +13,32 @@ engine = create_engine(DB_URL)
 
 # --- FETCH SETS ---
 def fetch_sets():
-    res = requests.get("https://api.pokemontcg.io/v2/sets", headers=HEADERS)
-    res.raise_for_status()
-    data = res.json()['data']
-    return [s for s in data if s.get('printedTotal')]
+    print("🔍 Fetching sets...")
+    try:
+        res = requests.get("https://api.pokemontcg.io/v2/sets", headers=HEADERS)
+        res.raise_for_status()
+        data = res.json()['data']
+        sets = [s for s in data if s.get('printedTotal')]
+        print(f"✅ {len(sets)} sets fetched.")
+        return sets
+    except Exception as e:
+        print(f"❌ Failed to fetch sets: {e}")
+        return []
 
-# --- FETCH CARDS FOR SET ---
+# --- FETCH CARDS FOR A SET ---
 def fetch_cards(set_id):
-    url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}"
-    res = requests.get(url, headers=HEADERS)
-    res.raise_for_status()
-    return res.json()['data']
+    try:
+        url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}"
+        res = requests.get(url, headers=HEADERS)
+        res.raise_for_status()
+        cards = res.json()['data']
+        print(f"   ↳ {len(cards)} cards fetched")
+        return cards
+    except Exception as e:
+        print(f"   ❌ Error fetching cards for {set_id}: {e}")
+        return []
 
-# --- MAIN INSERT FUNCTION ---
+# --- POPULATE CARDS INTO DB ---
 def populate_cards():
     all_sets = fetch_sets()
     total_inserted = 0
@@ -35,11 +49,7 @@ def populate_cards():
             set_code = s.get('ptcgoCode') or s['id']
             print(f"📦 {s['name']} ({set_id})")
 
-            try:
-                cards = fetch_cards(set_id)
-            except Exception as e:
-                print(f"❌ Skipping {set_id}: {e}")
-                continue
+            cards = fetch_cards(set_id)
 
             for c in cards:
                 try:
@@ -60,13 +70,12 @@ def populate_cards():
                         set_symbol_url=s['images'].get('symbol'),
                         query=f"{c['name']} {s['name']} {c['number']}",
                         set_id=set_id,
-                        types=c.get('types'),
+                        types=json.dumps(c.get('types')) if c.get('types') else None,
                         hot_character=False,
                         card_image_url=c.get('images', {}).get('small'),
-                        subtypes=c.get('subtypes'),
+                        subtypes=json.dumps(c.get('subtypes')) if c.get('subtypes') else None,
                         supertype=c.get('supertype')
                     )
-
                     session.add(card)
                     total_inserted += 1
 
@@ -78,5 +87,8 @@ def populate_cards():
 
     print(f"\n✅ Total inserted into mastercard_v2: {total_inserted}")
 
-# ---
+# --- RUN ---
+if __name__ == "__main__":
+    populate_cards()
+
 
