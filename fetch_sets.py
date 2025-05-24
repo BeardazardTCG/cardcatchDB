@@ -2,7 +2,7 @@ import requests
 import json
 import time
 
-API_KEY = 'YOUR_API_KEY'  # Replace with your actual key
+API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
 HEADERS = {'X-Api-Key': API_KEY}
 
 def fetch_all_sets():
