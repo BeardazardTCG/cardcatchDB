@@ -1,3 +1,6 @@
+print("🛠 Card fetch started...")
+
+
 import requests
 import json
 import time
