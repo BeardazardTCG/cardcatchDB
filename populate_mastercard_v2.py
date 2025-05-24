@@ -7,26 +7,37 @@ API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
 DB_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 HEADERS = {'X-Api-Key': API_KEY}
 
+# --- SETUP ENGINE ---
 engine = create_engine(DB_URL)
 metadata = MetaData()
-metadata.reflect(bind=engine)
-table = metadata.tables["mastercard_v2"]
 
+try:
+    metadata.reflect(bind=engine)
+    table = metadata.tables["mastercard_v2"]
+except KeyError:
+    print("❌ ERROR: Table 'mastercard_v2' not found in the database. Exiting.")
+    exit(1)
+
+# --- FETCH SETS ---
 def fetch_sets():
     print("🔍 Fetching sets...")
     res = requests.get("https://api.pokemontcg.io/v2/sets", headers=HEADERS)
     res.raise_for_status()
     sets = res.json()['data']
-    return [s for s in sets if s.get('printedTotal')]
+    filtered = [s for s in sets if s.get('printedTotal')]
+    print(f"✅ {len(filtered)} valid sets found.")
+    return filtered
 
+# --- FETCH CARDS ---
 def fetch_cards(set_id):
     url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}"
     res = requests.get(url, headers=HEADERS)
     res.raise_for_status()
     return res.json()['data']
 
+# --- MAIN POPULATOR ---
 def populate():
-    print("✅ Running populate()")
+    print("✅ Starting card population...")
     sets = fetch_sets()
     total = 0
     conn = engine.connect()
@@ -35,10 +46,11 @@ def populate():
         set_id = s['id']
         set_code = s.get('ptcgoCode') or s['id']
         print(f"📦 {s['name']} ({set_id})")
+
         try:
             cards = fetch_cards(set_id)
         except Exception as e:
-            print(f"❌ {set_id} failed: {e}")
+            print(f"❌ Failed to fetch cards for {set_id}: {e}")
             continue
 
         for c in cards:
@@ -73,8 +85,9 @@ def populate():
                 continue
 
     conn.close()
-    print(f"✅ Inserted {total} cards into mastercard_v2")
+    print(f"\n✅ Inserted {total} cards into mastercard_v2")
 
+# --- RUN ---
 if __name__ == "__main__":
     print("🚀 Script started")
     populate()
