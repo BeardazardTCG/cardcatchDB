@@ -1,7 +1,6 @@
-# populate_mastercard_v2.py
 import requests
 import json
-from sqlalchemy import create_engine, MetaData, Table
+from sqlalchemy import create_engine, Table, Column, String, Integer, Boolean, MetaData
 from sqlalchemy.dialects.postgresql import insert
 
 # --- CONFIG ---
@@ -11,14 +10,33 @@ HEADERS = {'X-Api-Key': API_KEY}
 
 # --- DB SETUP ---
 engine = create_engine(DB_URL)
-metadata = MetaData(schema="public")
-metadata.reflect(bind=engine)
+metadata = MetaData()
 
-if "mastercard_v2" not in metadata.tables:
-    print("❌ ERROR: 'mastercard_v2' table not found in 'public' schema.")
-    exit()
-
-table = metadata.tables["mastercard_v2"]
+table = Table(
+    "mastercard_v2",
+    metadata,
+    Column("id", Integer, primary_key=True),
+    Column("unique_id", String),
+    Column("card_name", String),
+    Column("set_name", String),
+    Column("card_number", String),
+    Column("card_number_raw", String),
+    Column("query", String),
+    Column("set_code", String),
+    Column("set_id", String),
+    Column("supertype", String),
+    Column("subtypes", String),
+    Column("rarity", String),
+    Column("artist", String),
+    Column("types", String),
+    Column("type", String),
+    Column("release_date", String),
+    Column("language", String),
+    Column("hot_character", Boolean),
+    Column("card_image_url", String),
+    Column("set_logo_url", String),
+    Column("set_symbol_url", String),
+)
 
 # --- FETCH SETS ---
 def fetch_sets():
