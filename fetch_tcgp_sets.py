@@ -1,6 +1,5 @@
 import requests
 import json
-import time
 
 API_KEY = 'a4a5ed18-fbf7-4960-b0ac-2ac71e01eee7'
 HEADERS = {'X-Api-Key': API_KEY}
@@ -13,16 +12,15 @@ def fetch_all_sets():
 
     english_sets = []
     for s in sets:
-        if s.get('ptcgoCode') and 'EN' in s.get('id', '').upper():  # loose English filter fallback
-            english_sets.append({
-                'id': s['id'],
-                'name': s['name'],
-                'releaseDate': s.get('releaseDate'),
-                'printedTotal': s.get('printedTotal'),
-                'total': s.get('total'),
-                'logo_url': s['images']['logo'],
-                'symbol_url': s['images']['symbol']
-            })
+        english_sets.append({
+            'id': s['id'],
+            'name': s['name'],
+            'releaseDate': s.get('releaseDate'),
+            'printedTotal': s.get('printedTotal'),
+            'total': s.get('total'),
+            'logo_url': s['images']['logo'],
+            'symbol_url': s['images']['symbol']
+        })
     return english_sets
 
 if __name__ == "__main__":
