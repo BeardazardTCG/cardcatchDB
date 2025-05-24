@@ -2,6 +2,32 @@ from typing import Optional
 from sqlmodel import SQLModel, Field
 from datetime import datetime
 
+class MasterCardV2(SQLModel, table=True):
+    __tablename__ = "mastercard_v2"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    unique_id: str
+    card_name: str
+    set_name: str
+    card_number: Optional[str] = None
+    card_number_raw: Optional[str] = None
+    card_id: Optional[str] = None
+    query: Optional[str] = None
+    set_code: Optional[str] = None
+    set_id: Optional[str] = None
+    supertype: Optional[str] = None
+    subtypes: Optional[str] = None
+    rarity: Optional[str] = None
+    artist: Optional[str] = None
+    types: Optional[str] = None
+    type: Optional[str] = None
+    release_date: Optional[str] = None
+    language: Optional[str] = None
+    hot_character: Optional[bool] = None
+    card_image_url: Optional[str] = None
+    set_logo_url: Optional[str] = None
+    set_symbol_url: Optional[str] = None
+
 # === Master card record used throughout CardCatch ===
 class MasterCard(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
