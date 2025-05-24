@@ -1,11 +1,11 @@
 import os
 import requests
 import psycopg2
+import json
 from datetime import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
-
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL not set")
@@ -18,31 +18,44 @@ HEADERS = {
 }
 
 def fetch_all_sets():
-    return [{"id": "base1", "name": "Base", "releaseDate": "1999/01/09"}]  # Replace with actual source
+    url = "https://api.pokemontcg.io/v2/sets"
+    res = requests.get(url, headers=HEADERS)
+    if res.ok:
+        return res.json().get("data", [])
+    else:
+        print("Failed to fetch sets:", res.status_code)
+        return []
 
 def fetch_cards(set_id):
     url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}&pageSize=250"
     res = requests.get(url, headers=HEADERS)
-    return res.json().get("data", []) if res.ok else []
+    if res.ok:
+        return res.json().get("data", [])
+    else:
+        print(f"Failed to fetch cards for set {set_id}: {res.status_code}")
+        return []
 
 def convert_date(s):
+    if not s:
+        return None
     try:
         return datetime.strptime(s.replace("/", "-"), "%Y-%m-%d").date()
-    except:
+    except Exception:
         return None
 
-def null_or_json(value):
-    return None if not value else value
-
 def run():
-    for s in fetch_all_sets():
+    sets = fetch_all_sets()
+    print(f"Total sets to process: {len(sets)}")
+    for s in sets:
         set_id = s["id"]
         set_name = s["name"]
         release_date = convert_date(s.get("releaseDate"))
+        print(f"Processing set {set_name} ({set_id}), release date: {release_date}")
 
-        print(f"📦 {set_name} ({set_id})")
+        cards = fetch_cards(set_id)
+        print(f"  Found {len(cards)} cards")
 
-        for card in fetch_cards(set_id):
+        for card in cards:
             try:
                 data = {
                     "unique_id": card["id"],
@@ -60,10 +73,10 @@ def run():
                     "set_symbol_url": card["set"]["images"]["symbol"],
                     "query": f"{card['name']} {card['set']['name']} {card['number'].split('/')[0]}",
                     "set_id": card["set"]["id"],
-                    "types": card.get("types"),
+                    "types": json.dumps(card.get("types")) if card.get("types") else None,
                     "hot_character": False,
                     "card_image_url": card["images"]["small"],
-                    "subtypes": card.get("subtypes"),
+                    "subtypes": json.dumps(card.get("subtypes")) if card.get("subtypes") else None,
                     "supertype": card.get("supertype")
                 }
 
@@ -81,10 +94,9 @@ def run():
                     ) ON CONFLICT (unique_id) DO NOTHING
                 """, data)
                 conn.commit()
-
             except Exception as e:
                 conn.rollback()
-                print(f"❌ Failed insert for {card['id']}: {e}")
+                print(f"Failed to insert card {card['id']}: {e}")
 
     cur.close()
     conn.close()
