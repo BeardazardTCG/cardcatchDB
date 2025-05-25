@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy import text
 from utils import filter_outliers, calculate_median, calculate_average
 from archive.scraper import parse_ebay_sold_page
+import re
 
 # === Load config
 load_dotenv()
@@ -21,12 +22,29 @@ if not DATABASE_URL:
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
+# === Updated exclusion logic
 EXCLUSION_KEYWORDS = [
     "psa", "psa ", "psa-", "psa:", "cgc", "bgs", "ace", "graded", "gem mint",
-    "bulk", "lot", "bundle", "set of", "collection",
-    "spanish", "german", "french", "japanese", "italian", "chinese", "portuguese",
-    "coin", "pin", "promo tin", "jumbo"
+    "bulk", "lot", "bundle", "set of", "collection", "coin", "pin", "promo tin", "jumbo",
+    "x", "x1", "x2", "x3", "x5", "x10", "x15",
+    "choose", "select", "playset", "save", "mix", "match",
+    "multi", "offer", "your pick", "non holo base set lot", "energy lot",
+    "singles", "menu", "all cards", "selection"
 ]
+
+def should_include_listing(title: str, price_text: str, card_number_digits: str, character: str) -> bool:
+    title_lower = title.lower()
+    title_digits = re.sub(r"[^\d]", "", title)
+
+    if any(kw in title_lower for kw in EXCLUSION_KEYWORDS):
+        return False
+    if " to " in price_text.lower():
+        return False
+    if card_number_digits and card_number_digits not in title_digits:
+        return False
+    if character and character.lower() not in title_lower:
+        return False
+    return True
 
 BATCH_SIZE = 120
 
@@ -60,14 +78,20 @@ async def run_ebay_sold_scraper():
                 listings_by_date = defaultdict(list)
 
                 for item in results:
-                    title = item.get("title", "").lower()
+                    title = item.get("title", "").strip()
                     price = item.get("price")
                     sold_date = item.get("sold_date")
                     url = item.get("url")
 
-                    if any(kw in title for kw in EXCLUSION_KEYWORDS):
+                    if not title or price is None or not sold_date:
                         continue
-                    if price is None or not sold_date:
+
+                    # Extract filters
+                    price_text = str(price)
+                    character, _, card_number = query.partition(" ")
+                    card_number_digits = re.sub(r"[^\d]", "", card_number)
+
+                    if not should_include_listing(title, price_text, card_number_digits, character):
                         continue
 
                     try:
@@ -107,7 +131,6 @@ async def run_ebay_sold_scraper():
                     average_price = calculate_average(final_filtered)
                     sale_count = len(final_filtered)
 
-                    # === Optional: attach debug info for later table or JSON log
                     debug_summary = {
                         "query": query,
                         "date": str(sold_date),
