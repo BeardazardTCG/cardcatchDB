@@ -34,9 +34,7 @@ BATCH_SIZE = 120
 async def run_ebay_sold_scraper():
     async with async_session() as session:
         # 1. Pull all cards
-        result = await session.execute(select(
-            text("unique_id, query FROM mastercard_v2")
-        ))
+        result = await session.execute(text("SELECT unique_id, query FROM mastercard_v2"))
         cards = result.fetchall()
 
         for i in range(0, len(cards), BATCH_SIZE):
@@ -50,7 +48,7 @@ async def run_ebay_sold_scraper():
                     print(f"❌ Scrape error for {unique_id}: {e}")
                     await session.execute(text("""
                         INSERT INTO scrape_failures (unique_id, scraper_source, error_message)
-                        VALUES (:unique_id, :scraper_source, :error_message)
+                        VALUES (CAST(:unique_id AS TEXT), :scraper_source, :error_message)
                     """), {
                         "unique_id": unique_id,
                         "scraper_source": "ebay_sold",
@@ -81,7 +79,7 @@ async def run_ebay_sold_scraper():
                     print(f"⚠️ No valid prices for {unique_id}, logging null result.")
                     await session.execute(text("""
                         INSERT INTO ebay_sold_nulls (unique_id, query_used, logged_at)
-                        VALUES (:unique_id, :query_used, :logged_at)
+                        VALUES (CAST(:unique_id AS TEXT), :query_used, :logged_at)
                     """), {
                         "unique_id": unique_id,
                         "query_used": query,
@@ -107,7 +105,7 @@ async def run_ebay_sold_scraper():
                             unique_id, sold_date, median_price, average_price,
                             sale_count, query_used
                         )
-                        VALUES (:unique_id, :sold_date, :median_price, :average_price,
+                        VALUES (CAST(:unique_id AS TEXT), :sold_date, :median_price, :average_price,
                                 :sale_count, :query_used)
                     """), {
                         "unique_id": unique_id,
