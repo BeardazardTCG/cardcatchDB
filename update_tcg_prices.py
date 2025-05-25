@@ -29,7 +29,7 @@ def normalize_card_id(card_id: str) -> str:
 
 def get_card_ids():
     print("📡 Connecting to DB and pulling card IDs...")
-    with psycopg2.connect(**DB_CONFIG) as conn:
+    with psycopg2.connect(os.getenv("DATABASE_URL")) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT unique_id FROM mastercard_v2 WHERE tcg_market_price IS NULL")
             rows = cur.fetchall()
