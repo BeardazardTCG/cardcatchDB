@@ -87,4 +87,36 @@ async def run_ebay_sold_scraper():
                     continue
 
                 for sold_date, prices in grouped.items():
-                    filtered_step1 = filter_outliers(pric
+                    filtered_step1 = filter_outliers(prices)
+                    median_val = calculate_median(filtered_step1)
+                    band = 0.5 if median_val > 10 else 0.4
+                    final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= band]
+
+                    median_price = calculate_median(final_filtered)
+                    average_price = calculate_average(final_filtered)
+                    sale_count = len(final_filtered)
+
+                    try:
+                        await session.execute(text("""
+                            INSERT INTO dailypricelog (
+                                unique_id, sold_date, median_price, average_price,
+                                sale_count, query_used
+                            )
+                            VALUES (:unique_id, :sold_date, :median_price, :average_price,
+                                    :sale_count, :query_used)
+                        """), {
+                            "unique_id": unique_id,
+                            "sold_date": sold_date,
+                            "median_price": median_price,
+                            "average_price": average_price,
+                            "sale_count": sale_count,
+                            "query_used": query
+                        })
+                        await session.commit()
+                        print(f"✅ Logged {sale_count} sales for {unique_id} on {sold_date}")
+                    except Exception as e:
+                        print(f"❌ DB insert error for {unique_id} on {sold_date}: {e}")
+                        await session.rollback()
+
+if __name__ == "__main__":
+    asyncio.run(run_ebay_sold_scraper())
