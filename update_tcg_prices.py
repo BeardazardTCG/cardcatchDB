@@ -10,14 +10,10 @@ from datetime import date
 # Load env variables
 load_dotenv()
 
+# Fix DATABASE_URL format for psycopg2
+DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql+asyncpg", "postgres")
+
 API_URL = os.getenv("TCG_API_URL", "https://cardcatchdb.onrender.com/tcg-prices-batch-async")
-DB_CONFIG = {
-    "dbname": os.getenv("DB_NAME", "railway"),
-    "user": os.getenv("DB_USER", "postgres"),
-    "password": os.getenv("DB_PASSWORD", ""),
-    "host": os.getenv("DB_HOST", "localhost"),
-    "port": os.getenv("DB_PORT", "5432"),
-}
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "333"))
 
 def normalize_card_id(card_id: str) -> str:
@@ -29,7 +25,7 @@ def normalize_card_id(card_id: str) -> str:
 
 def get_card_ids():
     print("📡 Connecting to DB and pulling card IDs...")
-    with psycopg2.connect(os.getenv("DATABASE_URL")) as conn:
+    with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT unique_id FROM mastercard_v2 WHERE tcg_market_price IS NULL")
             rows = cur.fetchall()
@@ -53,7 +49,7 @@ def insert_pricing_logs(data):
         print("⚠️ No valid pricing data to insert.")
         return
 
-    with psycopg2.connect(**DB_CONFIG) as conn:
+    with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             execute_batch(cur,
                 """
@@ -65,7 +61,7 @@ def insert_pricing_logs(data):
     print(f"✅ Inserted {len(records)} pricing log records.")
 
 def log_failure(card_id, source, error_msg):
-    with psycopg2.connect(**DB_CONFIG) as conn:
+    with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             cur.execute(
                 """
