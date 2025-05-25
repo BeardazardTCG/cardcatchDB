@@ -57,10 +57,13 @@ async def run_ebay_sold_scraper():
                     continue
 
                 grouped = defaultdict(list)
+                listings_by_date = defaultdict(list)
+
                 for item in results:
                     title = item.get("title", "").lower()
                     price = item.get("price")
                     sold_date = item.get("sold_date")
+                    url = item.get("url")
 
                     if any(kw in title for kw in EXCLUSION_KEYWORDS):
                         continue
@@ -70,6 +73,11 @@ async def run_ebay_sold_scraper():
                     try:
                         dt = datetime.strptime(sold_date, "%Y-%m-%d")
                         grouped[dt.date()].append(price)
+                        listings_by_date[dt.date()].append({
+                            "title": title,
+                            "price": price,
+                            "url": url
+                        })
                     except Exception:
                         continue
 
@@ -89,12 +97,24 @@ async def run_ebay_sold_scraper():
                 for sold_date, prices in grouped.items():
                     filtered_step1 = filter_outliers(prices)
                     median_val = calculate_median(filtered_step1)
-                    band = 0.5 if median_val > 10 else 0.4
-                    final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= band]
+
+                    if median_val == 0 or median_val is None:
+                        final_filtered = []
+                    else:
+                        final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= (0.5 if median_val > 10 else 0.4)]
 
                     median_price = calculate_median(final_filtered)
                     average_price = calculate_average(final_filtered)
                     sale_count = len(final_filtered)
+
+                    # === Optional: attach debug info for later table or JSON log
+                    debug_summary = {
+                        "query": query,
+                        "date": str(sold_date),
+                        "raw_prices": prices,
+                        "filtered_prices": final_filtered,
+                        "listings_used": listings_by_date.get(sold_date, []),
+                    }
 
                     try:
                         await session.execute(text("""
