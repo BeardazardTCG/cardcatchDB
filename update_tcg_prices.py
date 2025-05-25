@@ -10,10 +10,11 @@ from datetime import date
 # Load env variables
 load_dotenv()
 
-# Fix DATABASE_URL format for psycopg2
+# Fix DATABASE_URL for psycopg2
 DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql+asyncpg", "postgres")
 
 API_URL = os.getenv("TCG_API_URL", "https://cardcatchdb.onrender.com/tcg-prices-batch-async")
+API_KEY = os.getenv("API_KEY")  # Now used as x-api-key
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "333"))
 
 def normalize_card_id(card_id: str) -> str:
@@ -73,12 +74,14 @@ def log_failure(card_id, source, error_msg):
 
 def run():
     card_ids = get_card_ids()
+    headers = {"x-api-key": API_KEY}
+
     for i in range(0, len(card_ids), BATCH_SIZE):
         batch = card_ids[i:i + BATCH_SIZE]
         print(f"\n🚀 Sending batch {i}–{i + len(batch)} to TCG endpoint...")
 
         try:
-            response = requests.post(API_URL, json={"card_ids": batch})
+            response = requests.post(API_URL, json={"card_ids": batch}, headers=headers)
             print(f"📡 Response status: {response.status_code}")
 
             if response.status_code != 200:
