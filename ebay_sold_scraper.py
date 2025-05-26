@@ -32,19 +32,29 @@ EXCLUSION_KEYWORDS = [
     "singles", "menu", "all cards", "selection"
 ]
 
+# === Inclusion logic
+PREMIUM_EXCLUDE_KEYWORDS = ["psa", "bgs", "graded", "gem mint"]
+
+
 def should_include_listing(title: str, price_text: str, card_number_digits: str, character: str) -> bool:
     title_lower = title.lower()
     title_digits = re.sub(r"[^\d]", "", title)
 
     if any(kw in title_lower for kw in EXCLUSION_KEYWORDS):
         return False
-    if " to " in price_text.lower():
+    if " to " in price_text.lower() or "0.00" in price_text:
         return False
     if card_number_digits and card_number_digits not in title_digits:
         return False
-    if character and character.lower() not in title_lower:
+
+    # Normalize character matching
+    norm_character = character.replace("-", "").lower()
+    norm_title = title_lower.replace("-", "")
+    if norm_character not in norm_title:
         return False
+
     return True
+
 
 BATCH_SIZE = 120
 
@@ -76,6 +86,7 @@ async def run_ebay_sold_scraper():
 
                 grouped = defaultdict(list)
                 listings_by_date = defaultdict(list)
+                urls_used_tracker = defaultdict(set)
 
                 for item in results:
                     title = item.get("title", "").strip()
@@ -86,7 +97,6 @@ async def run_ebay_sold_scraper():
                     if not title or price is None or not sold_date:
                         continue
 
-                    # Extract filters
                     price_text = str(price)
                     character, _, card_number = query.partition(" ")
                     card_number_digits = re.sub(r"[^\d]", "", card_number)
@@ -102,6 +112,7 @@ async def run_ebay_sold_scraper():
                             "price": price,
                             "url": url
                         })
+                        urls_used_tracker[dt.date()].add(url)
                     except Exception:
                         continue
 
@@ -130,30 +141,24 @@ async def run_ebay_sold_scraper():
                     median_price = calculate_median(final_filtered)
                     average_price = calculate_average(final_filtered)
                     sale_count = len(final_filtered)
-
-                    debug_summary = {
-                        "query": query,
-                        "date": str(sold_date),
-                        "raw_prices": prices,
-                        "filtered_prices": final_filtered,
-                        "listings_used": listings_by_date.get(sold_date, []),
-                    }
+                    url_list = list(urls_used_tracker.get(sold_date, []))
 
                     try:
                         await session.execute(text("""
                             INSERT INTO dailypricelog (
                                 unique_id, sold_date, median_price, average_price,
-                                sale_count, query_used
+                                sale_count, query_used, urls_used
                             )
                             VALUES (:unique_id, :sold_date, :median_price, :average_price,
-                                    :sale_count, :query_used)
+                                    :sale_count, :query_used, :urls_used)
                         """), {
                             "unique_id": unique_id,
                             "sold_date": sold_date,
                             "median_price": median_price,
                             "average_price": average_price,
                             "sale_count": sale_count,
-                            "query_used": query
+                            "query_used": query,
+                            "urls_used": json.dumps(url_list)
                         })
                         await session.commit()
                         print(f"✅ Logged {sale_count} sales for {unique_id} on {sold_date}")
