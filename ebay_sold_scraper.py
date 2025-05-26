@@ -72,19 +72,19 @@ def should_include_listing(title: str, price_text: str, card_number_digits: str,
 
 async def scrape_card(unique_id, query, session, semaphore, completed_set):
     if unique_id in completed_set:
-        print(f"\u23ED\ufe0f Skipping {unique_id} - already scraped")
+        print(f"Skipping {unique_id} - already scraped")
         return
 
     async with semaphore:
-        print(f"\n\ud83d\udd0d Scraping eBay sold for: {query} ({unique_id})")
+        print(f"\nScraping eBay sold for: {query} ({unique_id})")
         urls_used_tracker = defaultdict(set)
         search_url = build_search_url(query)
-        print(f"\ud83d\udd17 Search URL: {search_url}")
+        print(f"Search URL: {search_url}")
 
         try:
             results = parse_ebay_sold_page(query, max_items=MAX_RESULTS)
         except Exception as e:
-            print(f"\u274c Scrape error for {unique_id}: {e}")
+            print(f"Scrape error for {unique_id}: {e}")
             await session.execute(text("""
                 INSERT INTO scrape_failures (unique_id, scraper_source, error_message, urls_used)
                 VALUES (:unique_id, :scraper_source, :error_message, :urls_used)
@@ -129,7 +129,7 @@ async def scrape_card(unique_id, query, session, semaphore, completed_set):
                 continue
 
         if not grouped:
-            print(f"\u26a0\ufe0f No valid prices for {unique_id}, logging null result.")
+            print(f"No valid prices for {unique_id}, logging null result.")
             await session.execute(text("""
                 INSERT INTO ebay_sold_nulls (unique_id, query_used, logged_at, urls_used)
                 VALUES (:unique_id, :query_used, :logged_at, :urls_used)
@@ -175,9 +175,9 @@ async def scrape_card(unique_id, query, session, semaphore, completed_set):
                     "urls_used": json.dumps(url_list)
                 })
                 await session.commit()
-                print(f"\u2705 Logged {sale_count} sales for {unique_id} on {sold_date}")
+                print(f"Logged {sale_count} sales for {unique_id} on {sold_date}")
             except Exception as e:
-                print(f"\u274c DB insert error for {unique_id} on {sold_date}: {e}")
+                print(f"DB insert error for {unique_id} on {sold_date}: {e}")
                 await session.rollback()
 
         await asyncio.sleep(CARD_SCRAPE_DELAY)
