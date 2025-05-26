@@ -35,7 +35,6 @@ EXCLUSION_KEYWORDS = [
 # === Inclusion logic
 PREMIUM_EXCLUDE_KEYWORDS = ["psa", "bgs", "graded", "gem mint"]
 
-
 def should_include_listing(title: str, price_text: str, card_number_digits: str, character: str) -> bool:
     title_lower = title.lower()
     title_digits = re.sub(r"[^\d]", "", title)
@@ -55,7 +54,6 @@ def should_include_listing(title: str, price_text: str, card_number_digits: str,
 
     return True
 
-
 BATCH_SIZE = 120
 
 async def run_ebay_sold_scraper():
@@ -69,24 +67,26 @@ async def run_ebay_sold_scraper():
             for unique_id, query in batch:
                 print(f"\n🔍 Scraping eBay sold for: {query} ({unique_id})")
 
+                urls_used_tracker = defaultdict(set)
+
                 try:
                     results = parse_ebay_sold_page(query, max_items=120)
                 except Exception as e:
                     print(f"❌ Scrape error for {unique_id}: {e}")
                     await session.execute(text("""
-                        INSERT INTO scrape_failures (unique_id, scraper_source, error_message)
-                        VALUES (:unique_id, :scraper_source, :error_message)
+                        INSERT INTO scrape_failures (unique_id, scraper_source, error_message, urls_used)
+                        VALUES (:unique_id, :scraper_source, :error_message, :urls_used)
                     """), {
                         "unique_id": unique_id,
                         "scraper_source": "ebay_sold",
-                        "error_message": str(e)
+                        "error_message": str(e),
+                        "urls_used": json.dumps([])
                     })
                     await session.commit()
                     continue
 
                 grouped = defaultdict(list)
                 listings_by_date = defaultdict(list)
-                urls_used_tracker = defaultdict(set)
 
                 for item in results:
                     title = item.get("title", "").strip()
@@ -119,12 +119,13 @@ async def run_ebay_sold_scraper():
                 if not grouped:
                     print(f"⚠️ No valid prices for {unique_id}, logging null result.")
                     await session.execute(text("""
-                        INSERT INTO ebay_sold_nulls (unique_id, query_used, logged_at)
-                        VALUES (:unique_id, :query_used, :logged_at)
+                        INSERT INTO ebay_sold_nulls (unique_id, query_used, logged_at, urls_used)
+                        VALUES (:unique_id, :query_used, :logged_at, :urls_used)
                     """), {
                         "unique_id": unique_id,
                         "query_used": query,
-                        "logged_at": datetime.utcnow()
+                        "logged_at": datetime.utcnow(),
+                        "urls_used": json.dumps([])
                     })
                     await session.commit()
                     continue
