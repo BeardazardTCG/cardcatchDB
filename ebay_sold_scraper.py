@@ -22,7 +22,11 @@ if not DATABASE_URL:
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-# === Updated exclusion logic
+# === Config
+BATCH_SIZE = 120
+CARD_SCRAPE_DELAY = 1.2  # seconds between card scrapes
+
+# === Exclusion logic
 EXCLUSION_KEYWORDS = [
     "psa", "psa ", "psa-", "psa:", "cgc", "bgs", "ace", "graded", "gem mint",
     "bulk", "lot", "bundle", "set of", "collection", "coin", "pin", "promo tin", "jumbo",
@@ -32,7 +36,6 @@ EXCLUSION_KEYWORDS = [
     "singles", "menu", "all cards", "selection"
 ]
 
-# === Inclusion logic
 PREMIUM_EXCLUDE_KEYWORDS = ["psa", "bgs", "graded", "gem mint"]
 
 def should_include_listing(title: str, price_text: str, card_number_digits: str, character: str) -> bool:
@@ -46,15 +49,12 @@ def should_include_listing(title: str, price_text: str, card_number_digits: str,
     if card_number_digits and card_number_digits not in title_digits:
         return False
 
-    # Normalize character matching
     norm_character = character.replace("-", "").lower()
     norm_title = title_lower.replace("-", "")
     if norm_character not in norm_title:
         return False
 
     return True
-
-BATCH_SIZE = 120
 
 async def run_ebay_sold_scraper():
     async with async_session() as session:
@@ -83,6 +83,7 @@ async def run_ebay_sold_scraper():
                         "urls_used": json.dumps([])
                     })
                     await session.commit()
+                    await asyncio.sleep(CARD_SCRAPE_DELAY)
                     continue
 
                 grouped = defaultdict(list)
@@ -128,6 +129,7 @@ async def run_ebay_sold_scraper():
                         "urls_used": json.dumps([])
                     })
                     await session.commit()
+                    await asyncio.sleep(CARD_SCRAPE_DELAY)
                     continue
 
                 for sold_date, prices in grouped.items():
@@ -167,5 +169,8 @@ async def run_ebay_sold_scraper():
                         print(f"❌ DB insert error for {unique_id} on {sold_date}: {e}")
                         await session.rollback()
 
+                await asyncio.sleep(CARD_SCRAPE_DELAY)
+
 if __name__ == "__main__":
     asyncio.run(run_ebay_sold_scraper())
+
