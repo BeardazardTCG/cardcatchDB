@@ -12,6 +12,7 @@ from sqlalchemy import text
 from utils import filter_outliers, calculate_median, calculate_average
 from archive.scraper import parse_ebay_sold_page
 import re
+import urllib.parse
 
 # === Load config
 load_dotenv()
@@ -25,18 +26,35 @@ async_session = async_sessionmaker(engine, expire_on_commit=False)
 # === Config
 BATCH_SIZE = 120
 CARD_SCRAPE_DELAY = 1.2  # seconds between card scrapes
+MAX_RESULTS = 240
 
-# === Exclusion logic
+# === Exclusion keywords for _ex_kw param and filtering
 EXCLUSION_KEYWORDS = [
-    "psa", "psa ", "psa-", "psa:", "cgc", "bgs", "ace", "graded", "gem mint",
-    "bulk", "lot", "bundle", "set of", "collection", "coin", "pin", "promo tin", "jumbo",
-    "x", "x1", "x2", "x3", "x5", "x10", "x15",
-    "choose", "select", "playset", "save", "mix", "match",
-    "multi", "offer", "your pick", "non holo base set lot", "energy lot",
-    "singles", "menu", "all cards", "selection"
+    "psa", "bgs", "cgc", "graded", "gem mint", "slab", "bulk", "lot", "bundle",
+    "set of", "collection", "coin", "pin", "promo tin", "jumbo", "x", "x1", "x2",
+    "x3", "x5", "x10", "x15", "choose", "select", "playset", "save", "mix", "match",
+    "multi", "offer", "your pick", "non holo base set lot", "energy lot", "singles",
+    "menu", "all cards", "selection", "1st edition", "1st ed", "first edition", "shadowless"
 ]
 
-PREMIUM_EXCLUDE_KEYWORDS = ["psa", "bgs", "graded", "gem mint"]
+EXCLUSION_STRING = " ".join(EXCLUSION_KEYWORDS)
+
+def build_search_url(query: str) -> str:
+    base_url = "https://www.ebay.co.uk/sch/i.html"
+    params = {
+        "_nkw": query,
+        "LH_Sold": "1",
+        "LH_Complete": "1",
+        "LH_PrefLoc": "1",
+        "_dmd": "2",
+        "_ipg": str(MAX_RESULTS),
+        "_sop": "13",   # Sort by End Date: Recent First
+        "_dcat": "183454",  # Pokémon category
+        "Graded": "No",  # Best effort exclusion of graded
+        "_in_kw": "3",  # Exact words, any order
+        "_ex_kw": EXCLUSION_STRING  # Exclude unwanted keywords
+    }
+    return f"{base_url}?{urllib.parse.urlencode(params)}"
 
 def should_include_listing(title: str, price_text: str, card_number_digits: str, character: str) -> bool:
     title_lower = title.lower()
@@ -68,9 +86,12 @@ async def run_ebay_sold_scraper():
                 print(f"\n🔍 Scraping eBay sold for: {query} ({unique_id})")
 
                 urls_used_tracker = defaultdict(set)
+                # Build the enhanced search URL for logging/debugging if needed
+                search_url = build_search_url(query)
+                print(f"🔗 Search URL: {search_url}")
 
                 try:
-                    results = parse_ebay_sold_page(query, max_items=120)
+                    results = parse_ebay_sold_page(query, max_items=MAX_RESULTS)
                 except Exception as e:
                     print(f"❌ Scrape error for {unique_id}: {e}")
                     await session.execute(text("""
@@ -80,7 +101,7 @@ async def run_ebay_sold_scraper():
                         "unique_id": unique_id,
                         "scraper_source": "ebay_sold",
                         "error_message": str(e),
-                        "urls_used": json.dumps([])
+                        "urls_used": json.dumps([search_url])
                     })
                     await session.commit()
                     await asyncio.sleep(CARD_SCRAPE_DELAY)
@@ -93,9 +114,9 @@ async def run_ebay_sold_scraper():
                     title = item.get("title", "").strip()
                     price = item.get("price")
                     sold_date = item.get("sold_date")
-                    url = item.get("url")
+                    url = item.get("url")  # This must be the real listing URL!
 
-                    if not title or price is None or not sold_date:
+                    if not title or price is None or not sold_date or not url:
                         continue
 
                     price_text = str(price)
@@ -126,7 +147,7 @@ async def run_ebay_sold_scraper():
                         "unique_id": unique_id,
                         "query_used": query,
                         "logged_at": datetime.utcnow(),
-                        "urls_used": json.dumps([])
+                        "urls_used": json.dumps([search_url])
                     })
                     await session.commit()
                     await asyncio.sleep(CARD_SCRAPE_DELAY)
@@ -139,7 +160,8 @@ async def run_ebay_sold_scraper():
                     if median_val == 0 or median_val is None:
                         final_filtered = []
                     else:
-                        final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= (0.5 if median_val > 10 else 0.4)]
+                        threshold = 0.5 if median_val > 10 else 0.4
+                        final_filtered = [p for p in filtered_step1 if abs(p - median_val) / median_val <= threshold]
 
                     median_price = calculate_median(final_filtered)
                     average_price = calculate_average(final_filtered)
@@ -173,4 +195,3 @@ async def run_ebay_sold_scraper():
 
 if __name__ == "__main__":
     asyncio.run(run_ebay_sold_scraper())
-
