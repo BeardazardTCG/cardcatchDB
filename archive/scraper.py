@@ -3,7 +3,6 @@ import requests
 import re
 from datetime import datetime
 
-
 def extract_sold_date(item):
     spans = item.find_all("span")
     for span in spans:
@@ -12,11 +11,11 @@ def extract_sold_date(item):
             match = re.search(r"Sold\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
             if match:
                 try:
+                    # Parse date in format "DD MMM YYYY"
                     return datetime.strptime(match.group(0)[5:], "%d %b %Y").date()
                 except ValueError:
                     return None
     return None
-
 
 def parse_character_set_and_number(query):
     parts = query.split()
@@ -33,7 +32,6 @@ def parse_character_set_and_number(query):
 
     return character.lower(), set_name, card_number
 
-
 def parse_ebay_sold_page(query, max_items=100):
     character, set_name, card_number = parse_character_set_and_number(query)
     card_number_digits = re.sub(r"[^\d]", "", card_number)
@@ -45,7 +43,7 @@ def parse_ebay_sold_page(query, max_items=100):
         "LH_Complete": "1",
         "LH_PrefLoc": "1",
         "_dmd": "2",
-        "_ipg": "120",
+        "_ipg": str(max_items),
         "_sop": "13",
         "_dcat": "183454",
         "Graded": "No"
@@ -74,17 +72,20 @@ def parse_ebay_sold_page(query, max_items=100):
         title_tag = item.select_one(".s-item__title")
         price_tag = item.select_one(".s-item__price")
         sold_date = extract_sold_date(item)
+        link_tag = item.select_one(".s-item__link")
 
-        if not title_tag or not price_tag or not sold_date:
+        if not title_tag or not price_tag or not sold_date or not link_tag:
             continue
 
         title = title_tag.text.strip()
         title_lower = title.lower()
         title_digits = re.sub(r"[^\d]", "", title)
+        url = link_tag['href']
 
-        if card_number_digits not in title_digits:
+        # Card number and character matching for filtering
+        if card_number_digits and card_number_digits not in title_digits:
             continue
-        if character not in title_lower:
+        if character and character not in title_lower:
             continue
 
         price_clean = re.sub(r"[^\d.]", "", price_tag.text)
@@ -99,13 +100,11 @@ def parse_ebay_sold_page(query, max_items=100):
             "title": title,
             "price": price_float,
             "sold_date": str(sold_date),
-            "url": resp.url
+            "url": url
         })
         count += 1
 
     return results
-
-
 
 def parse_ebay_active_page(query, max_items=30):
     character, set_name, card_number = parse_character_set_and_number(query)
@@ -116,14 +115,19 @@ def parse_ebay_active_page(query, max_items=30):
         "_nkw": query,
         "LH_BIN": "1",           # Buy It Now only
         "LH_PrefLoc": "1",       # UK only
-        "_ipg": "120",           # 120 results per page
-        "_sop": "12",            # Best Match sort (was 15: lowest+post)
-        "_dcat": "183454",       # Pokémon TCG
+        "_ipg": str(max_items),
+        "_sop": "12",            # Best Match sort
+        "_dcat": "183454",
         "Graded": "No"
     }
 
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Accept-Language": "en-GB,en;q=0.9"
+    }
+
     try:
-        resp = requests.get(url, params=params, timeout=10)
+        resp = requests.get(url, params=params, headers=headers, timeout=10)
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Active scrape error:", e)
@@ -140,17 +144,18 @@ def parse_ebay_active_page(query, max_items=30):
         price_tag = item.select_one(".s-item__price")
         link_tag = item.select_one(".s-item__link")
 
-        if not title_tag or not price_tag:
+        if not title_tag or not price_tag or not link_tag:
             continue
 
         title = title_tag.text.strip()
         title_lower = title.lower()
         title_digits = re.sub(r"[^\d]", "", title)
-        url = link_tag['href'] if link_tag else ""
+        url = link_tag['href']
 
+        # Exclude common junk terms for active listings
         if any(term in title_lower for term in ["proxy", "lot", "damaged", "jumbo", "binder", "custom"]):
             continue
-        if character and character.lower() not in title_lower:
+        if character and character not in title_lower:
             continue
         if card_number_digits and card_number_digits not in title_digits:
             continue
