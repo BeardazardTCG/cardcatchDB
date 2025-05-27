@@ -1,5 +1,6 @@
 import os
 import psycopg2
+from collections import defaultdict
 
 # Use original asyncpg-style URL from .env
 raw_url = os.getenv("DATABASE_URL")
