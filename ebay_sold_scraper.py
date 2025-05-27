@@ -33,7 +33,7 @@ EXCLUSION_KEYWORDS = [
     "psa", "bgs", "cgc", "graded", "gem mint", "slab", "bulk", "lot", "bundle",
     "set of", "collection", "coin", "pin", "promo tin", "jumbo", "x", "x1", "x2",
     "x3", "x5", "x10", "x15", "choose", "select", "playset", "save", "mix", "match",
-    "multi", "offer", "your pick", "non holo base set lot", "energy lot", "singles",
+    "multi", "offer", "your pick", "singles",
     "menu", "all cards", "selection", "1st edition", "1st ed", "first edition", "shadowless"
 ]
 EXCLUSION_STRING = " ".join(EXCLUSION_KEYWORDS)
@@ -50,7 +50,7 @@ def build_search_url(query: str) -> str:
         "_sop": "13",
         "_dcat": "183454",
         "Graded": "No",
-        "_in_kw": "3",
+        "_in_kw": "4",
         "_ex_kw": EXCLUSION_STRING
     }
     return f"{base_url}?{urllib.parse.urlencode(params)}"
