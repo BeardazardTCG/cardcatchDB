@@ -1,11 +1,13 @@
 import os
 import psycopg2
-from collections import defaultdict
-from dotenv import load_dotenv
 
-# === Load environment variables ===
-load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Use original asyncpg-style URL from .env
+raw_url = os.getenv("DATABASE_URL")
+
+# Convert to psycopg2-compatible format
+DATABASE_URL = raw_url.replace("postgresql+asyncpg://", "postgresql://")
+
+conn = psycopg2.connect(DATABASE_URL)
 
 # === Outlier filtering ===
 def filter_outliers(prices):
