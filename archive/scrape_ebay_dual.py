@@ -1,5 +1,5 @@
 # ===========================================
-# CardCatch: scrape_ebay_dual.py
+# CardCatch: # Location: /archive/
 # Purpose: Tier-based eBay Sold + Active scraper
 # Priority: Critical / high accuracy / traceable
 # ===========================================
