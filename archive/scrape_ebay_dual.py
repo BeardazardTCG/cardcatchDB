@@ -99,7 +99,7 @@ async def scrape_card(unique_id, query, tier):
                     VALUES (:uid, :dt, :median, :avg, :count, :query, :card, :url, :low)
                 """), {
                     "uid": unique_id,
-                    "dt": datetime.utcnow().date(),
+                    "dt": str(datetime.utcnow().date()),
                     "median": median,
                     "avg": average,
                     "count": count,
