@@ -62,6 +62,8 @@ async def scrape_card(unique_id, query, tier):
                 average = calculate_average(filtered)
                 sale_count = len(filtered)
                 urls = json.dumps(list(url_tracker[sold_date]))
+                final_price = median if sale_count >= 15 else average
+                print(f"💰 Final price used (sold): {final_price:.2f} [{'median' if sale_count >= 15 else 'average'}]")
 
                 await session.execute(text("""
                     INSERT INTO dailypricelog (unique_id, sold_date, median_price, average_price, sale_count, query_used, urls_used)
@@ -76,8 +78,6 @@ async def scrape_card(unique_id, query, tier):
                     "urls": urls
                 })
 
-                print(f"📦 Logged {sale_count} sales on {sold_date} | Median £{median:.2f}, Avg £{average:.2f}")
-
         except Exception as e:
             print(f"❌ Sold scrape error for {unique_id}: {e}")
 
@@ -90,6 +90,8 @@ async def scrape_card(unique_id, query, tier):
             average = calculate_average(active_prices)
             count = len(active_prices)
             active_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={query.replace(' ', '+')}&LH_BIN=1"
+            final_price = median if count >= 15 else average
+            print(f"💰 Final price used (active): {final_price:.2f} [{'median' if count >= 15 else 'average'}]")
 
             if count > 0:
                 await session.execute(text("""
@@ -106,8 +108,6 @@ async def scrape_card(unique_id, query, tier):
                     "url": active_url,
                     "low": best_price
                 })
-
-                print(f"📈 Active listings: {count} | Median £{median:.2f}, Avg £{average:.2f}, Low £{best_price:.2f if best_price else 0.0}")
 
         except Exception as e:
             print(f"❌ Active scrape error for {unique_id}: {e}")
