@@ -11,6 +11,7 @@ import asyncio
 from datetime import datetime
 from collections import defaultdict
 from dotenv import load_dotenv
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy import text
 from utils import filter_outliers, calculate_median, calculate_average
