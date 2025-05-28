@@ -76,8 +76,6 @@ async def scrape_card(unique_id, query, tier):
                     "urls": urls
                 })
 
-                print(f"💰 Final price used (sold): {average:.2f} [average] from {sale_count} listings")
-
         except Exception as e:
             print(f"❌ Sold scrape error for {unique_id}: {e}")
 
@@ -85,10 +83,11 @@ async def scrape_card(unique_id, query, tier):
         try:
             active_results = parse_ebay_active_page(query, max_items=MAX_ACTIVE_RESULTS)
             active_prices = [item["price"] for item in active_results if "price" in item]
-            best_price = min(active_prices) if active_prices else None
-            median = calculate_median(active_prices)
-            average = calculate_average(active_prices)
-            count = len(active_prices)
+            filtered_prices = filter_outliers(active_prices)  # Outlier filtering applied here
+            best_price = min(filtered_prices) if filtered_prices else None
+            median = calculate_median(filtered_prices)
+            average = calculate_average(filtered_prices)
+            count = len(filtered_prices)
             active_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={query.replace(' ', '+')}&LH_BIN=1&LH_PrefLoc=1"
 
             if count > 0:
@@ -106,10 +105,6 @@ async def scrape_card(unique_id, query, tier):
                     "url": active_url,
                     "low": best_price
                 })
-
-                print(f"💰 Final price used (active): {median:.2f} [median] from {count} listings")
-            else:
-                print(f"⚠️ No active listings passed filter for {query}")
 
         except Exception as e:
             print(f"❌ Active scrape error for {unique_id}: {e}")
@@ -139,4 +134,3 @@ async def run_card_with_semaphore(unique_id, query, tier, semaphore):
 
 if __name__ == "__main__":
     asyncio.run(run_dual_scraper())
-
