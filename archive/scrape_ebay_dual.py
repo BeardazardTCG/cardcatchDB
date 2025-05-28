@@ -62,8 +62,6 @@ async def scrape_card(unique_id, query, tier):
                 average = calculate_average(filtered)
                 sale_count = len(filtered)
                 urls = json.dumps(list(url_tracker[sold_date]))
-                final_price = median if sale_count >= 15 else average
-                print(f"💰 Final price used (sold): {final_price:.2f} [{'median' if sale_count >= 15 else 'average'}]")
 
                 await session.execute(text("""
                     INSERT INTO dailypricelog (unique_id, sold_date, median_price, average_price, sale_count, query_used, urls_used)
@@ -89,9 +87,7 @@ async def scrape_card(unique_id, query, tier):
             median = calculate_median(active_prices)
             average = calculate_average(active_prices)
             count = len(active_prices)
-            active_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={query.replace(' ', '+')}&LH_BIN=1"
-            final_price = median if count >= 15 else average
-            print(f"💰 Final price used (active): {final_price:.2f} [{'median' if count >= 15 else 'average'}]")
+            active_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={query.replace(' ', '+')}&LH_BIN=1&LH_PrefLoc=1"
 
             if count > 0:
                 await session.execute(text("""
@@ -99,7 +95,7 @@ async def scrape_card(unique_id, query, tier):
                     VALUES (:uid, :dt, :median, :avg, :count, :query, :card, :url, :low)
                 """), {
                     "uid": unique_id,
-                    "dt": str(datetime.utcnow().date()),
+                    "dt": datetime.utcnow().date().isoformat(),
                     "median": median,
                     "avg": average,
                     "count": count,
