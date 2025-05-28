@@ -76,6 +76,8 @@ async def scrape_card(unique_id, query, tier):
                     "urls": urls
                 })
 
+                print(f"💰 Final price used (sold): {average:.2f} [average] from {sale_count} listings")
+
         except Exception as e:
             print(f"❌ Sold scrape error for {unique_id}: {e}")
 
@@ -105,6 +107,10 @@ async def scrape_card(unique_id, query, tier):
                     "low": best_price
                 })
 
+                print(f"💰 Final price used (active): {median:.2f} [median] from {count} listings")
+            else:
+                print(f"⚠️ No active listings passed filter for {query}")
+
         except Exception as e:
             print(f"❌ Active scrape error for {unique_id}: {e}")
 
@@ -133,3 +139,4 @@ async def run_card_with_semaphore(unique_id, query, tier, semaphore):
 
 if __name__ == "__main__":
     asyncio.run(run_dual_scraper())
+
