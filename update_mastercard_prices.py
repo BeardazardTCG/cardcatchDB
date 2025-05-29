@@ -1,19 +1,14 @@
 import os
-import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
-from sqlalchemy.ext.asyncio import async_sessionmaker
-from sqlalchemy import text
+import psycopg2
 from collections import defaultdict
 
-# === Config ===
+# === Database URL fix for psycopg2 ===
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL not set")
+DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgres")
 
-engine = create_async_engine(DATABASE_URL, echo=False)
-SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
-
-# === Outlier Filtering ===
+# === Outlier filtering ===
 def filter_outliers(prices):
     if not prices:
         return []
@@ -21,74 +16,115 @@ def filter_outliers(prices):
     q1 = sorted_prices[len(sorted_prices) // 4]
     q3 = sorted_prices[(len(sorted_prices) * 3) // 4]
     iqr = q3 - q1
-    lower = q1 - 1.5 * iqr
-    upper = q3 + 1.5 * iqr
-    return [p for p in prices if lower <= p <= upper]
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    return [p for p in prices if lower_bound <= p <= upper_bound]
 
-# === Median ===
+# === Median calculator ===
 def calculate_median(prices):
-    if not prices:
+    n = len(prices)
+    if n == 0:
         return None
     sorted_prices = sorted(prices)
-    mid = len(prices) // 2
-    if len(prices) % 2 == 0:
+    mid = n // 2
+    if n % 2 == 0:
         return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2
     return sorted_prices[mid]
 
-# === Batch SQL Generator ===
-def generate_update_sql(batch):
-    value_str = ", ".join([f"('{uid}', {price})" for uid, price in batch])
-    return f"""
-        UPDATE mastercard_v2 AS m
-        SET sold_ebay_median = v.median
-        FROM (VALUES {value_str}) AS v(unique_id, median)
-        WHERE m.unique_id = v.unique_id;
-    """
+# === Commit batch helper ===
+def batch_commit(cur, conn, batch, query, batch_name):
+    if batch:
+        cur.executemany(query, batch)
+        conn.commit()
+        print(f"🔄 Committed {len(batch)} {batch_name} updates")
+        batch.clear()
 
-# === Main Async Runner ===
-async def main():
+# === Main ===
+def main():
     print("🔌 Connecting to database...")
-    async with SessionLocal() as session:
-        # === SOLD MEDIANS ===
-        print("📦 Fetching sold prices...")
-        result = await session.execute(text("""
-            SELECT unique_id, median_price FROM dailypricelog
-            WHERE median_price IS NOT NULL
-        """))
-        rows = result.fetchall()
+    conn = psycopg2.connect(DATABASE_URL)
+    cur = conn.cursor()
 
-        sold_map = defaultdict(list)
-        for uid, price in rows:
-            sold_map[uid.strip()].append(float(price))
+    # === 1. Sold eBay median ===
+    print("📦 Fetching sold prices from dailypricelog...")
+    cur.execute("""
+        SELECT unique_id, median_price
+        FROM dailypricelog
+        WHERE median_price IS NOT NULL
+    """)
+    sold_map = defaultdict(list)
+    for uid, price in cur.fetchall():
+        sold_map[uid.strip()].append(float(price))
 
-        print(f"💾 Updating {len(sold_map)} sold medians in VALUE-batches...")
-        batch = []
-        BATCH_SIZE = 500
+    print(f"📏 Updating {len(sold_map)} sold medians in batches...")
+    sold_query = """
+        UPDATE mastercard_v2
+        SET sold_ebay_median = %s
+        WHERE unique_id = %s
+    """
+    sold_batch = []
+    for i, (uid, prices) in enumerate(sold_map.items(), 1):
+        filtered = filter_outliers(prices)
+        median = calculate_median(filtered)
+        if median is not None:
+            sold_batch.append((round(median, 2), uid))
+        if i % 500 == 0:
+            batch_commit(cur, conn, sold_batch, sold_query, "sold")
+    batch_commit(cur, conn, sold_batch, sold_query, "sold")
 
-        batches = []
-        for uid, prices in sold_map.items():
+    # === 2. TCGPlayer prices ===
+    print("📦 Fetching latest TCGPlayer prices...")
+    cur.execute("""
+        SELECT DISTINCT ON (unique_id) unique_id, market_price
+        FROM tcg_pricing_log
+        WHERE market_price IS NOT NULL
+        ORDER BY unique_id, date DESC
+    """)
+    tcg_query = """
+        UPDATE mastercard_v2
+        SET tcgplayer_market_price = %s
+        WHERE unique_id = %s
+    """
+    tcg_batch = [(round(float(price), 2), uid.strip()) for uid, price in cur.fetchall()]
+    cur.executemany(tcg_query, tcg_batch)
+    conn.commit()
+    print(f"✅ TCG updates complete: {len(tcg_batch)} cards updated")
+
+    # === 3. Active BIN prices (filtered) ===
+    print("📦 Fetching and filtering active BIN prices...")
+    try:
+        cur.execute("""
+            SELECT unique_id, lowest_price
+            FROM activedailypricelog
+            WHERE lowest_price IS NOT NULL
+              AND date = CURRENT_DATE
+        """)
+        active_map = defaultdict(list)
+        for uid, price in cur.fetchall():
+            active_map[uid.strip()].append(float(price))
+
+        active_query = """
+            UPDATE mastercard_v2
+            SET active_ebay_lowest = %s
+            WHERE unique_id = %s
+        """
+        active_batch = []
+        for i, (uid, prices) in enumerate(active_map.items(), 1):
             filtered = filter_outliers(prices)
-            median = calculate_median(filtered)
-            if median is not None:
-                batch.append((uid, round(median, 2)))
-                if len(batch) >= BATCH_SIZE:
-                    batches.append(batch)
-                    batch = []
-        if batch:
-            batches.append(batch)
+            if filtered:
+                lowest = min(filtered)
+                active_batch.append((round(lowest, 2), uid))
+            if i % 500 == 0:
+                batch_commit(cur, conn, active_batch, active_query, "active")
+        batch_commit(cur, conn, active_batch, active_query, "active")
 
-        for i, batch in enumerate(batches, 1):
-            sql = generate_update_sql(batch)
-            try:
-                await session.execute(text(sql))
-                await session.commit()
-                print(f"🔄 Committed batch {i * BATCH_SIZE - BATCH_SIZE + 1}–{i * BATCH_SIZE}")
-                await asyncio.sleep(0.3)  # Allow DB to release locks
-            except Exception as e:
-                print(f"❌ Failed batch {i}: {e}")
-                await session.rollback()
+    except psycopg2.errors.UndefinedColumn:
+        print("⚠️ Skipping active BIN update — column not found")
 
-        print("✅ All sold medians updated!")
+    # === Finalize ===
+    cur.close()
+    conn.close()
+    print("🌟 All updates completed successfully.")
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
