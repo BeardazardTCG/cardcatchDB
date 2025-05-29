@@ -38,7 +38,7 @@ def main():
             SELECT unique_id, lowest_price
             FROM activedailypricelog
             WHERE lowest_price IS NOT NULL
-              AND active_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
+              AND active_date::date = CURRENT_DATE
         """)
         active_map = defaultdict(list)
         for uid, price in cur.fetchall():
