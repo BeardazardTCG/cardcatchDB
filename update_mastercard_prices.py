@@ -55,10 +55,11 @@ async def main():
                 updates.append({"median": round(median, 2), "uid": uid})
 
         print(f"💾 Updating {len(updates)} sold medians...")
-        await session.execute_many(
-            text("UPDATE mastercard_v2 SET sold_ebay_median = :median WHERE unique_id = :uid"),
-            updates
-        )
+        for row in updates:
+            await session.execute(
+                text("UPDATE mastercard_v2 SET sold_ebay_median = :median WHERE unique_id = :uid"),
+                row
+            )
 
         # === TCGPLAYER PRICES ===
         print("📦 Fetching latest TCGPlayer prices...")
@@ -74,10 +75,11 @@ async def main():
         ]
 
         print(f"💾 Updating {len(tcg_updates)} TCG prices...")
-        await session.execute_many(
-            text("UPDATE mastercard_v2 SET tcgplayer_market_price = :price WHERE unique_id = :uid"),
-            tcg_updates
-        )
+        for row in tcg_updates:
+            await session.execute(
+                text("UPDATE mastercard_v2 SET tcgplayer_market_price = :price WHERE unique_id = :uid"),
+                row
+            )
 
         # === ACTIVE PRICES ===
         print("📦 Fetching active BIN prices...")
@@ -99,10 +101,12 @@ async def main():
                     active_updates.append({"price": round(min(filtered), 2), "uid": uid})
 
             print(f"💾 Updating {len(active_updates)} active BIN prices...")
-            await session.execute_many(
-                text("UPDATE mastercard_v2 SET active_ebay_lowest = :price WHERE unique_id = :uid"),
-                active_updates
-            )
+            for row in active_updates:
+                await session.execute(
+                    text("UPDATE mastercard_v2 SET active_ebay_lowest = :price WHERE unique_id = :uid"),
+                    row
+                )
+
         except Exception as e:
             print(f"⚠️ Skipping active BIN update: {e}")
 
