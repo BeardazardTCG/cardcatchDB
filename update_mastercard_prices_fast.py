@@ -28,12 +28,15 @@ def calculate_median(prices):
         return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2
     return sorted_prices[mid]
 
-def batch_commit(cur, conn, batch, query):
+# === Batch commit helper ===
+def batch_commit(cur, conn, batch, query, label="rows"):
     if batch:
-        print(f"💾 Committed batch of {len(sold_batch)} sold price updates.")
+        print(f"💾 Committing batch of {len(batch)} {label}...")
+        cur.executemany(query, batch)
         conn.commit()
         batch.clear()
 
+# === Main execution ===
 def main():
     print("🔌 Connecting to database...")
     conn = psycopg2.connect(DATABASE_URL)
@@ -57,17 +60,18 @@ def main():
         WHERE unique_id = %s
     """
     sold_batch = []
+    total_sold = 0
     for i, (uid, prices) in enumerate(sold_map.items(), 1):
         filtered = filter_outliers(prices)
         median = calculate_median(filtered)
         if median is not None:
             sold_batch.append((round(median, 2), uid))
+            total_sold += 1
         if i % 500 == 0:
-            batch_commit(cur, conn, sold_batch, sold_query)
+            batch_commit(cur, conn, sold_batch, sold_query, "sold price updates")
 
-    # Final commit
-    batch_commit(cur, conn, sold_batch, sold_query)
-    print(f"✅ Sold price updates complete: {len(sold_batch)} cards updated")
+    batch_commit(cur, conn, sold_batch, sold_query, "sold price updates")
+    print(f"✅ Sold price updates complete: {total_sold} cards updated")
 
     # === 2. TCGPlayer prices ===
     print("📦 Fetching latest TCGPlayer prices...")
@@ -83,6 +87,7 @@ def main():
         WHERE unique_id = %s
     """
     tcg_batch = [(round(float(price), 2), uid.strip()) for uid, price in cur.fetchall()]
+    print(f"💾 Committing {len(tcg_batch)} TCG price updates...")
     cur.executemany(tcg_query, tcg_batch)
     conn.commit()
     print(f"✅ TCG updates complete: {len(tcg_batch)} cards updated")
@@ -106,16 +111,18 @@ def main():
             WHERE unique_id = %s
         """
         active_batch = []
+        total_active = 0
         for i, (uid, prices) in enumerate(active_map.items(), 1):
             filtered = filter_outliers(prices)
             if filtered:
                 lowest = min(filtered)
                 active_batch.append((round(lowest, 2), uid))
+                total_active += 1
             if i % 500 == 0:
-                batch_commit(cur, conn, active_batch, active_query)
+                batch_commit(cur, conn, active_batch, active_query, "active BIN updates")
 
-        batch_commit(cur, conn, active_batch, active_query)
-        print(f"✅ Active BIN updates complete: {len(active_batch)} cards updated")
+        batch_commit(cur, conn, active_batch, active_query, "active BIN updates")
+        print(f"✅ Active BIN updates complete: {total_active} cards updated")
 
     except psycopg2.errors.UndefinedColumn:
         print("⚠️ Skipping active BIN update — column not found")
