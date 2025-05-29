@@ -3,7 +3,7 @@ import psycopg2
 from collections import defaultdict
 
 # === Database connection ===
-DATABASE_URL = os.getenv("DATABASE_URL")  # NO replace()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # === Outlier filtering ===
 def filter_outliers(prices):
@@ -28,7 +28,12 @@ def calculate_median(prices):
         return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2
     return sorted_prices[mid]
 
-# === Main ===
+def batch_commit(cur, conn, batch, query):
+    if batch:
+        cur.executemany(query, batch)
+        conn.commit()
+        batch.clear()
+
 def main():
     print("🔌 Connecting to database...")
     conn = psycopg2.connect(DATABASE_URL)
@@ -45,20 +50,26 @@ def main():
     for uid, price in cur.fetchall():
         sold_map[uid.strip()].append(float(price))
 
-    print(f"🧮 Calculating filtered medians for {len(sold_map)} cards...")
-    sold_updates = 0
-    for uid, prices in sold_map.items():
+    print(f"🧮 Calculating and batching {len(sold_map)} sold updates...")
+    sold_query = """
+        UPDATE mastercard_v2
+        SET sold_ebay_median = %s
+        WHERE unique_id = %s
+    """
+    sold_batch = []
+    for i, (uid, prices) in enumerate(sold_map.items(), 1):
         filtered = filter_outliers(prices)
         median = calculate_median(filtered)
         if median is not None:
-            cur.execute("""
-                UPDATE mastercard_v2
-                SET sold_ebay_median = %s
-                WHERE unique_id = %s
-            """, (round(median, 2), uid))
-            sold_updates += 1
+            sold_batch.append((round(median, 2), uid))
+        if i % 500 == 0:
+            batch_commit(cur, conn, sold_batch, sold_query)
 
-    # === 2. TCGPlayer market price ===
+    # Final commit
+    batch_commit(cur, conn, sold_batch, sold_query)
+    print(f"✅ Sold price updates complete: {len(sold_batch)} cards updated")
+
+    # === 2. TCGPlayer prices ===
     print("📦 Fetching latest TCGPlayer prices...")
     cur.execute("""
         SELECT DISTINCT ON (unique_id) unique_id, market_price
@@ -66,16 +77,17 @@ def main():
         WHERE market_price IS NOT NULL
         ORDER BY unique_id, date DESC
     """)
-    tcg_updates = 0
-    for uid, price in cur.fetchall():
-        cur.execute("""
-            UPDATE mastercard_v2
-            SET tcgplayer_market_price = %s
-            WHERE unique_id = %s
-        """, (round(float(price), 2), uid))
-        tcg_updates += 1
+    tcg_query = """
+        UPDATE mastercard_v2
+        SET tcgplayer_market_price = %s
+        WHERE unique_id = %s
+    """
+    tcg_batch = [(round(float(price), 2), uid.strip()) for uid, price in cur.fetchall()]
+    cur.executemany(tcg_query, tcg_batch)
+    conn.commit()
+    print(f"✅ TCG updates complete: {len(tcg_batch)} cards updated")
 
-    # === 3. Active eBay lowest price (filtered) ===
+    # === 3. Active BIN prices (filtered) ===
     print("📦 Fetching and filtering active BIN prices...")
     try:
         cur.execute("""
@@ -88,31 +100,30 @@ def main():
         for uid, price in cur.fetchall():
             active_map[uid.strip()].append(float(price))
 
-        active_updates = 0
-        for uid, prices in active_map.items():
+        active_query = """
+            UPDATE mastercard_v2
+            SET active_ebay_lowest = %s
+            WHERE unique_id = %s
+        """
+        active_batch = []
+        for i, (uid, prices) in enumerate(active_map.items(), 1):
             filtered = filter_outliers(prices)
             if filtered:
                 lowest = min(filtered)
-                cur.execute("""
-                    UPDATE mastercard_v2
-                    SET active_ebay_lowest = %s
-                    WHERE unique_id = %s
-                """, (round(lowest, 2), uid))
-                active_updates += 1
+                active_batch.append((round(lowest, 2), uid))
+            if i % 500 == 0:
+                batch_commit(cur, conn, active_batch, active_query)
+
+        batch_commit(cur, conn, active_batch, active_query)
+        print(f"✅ Active BIN updates complete: {len(active_batch)} cards updated")
 
     except psycopg2.errors.UndefinedColumn:
-        print("⚠️ Skipping active price update — 'active_ebay_lowest' column not found.")
+        print("⚠️ Skipping active BIN update — column not found")
 
-    # === Finalize ===
-    conn.commit()
+    # === Wrap up ===
     cur.close()
     conn.close()
+    print("🏁 All updates completed successfully.")
 
-    print("✅ Update complete:")
-    print(f"   • {sold_updates} sold prices updated")
-    print(f"   • {tcg_updates} TCG prices updated")
-    print(f"   • {active_updates if 'active_updates' in locals() else 0} active prices updated")
-
-# Entry point
 if __name__ == "__main__":
     main()
