@@ -1,16 +1,19 @@
 import os
 import asyncio
-from collections import defaultdict
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import async_sessionmaker
 from sqlalchemy import text
+from collections import defaultdict
 
-# === DATABASE SETUP ===
-DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql+asyncpg://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
+# === Config ===
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL not set")
 
 engine = create_async_engine(DATABASE_URL, echo=False)
-async_session = async_sessionmaker(engine, expire_on_commit=False)
+SessionLocal = async_sessionmaker(engine, expire_on_commit=False)
 
-# === OUTLIER FILTERING ===
+# === Outlier Filtering ===
 def filter_outliers(prices):
     if not prices:
         return []
@@ -18,112 +21,74 @@ def filter_outliers(prices):
     q1 = sorted_prices[len(sorted_prices) // 4]
     q3 = sorted_prices[(len(sorted_prices) * 3) // 4]
     iqr = q3 - q1
-    lower_bound = q1 - 1.5 * iqr
-    upper_bound = q3 + 1.5 * iqr
-    return [p for p in prices if lower_bound <= p <= upper_bound]
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+    return [p for p in prices if lower <= p <= upper]
 
+# === Median ===
 def calculate_median(prices):
-    n = len(prices)
-    if n == 0:
+    if not prices:
         return None
     sorted_prices = sorted(prices)
-    mid = n // 2
-    return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2 if n % 2 == 0 else sorted_prices[mid]
+    mid = len(prices) // 2
+    if len(prices) % 2 == 0:
+        return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2
+    return sorted_prices[mid]
 
-# === MAIN EXECUTION ===
+# === Batch SQL Generator ===
+def generate_update_sql(batch):
+    value_str = ", ".join([f"('{uid}', {price})" for uid, price in batch])
+    return f"""
+        UPDATE mastercard_v2 AS m
+        SET sold_ebay_median = v.median
+        FROM (VALUES {value_str}) AS v(unique_id, median)
+        WHERE m.unique_id = v.unique_id;
+    """
+
+# === Main Async Runner ===
 async def main():
     print("🔌 Connecting to database...")
-    async with async_session() as session:
-
-        # === SOLD PRICES ===
+    async with SessionLocal() as session:
+        # === SOLD MEDIANS ===
         print("📦 Fetching sold prices...")
-        sold_result = await session.execute(text("""
-            SELECT unique_id, median_price
-            FROM dailypricelog
+        result = await session.execute(text("""
+            SELECT unique_id, median_price FROM dailypricelog
             WHERE median_price IS NOT NULL
         """))
+        rows = result.fetchall()
+
         sold_map = defaultdict(list)
-        for uid, price in sold_result.fetchall():
+        for uid, price in rows:
             sold_map[uid.strip()].append(float(price))
 
-        updates = []
+        print(f"💾 Updating {len(sold_map)} sold medians in VALUE-batches...")
+        batch = []
+        BATCH_SIZE = 500
+
+        batches = []
         for uid, prices in sold_map.items():
             filtered = filter_outliers(prices)
             median = calculate_median(filtered)
             if median is not None:
-                updates.append((uid, round(median, 2)))
+                batch.append((uid, round(median, 2)))
+                if len(batch) >= BATCH_SIZE:
+                    batches.append(batch)
+                    batch = []
+        if batch:
+            batches.append(batch)
 
-        print(f"💾 Updating {len(updates)} sold medians in VALUE-batches...")
-        BATCH_SIZE = 500
-        for i in range(0, len(updates), BATCH_SIZE):
-            batch = updates[i:i+BATCH_SIZE]
-            values_clause = ", ".join([f"('{uid}', {median})" for uid, median in batch])
-            sql = f"""
-                UPDATE mastercard_v2 AS m
-                SET sold_ebay_median = v.median
-                FROM (VALUES {values_clause}) AS v(unique_id, median)
-                WHERE m.unique_id = v.unique_id;
-            """
-            await session.execute(text(sql))
-            await session.commit()
-            print(f"🔄 Committed batch {i+1}–{i+len(batch)}")
+        for i, batch in enumerate(batches, 1):
+            sql = generate_update_sql(batch)
+            try:
+                await session.execute(text(sql))
+                await session.commit()
+                print(f"🔄 Committed batch {i * BATCH_SIZE - BATCH_SIZE + 1}–{i * BATCH_SIZE}")
+                await asyncio.sleep(0.3)  # Allow DB to release locks
+            except Exception as e:
+                print(f"❌ Failed batch {i}: {e}")
+                await session.rollback()
 
-        print("✅ Sold medians updated.")
-
-        # === TCGPLAYER PRICES ===
-        print("📦 Fetching latest TCGPlayer prices...")
-        tcg_result = await session.execute(text("""
-            SELECT DISTINCT ON (unique_id) unique_id, market_price
-            FROM tcg_pricing_log
-            WHERE market_price IS NOT NULL
-            ORDER BY unique_id, date DESC
-        """))
-        tcg_updates = [
-            {"uid": uid.strip(), "price": round(float(price), 2)}
-            for uid, price in tcg_result.fetchall()
-        ]
-
-        print(f"💾 Updating {len(tcg_updates)} TCG prices...")
-        for i, row in enumerate(tcg_updates, 1):
-            await session.execute(
-                text("UPDATE mastercard_v2 SET tcgplayer_market_price = :price WHERE unique_id = :uid"),
-                row
-            )
-        await session.commit()
-        print("✅ TCG updates complete.")
-
-        # === ACTIVE PRICES ===
-        print("📦 Fetching active BIN prices...")
-        try:
-            active_result = await session.execute(text("""
-                SELECT unique_id, lowest_price
-                FROM activedailypricelog
-                WHERE lowest_price IS NOT NULL
-                  AND date = CURRENT_DATE
-            """))
-            active_map = defaultdict(list)
-            for uid, price in active_result.fetchall():
-                active_map[uid.strip()].append(float(price))
-
-            active_updates = []
-            for uid, prices in active_map.items():
-                filtered = filter_outliers(prices)
-                if filtered:
-                    active_updates.append({"price": round(min(filtered), 2), "uid": uid})
-
-            print(f"💾 Updating {len(active_updates)} active BIN prices...")
-            for i, row in enumerate(active_updates, 1):
-                await session.execute(
-                    text("UPDATE mastercard_v2 SET active_ebay_lowest = :price WHERE unique_id = :uid"),
-                    row
-                )
-            await session.commit()
-            print("✅ Active BIN updates complete.")
-
-        except Exception as e:
-            print(f"⚠️ Skipping active BIN update: {e}")
-
-        print("🏁 All updates completed successfully.")
+        print("✅ All sold medians updated!")
 
 if __name__ == "__main__":
     asyncio.run(main())
