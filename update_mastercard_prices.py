@@ -18,7 +18,6 @@ def filter_outliers(prices):
     upper_bound = q3 + 1.5 * iqr
     return [p for p in prices if lower_bound <= p <= upper_bound]
 
-# === Commit helper ===
 def batch_commit(cur, conn, batch, query, label):
     if batch:
         cur.executemany(query, batch)
@@ -39,7 +38,7 @@ def main():
             SELECT unique_id, lowest_price
             FROM activedailypricelog
             WHERE lowest_price IS NOT NULL
-              AND date = CURRENT_DATE
+              AND active_date = CURRENT_DATE
         """)
         active_map = defaultdict(list)
         for uid, price in cur.fetchall():
