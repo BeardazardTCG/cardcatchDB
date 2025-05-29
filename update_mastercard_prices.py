@@ -3,8 +3,7 @@ import psycopg2
 from collections import defaultdict
 
 # === Database connection ===
-raw_url = os.getenv("DATABASE_URL")
-DATABASE_URL = raw_url.replace("postgresql+asyncpg://", "postgresql://")
+DATABASE_URL = os.getenv("DATABASE_URL")  # NO replace()
 
 # === Outlier filtering ===
 def filter_outliers(prices):
