@@ -18,6 +18,7 @@ def filter_outliers(prices):
     upper_bound = q3 + 1.5 * iqr
     return [p for p in prices if lower_bound <= p <= upper_bound]
 
+# === Batch commit function ===
 def batch_commit(cur, conn, batch, query, label):
     if batch:
         cur.executemany(query, batch)
@@ -31,14 +32,13 @@ def main():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    # === Active BIN prices only ===
     print("📦 Fetching active BIN prices...")
     try:
         cur.execute("""
             SELECT unique_id, lowest_price
             FROM activedailypricelog
             WHERE lowest_price IS NOT NULL
-              AND active_date::date = CURRENT_DATE
+              AND active_date = TO_CHAR(CURRENT_DATE, 'YYYY-MM-DD')
         """)
         active_map = defaultdict(list)
         for uid, price in cur.fetchall():
@@ -61,8 +61,9 @@ def main():
         batch_commit(cur, conn, active_batch, active_query, f"{i - (i % 500) + 1}–{i}")
         print(f"✅ Active BIN updates complete: {i} processed")
 
-    except psycopg2.errors.UndefinedColumn:
-        print("⚠️ Skipping active BIN update — column not found")
+    except Exception as e:
+        print("❌ Error during active BIN update:")
+        print(e)
 
     cur.close()
     conn.close()
