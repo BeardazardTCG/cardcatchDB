@@ -30,7 +30,7 @@ def calculate_median(prices):
 
 def batch_commit(cur, conn, batch, query):
     if batch:
-        cur.executemany(query, batch)
+        print(f"💾 Committed batch of {len(sold_batch)} sold price updates.")
         conn.commit()
         batch.clear()
 
