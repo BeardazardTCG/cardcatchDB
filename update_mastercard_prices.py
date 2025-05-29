@@ -46,14 +46,18 @@ def main():
 
         active_query = """
             UPDATE mastercard_v2
-            SET active_ebay_lowest = %s
+            SET active_ebay_median = %s
             WHERE unique_id = %s
         """
         active_batch = []
         for i, (uid, prices) in enumerate(active_map.items(), 1):
             filtered = filter_outliers(prices)
             if filtered:
-                active_batch.append((round(min(filtered), 2), uid))
+                # We're calculating the median here
+                sorted_prices = sorted(filtered)
+                mid = len(sorted_prices) // 2
+                median = (sorted_prices[mid - 1] + sorted_prices[mid]) / 2 if len(sorted_prices) % 2 == 0 else sorted_prices[mid]
+                active_batch.append((round(median, 2), uid))
             if i % 500 == 0:
                 label = f"{i - 499}–{i}"
                 batch_commit(cur, conn, active_batch, active_query, label)
