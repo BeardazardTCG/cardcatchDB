@@ -51,19 +51,23 @@ async def main():
             filtered = filter_outliers(prices)
             median = calculate_median(filtered)
             if median is not None:
-                updates.append({"median": round(median, 2), "uid": uid})
+                updates.append((uid, round(median, 2)))
 
-        print(f"💾 Updating {len(updates)} sold medians in batches...")
-        for i, row in enumerate(updates, 1):
-            await session.execute(
-                text("UPDATE mastercard_v2 SET sold_ebay_median = :median WHERE unique_id = :uid"),
-                row
-            )
-            if i % 500 == 0:
-                print(f"🔄 Committing batch at row {i}...")
-                await session.commit()
+        print(f"💾 Updating {len(updates)} sold medians in VALUE-batches...")
+        BATCH_SIZE = 500
+        for i in range(0, len(updates), BATCH_SIZE):
+            batch = updates[i:i+BATCH_SIZE]
+            values_clause = ", ".join([f"('{uid}', {median})" for uid, median in batch])
+            sql = f"""
+                UPDATE mastercard_v2 AS m
+                SET sold_ebay_median = v.median
+                FROM (VALUES {values_clause}) AS v(unique_id, median)
+                WHERE m.unique_id = v.unique_id;
+            """
+            await session.execute(text(sql))
+            await session.commit()
+            print(f"🔄 Committed batch {i+1}–{i+len(batch)}")
 
-        await session.commit()
         print("✅ Sold medians updated.")
 
         # === TCGPLAYER PRICES ===
