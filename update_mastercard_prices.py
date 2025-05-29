@@ -35,7 +35,7 @@ def batch_commit(cur, conn, batch, query, label):
         conn.commit()
         print(f"🔄 Committed batch {label}")
         batch.clear()
-        time.sleep(0.3)  # Light throttle to avoid DB locks
+        time.sleep(0.1)  # Reduced throttle for better performance
 
 def main():
     print("🔌 Connecting to database...")
