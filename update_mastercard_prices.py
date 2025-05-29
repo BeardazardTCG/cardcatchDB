@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import text
 
 # === DATABASE SETUP ===
-# Hardcoded fallback URL for production use
 DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql+asyncpg://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 
 engine = create_async_engine(DATABASE_URL, echo=False)
@@ -54,12 +53,18 @@ async def main():
             if median is not None:
                 updates.append({"median": round(median, 2), "uid": uid})
 
-        print(f"💾 Updating {len(updates)} sold medians...")
-        for row in updates:
+        print(f"💾 Updating {len(updates)} sold medians in batches...")
+        for i, row in enumerate(updates, 1):
             await session.execute(
                 text("UPDATE mastercard_v2 SET sold_ebay_median = :median WHERE unique_id = :uid"),
                 row
             )
+            if i % 500 == 0:
+                print(f"🔄 Committing batch at row {i}...")
+                await session.commit()
+
+        await session.commit()
+        print("✅ Sold medians updated.")
 
         # === TCGPLAYER PRICES ===
         print("📦 Fetching latest TCGPlayer prices...")
@@ -75,11 +80,13 @@ async def main():
         ]
 
         print(f"💾 Updating {len(tcg_updates)} TCG prices...")
-        for row in tcg_updates:
+        for i, row in enumerate(tcg_updates, 1):
             await session.execute(
                 text("UPDATE mastercard_v2 SET tcgplayer_market_price = :price WHERE unique_id = :uid"),
                 row
             )
+        await session.commit()
+        print("✅ TCG updates complete.")
 
         # === ACTIVE PRICES ===
         print("📦 Fetching active BIN prices...")
@@ -101,16 +108,17 @@ async def main():
                     active_updates.append({"price": round(min(filtered), 2), "uid": uid})
 
             print(f"💾 Updating {len(active_updates)} active BIN prices...")
-            for row in active_updates:
+            for i, row in enumerate(active_updates, 1):
                 await session.execute(
                     text("UPDATE mastercard_v2 SET active_ebay_lowest = :price WHERE unique_id = :uid"),
                     row
                 )
+            await session.commit()
+            print("✅ Active BIN updates complete.")
 
         except Exception as e:
             print(f"⚠️ Skipping active BIN update: {e}")
 
-        await session.commit()
         print("🏁 All updates completed successfully.")
 
 if __name__ == "__main__":
