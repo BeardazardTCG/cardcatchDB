@@ -18,61 +18,21 @@ def filter_outliers(prices):
     upper_bound = q3 + 1.5 * iqr
     return [p for p in prices if lower_bound <= p <= upper_bound]
 
-# === Median calculator ===
-def calculate_median(prices):
-    n = len(prices)
-    if n == 0:
-        return None
-    sorted_prices = sorted(prices)
-    mid = n // 2
-    if n % 2 == 0:
-        return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2
-    return sorted_prices[mid]
-
+# === Commit helper ===
 def batch_commit(cur, conn, batch, query, label):
     if batch:
         cur.executemany(query, batch)
         conn.commit()
         print(f"🔄 Committed batch {label}")
         batch.clear()
-        time.sleep(0.1)  # Fast throttle to minimize locking and maintain speed
+        time.sleep(0.1)
 
 def main():
     print("🔌 Connecting to database...")
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    # === 1. Sold eBay median ===
-    print("📦 Fetching sold prices...")
-    cur.execute("""
-        SELECT unique_id, median_price
-        FROM dailypricelog
-        WHERE median_price IS NOT NULL
-    """)
-    sold_map = defaultdict(list)
-    for uid, price in cur.fetchall():
-        sold_map[uid.strip()].append(float(price))
-
-    print(f"💾 Updating {len(sold_map)} sold medians in VALUE-batches...")
-    sold_query = """
-        UPDATE mastercard_v2
-        SET sold_ebay_median = %s
-        WHERE unique_id = %s
-    """
-    sold_batch = []
-    for i, (uid, prices) in enumerate(sold_map.items(), 1):
-        filtered = filter_outliers(prices)
-        median = calculate_median(filtered)
-        if median is not None:
-            sold_batch.append((round(median, 2), uid))
-        if i % 500 == 0:
-            label = f"{i - 499}–{i}"
-            batch_commit(cur, conn, sold_batch, sold_query, label)
-
-    batch_commit(cur, conn, sold_batch, sold_query, f"{i - (i % 500) + 1}–{i}")
-    print(f"✅ Sold updates complete: {i} processed")
-
-    # === 2. Active BIN prices ===
+    # === Active BIN prices only ===
     print("📦 Fetching active BIN prices...")
     try:
         cur.execute("""
@@ -105,10 +65,9 @@ def main():
     except psycopg2.errors.UndefinedColumn:
         print("⚠️ Skipping active BIN update — column not found")
 
-    # === Done ===
     cur.close()
     conn.close()
-    print("🏁 All updates completed.")
+    print("🏁 Active-only update finished.")
 
 if __name__ == "__main__":
     main()
