@@ -69,7 +69,8 @@ def main():
             label = f"{i - 499}–{i}"
             batch_commit(cur, conn, sold_batch, sold_query, label)
 
-    batch_commit(cur, conn, sold_batch, sold_query, f"{i - (i % 500) + 1}–{i}")
+    if sold_batch:
+        batch_commit(cur, conn, sold_batch, sold_query, f"{i - (i % 500) + 1}–{i}")
     print(f"✅ Sold updates complete: {i} processed")
 
     # === 2. TCGPlayer prices ===
@@ -86,8 +87,9 @@ def main():
         WHERE unique_id = %s
     """
     tcg_batch = [(round(float(price), 2), uid.strip()) for uid, price in cur.fetchall()]
-    cur.executemany(tcg_query, tcg_batch)
-    conn.commit()
+    if tcg_batch:
+        cur.executemany(tcg_query, tcg_batch)
+        conn.commit()
     print(f"✅ TCG updates complete: {len(tcg_batch)} cards updated")
 
     # === 3. Active BIN prices ===
@@ -117,7 +119,8 @@ def main():
                 label = f"{i - 499}–{i}"
                 batch_commit(cur, conn, active_batch, active_query, label)
 
-        batch_commit(cur, conn, active_batch, active_query, f"{i - (i % 500) + 1}–{i}")
+        if active_batch:
+            batch_commit(cur, conn, active_batch, active_query, f"{i - (i % 500) + 1}–{i}")
         print(f"✅ Active BIN updates complete: {i} processed")
 
     except psycopg2.errors.UndefinedColumn:
