@@ -1,131 +1,113 @@
 import os
 import asyncio
-import json
-from datetime import datetime
-from dotenv import load_dotenv
-import aiohttp
+from collections import defaultdict
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
 
-load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL not set")
+# === DATABASE SETUP ===
+# Hardcoded fallback URL for production use
+DATABASE_URL = os.getenv("DATABASE_URL") or "postgresql+asyncpg://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 
 engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
-HEADERS = {"User-Agent": "Mozilla/5.0"}
+# === OUTLIER FILTERING ===
+def filter_outliers(prices):
+    if not prices:
+        return []
+    sorted_prices = sorted(prices)
+    q1 = sorted_prices[len(sorted_prices) // 4]
+    q3 = sorted_prices[(len(sorted_prices) * 3) // 4]
+    iqr = q3 - q1
+    lower_bound = q1 - 1.5 * iqr
+    upper_bound = q3 + 1.5 * iqr
+    return [p for p in prices if lower_bound <= p <= upper_bound]
 
-def convert_date(s):
-    if not s:
+def calculate_median(prices):
+    n = len(prices)
+    if n == 0:
         return None
-    try:
-        return datetime.strptime(s.replace("/", "-"), "%Y-%m-%d").date()
-    except Exception:
-        return None
+    sorted_prices = sorted(prices)
+    mid = n // 2
+    return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2 if n % 2 == 0 else sorted_prices[mid]
 
-async def fetch_json(session, url):
-    async with session.get(url, headers=HEADERS) as resp:
-        resp.raise_for_status()
-        return await resp.json()
-
-async def fetch_all_sets(session):
-    url = "https://api.pokemontcg.io/v2/sets"
-    data = await fetch_json(session, url)
-    return data.get("data", [])
-
-async def fetch_all_cards_for_set(session, set_id):
-    cards = []
-    page = 1
-    page_size = 250
-    while True:
-        url = f"https://api.pokemontcg.io/v2/cards?q=set.id:{set_id}&page={page}&pageSize={page_size}"
-        data = await fetch_json(session, url)
-        batch = data.get("data", [])
-        if not batch:
-            break
-        cards.extend(batch)
-        if len(batch) < page_size:
-            break
-        page += 1
-    return cards
-
-async def insert_card(db_session: AsyncSession, card, release_date):
-    data = {
-        "unique_id": card["id"],
-        "card_name": card["name"],
-        "card_number": card["number"],
-        "card_number_raw": card["number"].split("/")[0],
-        "rarity": card.get("rarity"),
-        "type": card.get("types", [None])[0] if card.get("types") else None,
-        "artist": card.get("artist"),
-        "language": card.get("language", "en"),
-        "set_name": card["set"]["name"],
-        "set_code": card["set"].get("ptcgoCode") or card["set"]["id"],
-        "release_date": release_date,
-        "set_logo_url": card["set"]["images"]["logo"],
-        "set_symbol_url": card["set"]["images"]["symbol"],
-        "query": f"{card['name']} {card['set']['name']} {card['number'].replace('/', ' ')}",
-        "set_id": card["set"]["id"],
-        "types": json.dumps(card.get("types")) if card.get("types") else None,
-        "hot_character": False,
-        "card_image_url": card["images"]["small"],
-        "subtypes": json.dumps(card.get("subtypes")) if card.get("subtypes") else None,
-        "supertype": card.get("supertype")
-    }
-    try:
-        await db_session.execute(text("""
-            INSERT INTO mastercard_v2 (
-                unique_id, card_name, card_number, card_number_raw, rarity,
-                type, artist, language, set_name, set_code,
-                release_date, set_logo_url, set_symbol_url, query, set_id,
-                types, hot_character, card_image_url, subtypes, supertype
-            ) VALUES (
-                :unique_id, :card_name, :card_number, :card_number_raw, :rarity,
-                :type, :artist, :language, :set_name, :set_code,
-                :release_date, :set_logo_url, :set_symbol_url, :query, :set_id,
-                :types, :hot_character, :card_image_url, :subtypes, :supertype
-            )
-            ON CONFLICT (unique_id) DO NOTHING
-        """), data)
-        await db_session.commit()
-        print(f"Inserted card {card['name']} ({card['id']})")
-        return True
-    except Exception as e:
-        print(f"Failed to insert card {card['id']}: {e}")
-        return False
-
+# === MAIN EXECUTION ===
 async def main():
-    total_cards = 0
-    successful_inserts = 0
-    failed_inserts = 0
+    print("🔌 Connecting to database...")
+    async with async_session() as session:
 
-    async with async_session() as db_session, aiohttp.ClientSession() as http_session:
-        sets = await fetch_all_sets(http_session)
-        print(f"Total sets to process: {len(sets)}")
+        # === SOLD PRICES ===
+        print("📦 Fetching sold prices...")
+        sold_result = await session.execute(text("""
+            SELECT unique_id, median_price
+            FROM dailypricelog
+            WHERE median_price IS NOT NULL
+        """))
+        sold_map = defaultdict(list)
+        for uid, price in sold_result.fetchall():
+            sold_map[uid.strip()].append(float(price))
 
-        for s in sets:
-            set_id = s["id"]
-            set_name = s["name"]
-            release_date = convert_date(s.get("releaseDate"))
-            print(f"Processing set {set_name} ({set_id}), release date: {release_date}")
+        updates = []
+        for uid, prices in sold_map.items():
+            filtered = filter_outliers(prices)
+            median = calculate_median(filtered)
+            if median is not None:
+                updates.append({"median": round(median, 2), "uid": uid})
 
-            cards = await fetch_all_cards_for_set(http_session, set_id)
-            print(f"  Found {len(cards)} cards")
+        print(f"💾 Updating {len(updates)} sold medians...")
+        await session.execute_many(
+            text("UPDATE mastercard_v2 SET sold_ebay_median = :median WHERE unique_id = :uid"),
+            updates
+        )
 
-            for card in cards:
-                total_cards += 1
-                if await insert_card(db_session, card, release_date):
-                    successful_inserts += 1
-                else:
-                    failed_inserts += 1
+        # === TCGPLAYER PRICES ===
+        print("📦 Fetching latest TCGPlayer prices...")
+        tcg_result = await session.execute(text("""
+            SELECT DISTINCT ON (unique_id) unique_id, market_price
+            FROM tcg_pricing_log
+            WHERE market_price IS NOT NULL
+            ORDER BY unique_id, date DESC
+        """))
+        tcg_updates = [
+            {"uid": uid.strip(), "price": round(float(price), 2)}
+            for uid, price in tcg_result.fetchall()
+        ]
 
-        print(f"Finished processing {len(sets)} sets.")
-        print(f"Total cards processed: {total_cards}")
-        print(f"Successful inserts: {successful_inserts}")
-        print(f"Failed inserts: {failed_inserts}")
+        print(f"💾 Updating {len(tcg_updates)} TCG prices...")
+        await session.execute_many(
+            text("UPDATE mastercard_v2 SET tcgplayer_market_price = :price WHERE unique_id = :uid"),
+            tcg_updates
+        )
+
+        # === ACTIVE PRICES ===
+        print("📦 Fetching active BIN prices...")
+        try:
+            active_result = await session.execute(text("""
+                SELECT unique_id, lowest_price
+                FROM activedailypricelog
+                WHERE lowest_price IS NOT NULL
+                  AND date = CURRENT_DATE
+            """))
+            active_map = defaultdict(list)
+            for uid, price in active_result.fetchall():
+                active_map[uid.strip()].append(float(price))
+
+            active_updates = []
+            for uid, prices in active_map.items():
+                filtered = filter_outliers(prices)
+                if filtered:
+                    active_updates.append({"price": round(min(filtered), 2), "uid": uid})
+
+            print(f"💾 Updating {len(active_updates)} active BIN prices...")
+            await session.execute_many(
+                text("UPDATE mastercard_v2 SET active_ebay_lowest = :price WHERE unique_id = :uid"),
+                active_updates
+            )
+        except Exception as e:
+            print(f"⚠️ Skipping active BIN update: {e}")
+
+        await session.commit()
+        print("🏁 All updates completed successfully.")
 
 if __name__ == "__main__":
     asyncio.run(main())
