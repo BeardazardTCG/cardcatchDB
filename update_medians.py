@@ -2,13 +2,9 @@ import os
 import psycopg2
 from collections import defaultdict
 
-# Use original asyncpg-style URL from .env
+# === Database connection ===
 raw_url = os.getenv("DATABASE_URL")
-
-# Convert to psycopg2-compatible format
 DATABASE_URL = raw_url.replace("postgresql+asyncpg://", "postgresql://")
-
-conn = psycopg2.connect(DATABASE_URL)
 
 # === Outlier filtering ===
 def filter_outliers(prices):
@@ -33,28 +29,26 @@ def calculate_median(prices):
         return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2
     return sorted_prices[mid]
 
-# === Main execution ===
+# === Main ===
 def main():
     print("🔌 Connecting to database...")
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    print("📦 Fetching price data from dailypricelog...")
+    # === 1. Sold eBay median ===
+    print("📦 Fetching sold prices from dailypricelog...")
     cur.execute("""
         SELECT unique_id, median_price
         FROM dailypricelog
         WHERE median_price IS NOT NULL
     """)
-    rows = cur.fetchall()
+    sold_map = defaultdict(list)
+    for uid, price in cur.fetchall():
+        sold_map[uid.strip()].append(float(price))
 
-    price_map = defaultdict(list)
-    for uid, price in rows:
-        if price is not None:
-            price_map[uid.strip()] += [float(price)]
-
-    print(f"🧮 Calculating medians for {len(price_map)} unique cards...")
-    updates = 0
-    for uid, prices in price_map.items():
+    print(f"🧮 Calculating filtered medians for {len(sold_map)} cards...")
+    sold_updates = 0
+    for uid, prices in sold_map.items():
         filtered = filter_outliers(prices)
         median = calculate_median(filtered)
         if median is not None:
@@ -63,13 +57,62 @@ def main():
                 SET sold_ebay_median = %s
                 WHERE unique_id = %s
             """, (round(median, 2), uid))
-            updates += 1
+            sold_updates += 1
 
+    # === 2. TCGPlayer market price ===
+    print("📦 Fetching latest TCGPlayer prices...")
+    cur.execute("""
+        SELECT DISTINCT ON (unique_id) unique_id, market_price
+        FROM tcg_pricing_log
+        WHERE market_price IS NOT NULL
+        ORDER BY unique_id, date DESC
+    """)
+    tcg_updates = 0
+    for uid, price in cur.fetchall():
+        cur.execute("""
+            UPDATE mastercard_v2
+            SET tcgplayer_market_price = %s
+            WHERE unique_id = %s
+        """, (round(float(price), 2), uid))
+        tcg_updates += 1
+
+    # === 3. Active eBay lowest price (filtered) ===
+    print("📦 Fetching and filtering active BIN prices...")
+    try:
+        cur.execute("""
+            SELECT unique_id, lowest_price
+            FROM activedailypricelog
+            WHERE lowest_price IS NOT NULL
+              AND date = CURRENT_DATE
+        """)
+        active_map = defaultdict(list)
+        for uid, price in cur.fetchall():
+            active_map[uid.strip()].append(float(price))
+
+        active_updates = 0
+        for uid, prices in active_map.items():
+            filtered = filter_outliers(prices)
+            if filtered:
+                lowest = min(filtered)
+                cur.execute("""
+                    UPDATE mastercard_v2
+                    SET active_ebay_lowest = %s
+                    WHERE unique_id = %s
+                """, (round(lowest, 2), uid))
+                active_updates += 1
+
+    except psycopg2.errors.UndefinedColumn:
+        print("⚠️ Skipping active price update — 'active_ebay_lowest' column not found.")
+
+    # === Finalize ===
     conn.commit()
     cur.close()
     conn.close()
 
-    print(f"✅ Update complete: {updates} rows updated.")
+    print("✅ Update complete:")
+    print(f"   • {sold_updates} sold prices updated")
+    print(f"   • {tcg_updates} TCG prices updated")
+    print(f"   • {active_updates if 'active_updates' in locals() else 0} active prices updated")
 
 # Entry point
 if __name__ == "__main__":
