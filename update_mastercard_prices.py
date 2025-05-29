@@ -35,7 +35,7 @@ def batch_commit(cur, conn, batch, query, label):
         conn.commit()
         print(f"🔄 Committed batch {label}")
         batch.clear()
-        time.sleep(0.1)  # Reduced throttle for better performance
+        time.sleep(0.1)  # Fast throttle to minimize locking and maintain speed
 
 def main():
     print("🔌 Connecting to database...")
@@ -69,30 +69,10 @@ def main():
             label = f"{i - 499}–{i}"
             batch_commit(cur, conn, sold_batch, sold_query, label)
 
-    if sold_batch:
-        batch_commit(cur, conn, sold_batch, sold_query, f"{i - (i % 500) + 1}–{i}")
+    batch_commit(cur, conn, sold_batch, sold_query, f"{i - (i % 500) + 1}–{i}")
     print(f"✅ Sold updates complete: {i} processed")
 
-    # === 2. TCGPlayer prices ===
-    print("📦 Fetching TCGPlayer prices...")
-    cur.execute("""
-        SELECT DISTINCT ON (unique_id) unique_id, market_price
-        FROM tcg_pricing_log
-        WHERE market_price IS NOT NULL
-        ORDER BY unique_id, date_logged DESC
-    """)
-    tcg_query = """
-        UPDATE mastercard_v2
-        SET tcgplayer_market_price = %s
-        WHERE unique_id = %s
-    """
-    tcg_batch = [(round(float(price), 2), uid.strip()) for uid, price in cur.fetchall()]
-    if tcg_batch:
-        cur.executemany(tcg_query, tcg_batch)
-        conn.commit()
-    print(f"✅ TCG updates complete: {len(tcg_batch)} cards updated")
-
-    # === 3. Active BIN prices ===
+    # === 2. Active BIN prices ===
     print("📦 Fetching active BIN prices...")
     try:
         cur.execute("""
@@ -119,8 +99,7 @@ def main():
                 label = f"{i - 499}–{i}"
                 batch_commit(cur, conn, active_batch, active_query, label)
 
-        if active_batch:
-            batch_commit(cur, conn, active_batch, active_query, f"{i - (i % 500) + 1}–{i}")
+        batch_commit(cur, conn, active_batch, active_query, f"{i - (i % 500) + 1}–{i}")
         print(f"✅ Active BIN updates complete: {i} processed")
 
     except psycopg2.errors.UndefinedColumn:
