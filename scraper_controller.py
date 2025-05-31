@@ -90,7 +90,7 @@ def get_cards_due():
 def call_dual_scraper():
     try:
         print("🚀 Running dual eBay scraper...")
-        subprocess.run(["python", "archive/run_dual_scraper.py"], check=True)
+        subprocess.run(["python", "archive/scrape_ebay_dual.py"], check=True)
         log_scrape_event("ebay_dual", "success", -1)
     except subprocess.CalledProcessError as e:
         print("❌ eBay scraper failed:", e)
