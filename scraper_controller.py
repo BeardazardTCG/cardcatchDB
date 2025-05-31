@@ -116,6 +116,17 @@ if __name__ == "__main__":
     if due_cards:
         call_dual_scraper()
         call_tcg_scraper()
+
+        # ✅ Run post-scrape logic
+        try:
+            print("🧮 Running post-scrape update (clean values + tier recalculation)...")
+            subprocess.run(["python", "post_scrape_update.py"], check=True)
+            log_scrape_event("post_scrape_update", "success", -1)
+        except subprocess.CalledProcessError as e:
+            print("❌ Post-scrape update failed:", e)
+            log_scrape_event("post_scrape_update", "fail", 0, str(e))
+            log_failure("post_scrape_update", str(e))
+
     else:
         print("🛌 No cards due today.")
-        log_scrape_event("controller", "no_due_cards", 0, "No cards met scrape threshold")
+        log_scrape_event("controller", "no_due_cards", 0, "No cards met scrape conditions.")
