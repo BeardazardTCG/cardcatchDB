@@ -60,7 +60,7 @@ def get_cards_due():
                     SELECT unique_id, query, tier
                     FROM mastercard_v2
                     WHERE tier IS NOT NULL
-                    LIMIT 10
+                    
                 """)
                 cards = cur.fetchall()
 
