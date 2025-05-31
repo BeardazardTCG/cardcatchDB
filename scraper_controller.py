@@ -1,6 +1,6 @@
 # scraper_controller.py
 # Purpose: Decides which cards are due for scraping (based on tier and last update),
-# and calls the appropriate scraper without modifying them.
+# and calls the appropriate scraper without modifying them. Logs all run outcomes.
 
 import os
 import subprocess
@@ -20,6 +20,25 @@ TIER_INTERVALS = {
     3: timedelta(days=3),
     4: timedelta(days=7),
 }
+
+# === Logging helpers ===
+def log_scrape_event(source, status, count, notes=""):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO scrape_log (source, status, card_count, notes)
+                VALUES (%s, %s, %s, %s)
+            """, (source, status, count, notes))
+            conn.commit()
+
+def log_failure(source, message):
+    with psycopg2.connect(DATABASE_URL) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO scrape_failures (unique_id, scraper_source, error_message)
+                VALUES (%s, %s, %s)
+            """, ("controller", source, message))
+            conn.commit()
 
 # === Pull card list from DB ===
 def get_cards_due():
@@ -42,7 +61,6 @@ def get_cards_due():
                 if not threshold:
                     continue
 
-                # Check latest scraped date for sold listings
                 cur.execute("""
                     SELECT MAX(sold_date) AS last_date FROM dailypricelog
                     WHERE unique_id = %s
@@ -57,13 +75,24 @@ def get_cards_due():
 
 # === Call scraper script ===
 def call_dual_scraper():
-    print("🚀 Running dual eBay scraper...")
-    subprocess.run(["python", "archive/run_dual_scraper.py"])  # must be relative to root
-
+    try:
+        print("🚀 Running dual eBay scraper...")
+        subprocess.run(["python", "archive/run_dual_scraper.py"], check=True)
+        log_scrape_event("ebay_dual", "success", -1)
+    except subprocess.CalledProcessError as e:
+        print("❌ eBay scraper failed:", e)
+        log_scrape_event("ebay_dual", "fail", 0, str(e))
+        log_failure("ebay_dual", str(e))
 
 def call_tcg_scraper():
-    print("🚀 Running TCG scraper...")
-    subprocess.run(["python", "scripts/tcg_price_updater.py"])  # update path if moved
+    try:
+        print("🚀 Running TCG scraper...")
+        subprocess.run(["python", "tcg_price_updater.py"], check=True)
+        log_scrape_event("tcg", "success", -1)
+    except subprocess.CalledProcessError as e:
+        print("❌ TCG scraper failed:", e)
+        log_scrape_event("tcg", "fail", 0, str(e))
+        log_failure("tcg", str(e))
 
 # === Main ===
 if __name__ == "__main__":
@@ -74,3 +103,4 @@ if __name__ == "__main__":
         call_tcg_scraper()
     else:
         print("🛌 No cards due today.")
+        log_scrape_event("controller", "no_due_cards", 0, "No cards met scrape threshold")
