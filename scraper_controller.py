@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 # === Load env ===
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgres")
 
 # === Tier frequency rules ===
 TIER_INTERVALS = {
