@@ -1,6 +1,6 @@
 # scraper_controller.py
-# Purpose: Decides which cards are due for scraping (based on tier and last update),
-# and calls the appropriate scraper without modifying them. Logs all run outcomes.
+# Purpose: Decide which cards are due for scraping based on tier and freshness,
+# and safely call the existing TCG + eBay dual scraper scripts. Logs all activity.
 
 import os
 import subprocess
@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 # === Load env ===
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgres")
+DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgres")  # Fix for psycopg2
 
 # === Tier frequency rules ===
 TIER_INTERVALS = {
@@ -24,52 +24,63 @@ TIER_INTERVALS = {
 
 # === Logging helpers ===
 def log_scrape_event(source, status, count, notes=""):
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO scrape_log (source, status, card_count, notes)
-                VALUES (%s, %s, %s, %s)
-            """, (source, status, count, notes))
-            conn.commit()
+    try:
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO scrape_log (source, status, card_count, notes)
+                    VALUES (%s, %s, %s, %s)
+                """, (source, status, count, notes))
+                conn.commit()
+    except Exception as e:
+        print(f"❌ Failed to log scrape event: {e}")
 
 def log_failure(source, message):
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor() as cur:
-            cur.execute("""
-                INSERT INTO scrape_failures (unique_id, scraper_source, error_message)
-                VALUES (%s, %s, %s)
-            """, ("controller", source, message))
-            conn.commit()
+    try:
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    INSERT INTO scrape_failures (unique_id, scraper_source, error_message)
+                    VALUES (%s, %s, %s)
+                """, ("controller", source, message))
+                conn.commit()
+    except Exception as e:
+        print(f"❌ Failed to log scrape failure: {e}")
 
 # === Pull card list from DB ===
 def get_cards_due():
-    print("📡 Fetching cards due for scrape...")
+    print("📡 Connecting to DB and checking for due cards...")
     today = datetime.utcnow().date()
     due_cards = []
 
-    with psycopg2.connect(DATABASE_URL) as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("""
-                SELECT unique_id, query, tier
-                FROM mastercard_v2
-                WHERE tier IS NOT NULL
-            """)
-            cards = cur.fetchall()
-
-            for card in cards:
-                tier = card["tier"]
-                threshold = TIER_INTERVALS.get(tier)
-                if not threshold:
-                    continue
-
+    try:
+        with psycopg2.connect(DATABASE_URL, connect_timeout=10) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 cur.execute("""
-                    SELECT MAX(sold_date) AS last_date FROM dailypricelog
-                    WHERE unique_id = %s
-                """, (card["unique_id"],))
-                last_entry = cur.fetchone()["last_date"]
+                    SELECT unique_id, query, tier
+                    FROM mastercard_v2
+                    WHERE tier IS NOT NULL
+                """)
+                cards = cur.fetchall()
 
-                if not last_entry or (today - last_entry) >= threshold:
-                    due_cards.append(card)
+                for card in cards:
+                    tier = card["tier"]
+                    threshold = TIER_INTERVALS.get(tier)
+                    if not threshold:
+                        continue
+
+                    cur.execute("""
+                        SELECT MAX(sold_date) AS last_date FROM dailypricelog
+                        WHERE unique_id = %s
+                    """, (card["unique_id"],))
+                    last_entry = cur.fetchone()["last_date"]
+
+                    if not last_entry or (today - last_entry) >= threshold:
+                        due_cards.append(card)
+
+    except Exception as e:
+        print(f"❌ Error during DB check: {e}")
+        log_failure("controller", str(e))
 
     print(f"✅ {len(due_cards)} cards are due for scraping.")
     return due_cards
@@ -85,6 +96,7 @@ def call_dual_scraper():
         log_scrape_event("ebay_dual", "fail", 0, str(e))
         log_failure("ebay_dual", str(e))
 
+
 def call_tcg_scraper():
     try:
         print("🚀 Running TCG scraper...")
@@ -97,6 +109,7 @@ def call_tcg_scraper():
 
 # === Main ===
 if __name__ == "__main__":
+    print("🟢 Starting CardCatch Scraper Controller...")
     due_cards = get_cards_due()
 
     if due_cards:
