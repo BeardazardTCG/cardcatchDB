@@ -43,6 +43,8 @@ async def scrape_card(unique_id, query, tier):
     async with async_session() as session:
         print(f"\n🃏 Scraping: {query} (UID: {unique_id}, Tier: {tier})")
 
+        sold_success, active_success = False, False
+
         # --- Sold Listings ---
         try:
             sold_results = parse_ebay_sold_page(query, max_items=MAX_SOLD_RESULTS)
@@ -78,6 +80,7 @@ async def scrape_card(unique_id, query, tier):
                     "query": query,
                     "urls": urls
                 })
+            sold_success = True
 
         except Exception as e:
             print(f"❌ Sold scrape error for {unique_id}: {e}")
@@ -86,7 +89,7 @@ async def scrape_card(unique_id, query, tier):
         try:
             active_results = parse_ebay_active_page(query, max_items=MAX_ACTIVE_RESULTS)
             active_prices = [item["price"] for item in active_results if "price" in item]
-            filtered_prices = filter_outliers(active_prices)  # Outlier filtering applied here
+            filtered_prices = filter_outliers(active_prices)
             best_price = min(filtered_prices) if filtered_prices else None
             median = calculate_median(filtered_prices)
             average = calculate_average(filtered_prices)
@@ -108,11 +111,13 @@ async def scrape_card(unique_id, query, tier):
                     "url": active_url,
                     "low": best_price
                 })
+            active_success = True
 
         except Exception as e:
             print(f"❌ Active scrape error for {unique_id}: {e}")
 
         await session.commit()
+        print(f"✅ Finished: {unique_id} — Sold: {'✔️' if sold_success else '❌'}, Active: {'✔️' if active_success else '❌'}")
         await asyncio.sleep(CARD_DELAY)
 
 # === Tier-Based Runner ===
@@ -130,6 +135,7 @@ async def run_dual_scraper():
     semaphore = asyncio.Semaphore(CONCURRENT_LIMIT)
     tasks = [run_card_with_semaphore(uid, q, t, semaphore) for uid, q, t in cards]
     await asyncio.gather(*tasks)
+    print("✅ Dual scraper run complete.")
 
 async def run_card_with_semaphore(unique_id, query, tier, semaphore):
     async with semaphore:
