@@ -1,6 +1,6 @@
 import os
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
@@ -56,7 +56,7 @@ def log_failure(source, message):
 # === Pull card list from DB ===
 def get_cards_due():
     print("📡 Connecting to DB and checking for due cards...")
-    today = datetime.utcnow().date()
+    today = date.today()
     due_cards = []
 
     try:
@@ -144,3 +144,4 @@ if __name__ == "__main__":
         with open("controller_errors.txt", "a") as f:
             f.write(f"{datetime.utcnow()} FATAL: {str(e)}\n")
         log_failure("controller", str(e))
+
