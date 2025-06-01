@@ -55,7 +55,16 @@ def main():
             "low": float(low) if low else None,
         }
 
-    cur.execute("SELECT unique_id, query FROM mastercard_v2")
+    cur.execute("SELECT unique_id, wishlist, inventory, hot_character FROM mastercard_v2")
+    flag_data = {}
+    for uid, wishlist, inventory, hot_character in cur.fetchall():
+        flag_data[uid.strip()] = {
+            "wishlist": wishlist,
+            "inventory": inventory,
+            "hot_character": hot_character
+        }
+
+    cur.execute("SELECT unique_id FROM mastercard_v2")
     all_cards = [row[0].strip() for row in cur.fetchall()]
 
     # ------------------- PROCESS + UPDATE -------------------
@@ -101,18 +110,25 @@ def main():
         if clean is not None:
             updates['clean_avg_value'] = round(clean, 2)
 
-        # Tier logic
+        # Tier Logic (Locked)
+        flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
+        wishlist = flags["wishlist"]
+        inventory = flags["inventory"]
+        hot = flags["hot_character"]
+
         tier = None
-        if clean is not None:
-            if clean < 1:
-                tier = 4
-            elif 1 <= clean < 5:
-                tier = 3
-            elif 5 <= clean < 15:
-                tier = 2
-            else:
-                tier = 1
-            updates['tier'] = tier
+        if wishlist or inventory:
+            tier = 1
+        elif clean is not None:
+            if 7 <= clean <= 11:
+                tier = 2 if hot else 3
+            elif clean > 11:
+                tier = 4 if hot else 5
+            elif 3 <= clean < 7:
+                tier = 6 if hot else 7
+            elif clean < 3:
+                tier = 8 if hot else 9
+        updates["tier"] = tier
 
         if updates:
             set_clause = ', '.join([f"{key} = %s" for key in updates.keys()])
