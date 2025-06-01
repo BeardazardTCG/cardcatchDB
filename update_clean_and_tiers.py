@@ -37,10 +37,17 @@ def main():
     # ------------------- FETCH RAW DATA -------------------
     print("📥 Fetching price logs...")
 
-    cur.execute("SELECT unique_id, median_price FROM dailypricelog WHERE median_price IS NOT NULL")
+    # Sold prices (last 7 days only)
+    seven_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=7)
+    cur.execute("""
+        SELECT unique_id, median_price, sold_date 
+        FROM dailypricelog 
+        WHERE median_price IS NOT NULL
+    """)
     sold_data = defaultdict(list)
-    for uid, price in cur.fetchall():
-        sold_data[uid.strip()].append(float(price))
+    for uid, price, sold_date in cur.fetchall():
+        if sold_date >= seven_days_ago:
+            sold_data[uid.strip()].append(float(price))
 
     cur.execute("SELECT unique_id, median_price FROM activedailypricelog WHERE median_price IS NOT NULL")
     active_data = defaultdict(list)
@@ -74,8 +81,8 @@ def main():
         # Sold median
         if uid in sold_data:
             filtered = filter_outliers(sold_data[uid])
-            median_sold = calculate_median(filtered)
-            if median_sold:
+            if len(filtered) > 0:
+                median_sold = calculate_median(filtered)
                 updates['sold_ebay_median'] = round(median_sold, 2)
 
         # Active median
@@ -100,8 +107,6 @@ def main():
         clean = None
         if sold is not None:
             clean = sold
-        elif active is not None and tcg is not None:
-            clean = (active + tcg) / 2
         elif active is not None:
             clean = active
         elif tcg is not None:
@@ -110,7 +115,7 @@ def main():
         if clean is not None:
             updates['clean_avg_value'] = round(clean, 2)
 
-        # Tier Logic (Locked)
+        # Tier Logic (Final 9-tier system)
         flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
         wishlist = flags["wishlist"]
         inventory = flags["inventory"]
@@ -130,6 +135,7 @@ def main():
                 tier = 8 if hot else 9
         updates["tier"] = tier
 
+        # Commit changes
         if updates:
             set_clause = ', '.join([f"{key} = %s" for key in updates.keys()])
             values = list(updates.values()) + [uid]
