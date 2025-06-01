@@ -37,7 +37,6 @@ def main():
     # ------------------- FETCH RAW DATA -------------------
     print("📥 Fetching price logs...")
 
-    # Sold prices (last 7 days only)
     seven_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=7)
     cur.execute("""
         SELECT unique_id, median_price, sold_date 
@@ -62,7 +61,16 @@ def main():
             "low": float(low) if low else None,
         }
 
-    cur.execute("SELECT unique_id, wishlist, inventory, hot_character FROM mastercard_v2")
+    # ✅ NEW: Pull wishlist/inventory via JOINs + hot_character from mastercard_v2
+    cur.execute("""
+        SELECT m.unique_id,
+               CASE WHEN w.unique_id IS NOT NULL THEN TRUE ELSE FALSE END AS wishlist,
+               CASE WHEN i.unique_id IS NOT NULL THEN TRUE ELSE FALSE END AS inventory,
+               m.hot_character
+        FROM mastercard_v2 m
+        LEFT JOIN wishlist w ON m.unique_id = w.unique_id
+        LEFT JOIN inventory i ON m.unique_id = i.unique_id
+    """)
     flag_data = {}
     for uid, wishlist, inventory, hot_character in cur.fetchall():
         flag_data[uid.strip()] = {
