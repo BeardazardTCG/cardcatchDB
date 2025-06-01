@@ -1,4 +1,3 @@
-# scraper_controller.py
 import os
 import subprocess
 from datetime import datetime, timedelta
@@ -6,17 +5,20 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
-# === File-based boot log ===
+# === Boot log ===
 try:
     with open("controller_boot_log.txt", "a") as f:
         f.write(f"🟢 Started at {datetime.utcnow()}\n")
 except:
     pass
 
-# === Load env ===
+# === Load and fix env ===
 load_dotenv()
-DATABASE_URL = os.getenv("DATABASE_URL")
-DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgres")
+raw_url = os.getenv("DATABASE_URL")
+if not raw_url:
+    raise RuntimeError("❌ DATABASE_URL not found in environment.")
+
+DATABASE_URL = raw_url.replace("postgresql+asyncpg", "postgresql")
 
 # === Tier frequency rules ===
 TIER_INTERVALS = {
