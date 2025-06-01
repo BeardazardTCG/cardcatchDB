@@ -19,7 +19,6 @@ load_dotenv()
 raw_url = os.getenv("DATABASE_URL")
 if not raw_url:
     raise RuntimeError("❌ DATABASE_URL not found in environment.")
-
 DATABASE_URL = raw_url.replace("postgresql+asyncpg", "postgresql")
 
 # === Tier frequency rules ===
@@ -64,9 +63,9 @@ def get_cards_due():
     try:
         with psycopg2.connect(DATABASE_URL, connect_timeout=15) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                with open("controller_checkpoint.txt", "a") as f:
-                    f.write(f"✅ DB connection succeeded at {datetime.utcnow()}\n")
+                print("✅ DB connected. Pulling cards and sold_date snapshots...")
 
+                # 1. All tiered cards
                 cur.execute("""
                     SELECT unique_id, query, tier
                     FROM mastercard_v2
@@ -74,19 +73,22 @@ def get_cards_due():
                 """)
                 cards = cur.fetchall()
 
+                # 2. Most recent sold_date for each card
+                cur.execute("""
+                    SELECT unique_id, MAX(sold_date) AS last_date
+                    FROM dailypricelog
+                    GROUP BY unique_id
+                """)
+                last_seen = {row["unique_id"]: row["last_date"] for row in cur.fetchall()}
+
+                # 3. Python filtering
                 for card in cards:
                     tier = card["tier"]
                     threshold = TIER_INTERVALS.get(tier)
                     if not threshold:
                         continue
-
-                    cur.execute("""
-                        SELECT MAX(sold_date) AS last_date FROM dailypricelog
-                        WHERE unique_id = %s
-                    """, (card["unique_id"],))
-                    last_entry = cur.fetchone()["last_date"]
-
-                    if not last_entry or (today - last_entry) >= threshold:
+                    last_date = last_seen.get(card["unique_id"])
+                    if not last_date or (today - last_date) >= threshold:
                         due_cards.append(card)
 
     except Exception as e:
