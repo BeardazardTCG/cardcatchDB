@@ -155,7 +155,7 @@ if __name__ == "__main__":
             try:
                 print("🧮 Running post-scrape update (clean values + tier recalculation)...")
                 result = subprocess.run(
-                    [sys.executable, "post_scrape_update.py"],
+                    [sys.executable, "update_clean_and_tiers.py"],
                     check=True,
                     stdout=sys.stdout,
                     stderr=sys.stderr
