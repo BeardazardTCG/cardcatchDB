@@ -1,4 +1,5 @@
 import os
+import json
 import subprocess
 from datetime import datetime, timedelta, date
 import psycopg2
@@ -123,6 +124,15 @@ if __name__ == "__main__":
         print("🟢 Starting CardCatch Scraper Controller...")
         due_cards = get_cards_due()
 
+        # === Write cards_due.json for the dual scraper ===
+        try:
+            with open("cards_due.json", "w", encoding="utf-8") as f:
+                json.dump(due_cards, f, indent=2)
+            print(f"📄 Wrote {len(due_cards)} cards to cards_due.json")
+        except Exception as e:
+            print(f"❌ Failed to write cards_due.json: {e}")
+            log_failure("controller", f"JSON write failed: {e}")
+
         if due_cards:
             call_dual_scraper()
             call_tcg_scraper()
@@ -144,4 +154,3 @@ if __name__ == "__main__":
         with open("controller_errors.txt", "a") as f:
             f.write(f"{datetime.utcnow()} FATAL: {str(e)}\n")
         log_failure("controller", str(e))
-
