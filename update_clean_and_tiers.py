@@ -1,6 +1,7 @@
 import psycopg2
 from collections import defaultdict
 import datetime
+import json
 
 DATABASE_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 
@@ -27,7 +28,7 @@ def log_update(cur, uid, changes):
     cur.execute("""
         INSERT INTO post_scrape_log (unique_id, log_time, changes)
         VALUES (%s, %s, %s)
-    """, (uid, datetime.datetime.utcnow(), changes))
+    """, (uid, datetime.datetime.utcnow(), json.dumps(changes)))
 
 def main():
     print("🔌 Connecting to database...")
@@ -61,7 +62,6 @@ def main():
             "low": float(low) if low else None,
         }
 
-    # ✅ NEW: Pull wishlist/inventory via JOINs + hot_character from mastercard_v2
     cur.execute("""
         SELECT m.unique_id,
                CASE WHEN w.unique_id IS NOT NULL THEN TRUE ELSE FALSE END AS wishlist,
@@ -143,7 +143,6 @@ def main():
                 tier = 8 if hot else 9
         updates["tier"] = tier
 
-        # Commit changes
         if updates:
             set_clause = ', '.join([f"{key} = %s" for key in updates.keys()])
             values = list(updates.values()) + [uid]
