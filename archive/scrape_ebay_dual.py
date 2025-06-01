@@ -1,7 +1,7 @@
 # ===========================================
-# CardCatch: scrape_ebay_dual.py (PATCHED)
+# CardCatch: scrape_ebay_dual.py (JSON MODE)
 # Location: /archive/
-# Purpose: Tier-based eBay Sold + Active scraper
+# Purpose: Tier-based eBay Sold + Active scraper (uses cards_due.json)
 # ===========================================
 
 import os
@@ -37,7 +37,7 @@ MAX_ACTIVE_RESULTS = 240
 CONCURRENT_LIMIT = 5
 CARD_DELAY = 0.75
 
-print("\n🟢 scrape_ebay_dual.py started")
+print("\n🟢 scrape_ebay_dual.py started (cards_due.json mode)")
 
 # === Scrape & Log ===
 async def scrape_card(unique_id, query, tier):
@@ -120,19 +120,18 @@ async def scrape_card(unique_id, query, tier):
         print(f"✅ Done: {unique_id} | Sold: {'✔️' if sold_success else '❌'} | Active: {'✔️' if active_success else '❌'}")
         await asyncio.sleep(CARD_DELAY)
 
-# === Run ===
+# === Run from JSON file ===
 async def run_dual_scraper():
-    async with async_session() as session:
-        result = await session.execute(text("""
-            SELECT unique_id, query, tier FROM mastercard_v2
-            WHERE tier IS NOT NULL
-            ORDER BY tier ASC
-        """))
-        cards = result.fetchall()
+    try:
+        with open("cards_due.json", "r") as f:
+            cards = json.load(f)
+    except Exception as e:
+        print(f"❌ Failed to load cards_due.json: {e}")
+        return
 
-    print(f"🔁 Starting run on {len(cards)} cards")
+    print(f"🔁 Starting run on {len(cards)} cards from file")
     sem = asyncio.Semaphore(CONCURRENT_LIMIT)
-    tasks = [run_card_with_semaphore(uid, q, t, sem) for uid, q, t in cards]
+    tasks = [run_card_with_semaphore(c["unique_id"], c["query"], c["tier"], sem) for c in cards]
     await asyncio.gather(*tasks)
     print("✅ scrape_ebay_dual.py finished")
 
