@@ -1,24 +1,24 @@
 # ===========================================
-# CardCatch: # Location: /archive/
-# Purpose: Tier-based eBay Sold + Active scraper
-# Priority: Critical / high accuracy / traceable
+# CardCatch: scrape_ebay_dual.py
+# Purpose: Scrapes eBay Sold + Active listings and logs to PostgreSQL
+# Priority: High Accuracy / Fully Logged / Tier-Controlled
 # ===========================================
 
 import os
 import sys
 import json
 import asyncio
-
-print("🟢 Starting scrape_ebay_dual.py")
-
 from datetime import datetime
 from collections import defaultdict
 from dotenv import load_dotenv
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import text
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import filter_outliers, calculate_median, calculate_average
-from scraper import parse_ebay_sold_page, parse_ebay_active_page  # Confirmed naming
+from scraper import parse_ebay_sold_page, parse_ebay_active_page
+
+print("\n🟢 Starting scrape_ebay_dual.py")
 
 # === Load .env ===
 load_dotenv()
@@ -42,10 +42,8 @@ print("✅ Scraper config loaded.")
 async def scrape_card(unique_id, query, tier):
     async with async_session() as session:
         print(f"\n🃏 Scraping: {query} (UID: {unique_id}, Tier: {tier})")
-
         sold_success, active_success = False, False
 
-        # --- Sold Listings ---
         try:
             sold_results = parse_ebay_sold_page(query, max_items=MAX_SOLD_RESULTS)
             grouped_by_date = defaultdict(list)
@@ -85,7 +83,6 @@ async def scrape_card(unique_id, query, tier):
         except Exception as e:
             print(f"❌ Sold scrape error for {unique_id}: {e}")
 
-        # --- Active Listings ---
         try:
             active_results = parse_ebay_active_page(query, max_items=MAX_ACTIVE_RESULTS)
             active_prices = [item["price"] for item in active_results if "price" in item]
@@ -131,7 +128,15 @@ async def run_dual_scraper():
         """))
         cards = result.fetchall()
 
+    if not cards:
+        print("❌ No cards found in mastercard_v2 with non-null tiers.")
+        return
+
     print(f"🔁 Running dual scraper on {len(cards)} cards...")
+    print("📋 Preview of first 5:")
+    for c in cards[:5]:
+        print(f" - {c}")
+
     semaphore = asyncio.Semaphore(CONCURRENT_LIMIT)
     tasks = [run_card_with_semaphore(uid, q, t, semaphore) for uid, q, t in cards]
     await asyncio.gather(*tasks)
