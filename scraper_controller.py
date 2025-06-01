@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import subprocess
 from datetime import datetime, timedelta, date
@@ -61,7 +62,7 @@ def get_cards_due():
     due_cards = []
 
     try:
-        with psycopg2.connect(DATABASE_URL, connect_timeout=10) as conn:
+        with psycopg2.connect(DATABASE_URL, connect_timeout=15) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 with open("controller_checkpoint.txt", "a") as f:
                     f.write(f"✅ DB connection succeeded at {datetime.utcnow()}\n")
@@ -101,7 +102,13 @@ def get_cards_due():
 def call_dual_scraper():
     try:
         print("🚀 Running dual eBay scraper...")
-        subprocess.run(["python", "archive/scrape_ebay_dual.py"], check=True)
+        result = subprocess.run(
+            [sys.executable, "archive/scrape_ebay_dual.py"],
+            check=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        )
+        print(f"🔁 Scraper finished with return code {result.returncode}")
         log_scrape_event("ebay_dual", "success", -1)
     except subprocess.CalledProcessError as e:
         print("❌ eBay scraper failed:", e)
@@ -111,7 +118,13 @@ def call_dual_scraper():
 def call_tcg_scraper():
     try:
         print("🚀 Running TCG scraper...")
-        subprocess.run(["python", "tcg_price_updater.py"], check=True)
+        result = subprocess.run(
+            [sys.executable, "tcg_price_updater.py"],
+            check=True,
+            stdout=sys.stdout,
+            stderr=sys.stderr
+        )
+        print(f"🔁 TCG scraper finished with return code {result.returncode}")
         log_scrape_event("tcg", "success", -1)
     except subprocess.CalledProcessError as e:
         print("❌ TCG scraper failed:", e)
@@ -139,7 +152,13 @@ if __name__ == "__main__":
 
             try:
                 print("🧮 Running post-scrape update (clean values + tier recalculation)...")
-                subprocess.run(["python", "post_scrape_update.py"], check=True)
+                result = subprocess.run(
+                    [sys.executable, "post_scrape_update.py"],
+                    check=True,
+                    stdout=sys.stdout,
+                    stderr=sys.stderr
+                )
+                print(f"🔁 Post-scrape update finished with return code {result.returncode}")
                 log_scrape_event("post_scrape_update", "success", -1)
             except subprocess.CalledProcessError as e:
                 print("❌ Post-scrape update failed:", e)
