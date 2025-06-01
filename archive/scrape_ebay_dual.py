@@ -1,5 +1,5 @@
 # ===========================================
-# CardCatch: scrape_ebay_dual.py (FINAL CLEAN)
+# CardCatch: scrape_ebay_dual.py (PATCHED)
 # Location: /archive/
 # Purpose: Tier-based eBay Sold + Active scraper
 # ===========================================
@@ -14,12 +14,13 @@ from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import text
 
-# === Force correct DB format ===
+# === Load .env and force correct async driver ===
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("❌ DATABASE_URL not set in .env")
-DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgresql")  # Force correct driver
+if DATABASE_URL.startswith("postgresql://"):
+    DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
 # === Import CardCatch core ===
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
