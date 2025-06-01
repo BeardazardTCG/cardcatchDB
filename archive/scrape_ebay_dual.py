@@ -8,6 +8,9 @@ import os
 import sys
 import json
 import asyncio
+
+print("🟢 Starting scrape_ebay_dual.py")
+
 from datetime import datetime
 from collections import defaultdict
 from dotenv import load_dotenv
