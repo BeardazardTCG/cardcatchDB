@@ -1,7 +1,4 @@
 # scraper_controller.py
-# Purpose: Decide which cards are due for scraping based on tier and freshness,
-# and safely call the existing TCG + eBay dual scraper scripts. Logs all activity.
-
 import os
 import subprocess
 from datetime import datetime, timedelta
@@ -9,10 +6,17 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from dotenv import load_dotenv
 
+# === File-based boot log ===
+try:
+    with open("controller_boot_log.txt", "a") as f:
+        f.write(f"🟢 Started at {datetime.utcnow()}\n")
+except:
+    pass
+
 # === Load env ===
 load_dotenv()
 DATABASE_URL = os.getenv("DATABASE_URL")
-DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgres")  # Fix for psycopg2
+DATABASE_URL = DATABASE_URL.replace("postgresql+asyncpg", "postgres")
 
 # === Tier frequency rules ===
 TIER_INTERVALS = {
@@ -56,11 +60,13 @@ def get_cards_due():
     try:
         with psycopg2.connect(DATABASE_URL, connect_timeout=10) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                with open("controller_checkpoint.txt", "a") as f:
+                    f.write(f"✅ DB connection succeeded at {datetime.utcnow()}\n")
+
                 cur.execute("""
                     SELECT unique_id, query, tier
                     FROM mastercard_v2
                     WHERE tier IS NOT NULL
-                    
                 """)
                 cards = cur.fetchall()
 
@@ -82,6 +88,8 @@ def get_cards_due():
     except Exception as e:
         print(f"❌ Error during DB check: {e}")
         log_failure("controller", str(e))
+        with open("controller_errors.txt", "a") as f:
+            f.write(f"{datetime.utcnow()} DB error: {str(e)}\n")
 
     print(f"✅ {len(due_cards)} cards are due for scraping.")
     return due_cards
@@ -97,7 +105,6 @@ def call_dual_scraper():
         log_scrape_event("ebay_dual", "fail", 0, str(e))
         log_failure("ebay_dual", str(e))
 
-
 def call_tcg_scraper():
     try:
         print("🚀 Running TCG scraper...")
@@ -110,23 +117,28 @@ def call_tcg_scraper():
 
 # === Main ===
 if __name__ == "__main__":
-    print("🟢 Starting CardCatch Scraper Controller...")
-    due_cards = get_cards_due()
+    try:
+        print("🟢 Starting CardCatch Scraper Controller...")
+        due_cards = get_cards_due()
 
-    if due_cards:
-        call_dual_scraper()
-        call_tcg_scraper()
+        if due_cards:
+            call_dual_scraper()
+            call_tcg_scraper()
 
-        # ✅ Run post-scrape logic
-        try:
-            print("🧮 Running post-scrape update (clean values + tier recalculation)...")
-            subprocess.run(["python", "post_scrape_update.py"], check=True)
-            log_scrape_event("post_scrape_update", "success", -1)
-        except subprocess.CalledProcessError as e:
-            print("❌ Post-scrape update failed:", e)
-            log_scrape_event("post_scrape_update", "fail", 0, str(e))
-            log_failure("post_scrape_update", str(e))
+            try:
+                print("🧮 Running post-scrape update (clean values + tier recalculation)...")
+                subprocess.run(["python", "post_scrape_update.py"], check=True)
+                log_scrape_event("post_scrape_update", "success", -1)
+            except subprocess.CalledProcessError as e:
+                print("❌ Post-scrape update failed:", e)
+                log_scrape_event("post_scrape_update", "fail", 0, str(e))
+                log_failure("post_scrape_update", str(e))
+        else:
+            print("🛌 No cards due today.")
+            log_scrape_event("controller", "no_due_cards", 0, "No cards met scrape conditions.")
 
-    else:
-        print("🛌 No cards due today.")
-        log_scrape_event("controller", "no_due_cards", 0, "No cards met scrape conditions.")
+    except Exception as e:
+        print(f"🔥 Fatal controller crash: {e}")
+        with open("controller_errors.txt", "a") as f:
+            f.write(f"{datetime.utcnow()} FATAL: {str(e)}\n")
+        log_failure("controller", str(e))
