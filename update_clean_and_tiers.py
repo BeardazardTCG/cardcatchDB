@@ -25,10 +25,15 @@ def calculate_median(prices):
     return (sorted_prices[mid - 1] + sorted_prices[mid]) / 2 if n % 2 == 0 else sorted_prices[mid]
 
 def log_update(cur, uid, changes):
+    def serialize(obj):
+        if isinstance(obj, (datetime.date, datetime.datetime)):
+            return obj.isoformat()
+        return str(obj)
+
     cur.execute("""
         INSERT INTO post_scrape_log (unique_id, log_time, changes)
         VALUES (%s, %s, %s)
-    """, (uid, datetime.datetime.utcnow(), json.dumps(changes)))
+    """, (uid, datetime.datetime.utcnow(), json.dumps(changes, default=serialize)))
 
 def main():
     print("🔌 Connecting to database...")
