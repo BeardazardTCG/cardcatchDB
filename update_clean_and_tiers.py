@@ -49,9 +49,11 @@ def main():
         WHERE median_price IS NOT NULL
     """)
     sold_data = defaultdict(list)
+    sold_dates = defaultdict(list)
     for uid, price, sold_date in cur.fetchall():
         if sold_date >= ninety_days_ago:
             sold_data[uid.strip()].append(float(price))
+            sold_dates[uid.strip()].append(sold_date)
 
     cur.execute("SELECT unique_id, median_price FROM activedailypricelog WHERE median_price IS NOT NULL")
     active_data = defaultdict(list)
@@ -117,17 +119,14 @@ def main():
             if clean is not None:
                 updates["clean_avg_value"] = round(clean, 2)
 
-            # Patch verified sales + range
             filtered = filter_outliers(sold_prices)
             if filtered:
                 updates["verified_sales_logged"] = len(filtered)
                 updates["price_range_seen_min"] = round(min(filtered), 2)
                 updates["price_range_seen_max"] = round(max(filtered), 2)
-                updates["last_verified_sale"] = max(
-                    d for (d_id, d, _) in [
-                        (u, p, sd) for u, prices in sold_data.items() if u == uid for p, sd in zip(prices, [ninety_days_ago]*len(prices))
-                    ]
-                ) if uid in sold_data else None
+                dates = sold_dates.get(uid, [])
+                if dates:
+                    updates["sold_date"] = max(dates)
 
             flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
             wishlist = flags["wishlist"]
