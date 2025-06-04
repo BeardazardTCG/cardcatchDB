@@ -35,18 +35,20 @@ def main():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    # --- Fetch last 90 days sold data ---
+    # --- Fetch sold price logs with date ---
     print("📥 Fetching price logs...")
     ninety_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=90)
     cur.execute("""
         SELECT unique_id, median_price, sold_date 
         FROM dailypricelog 
-        WHERE median_price IS NOT NULL
-    """)
-    sold_data = defaultdict(list)
+        WHERE median_price IS NOT NULL AND sold_date >= %s
+    """, (ninety_days_ago,))
+    raw_sold = defaultdict(list)
+    sold_dates = defaultdict(list)
     for uid, price, sold_date in cur.fetchall():
-        if sold_date >= ninety_days_ago:
-            sold_data[uid.strip()].append(float(price))
+        uid = uid.strip()
+        raw_sold[uid].append(float(price))
+        sold_dates[uid].append(sold_date)
 
     cur.execute("SELECT unique_id, median_price FROM activedailypricelog WHERE median_price IS NOT NULL")
     active_data = defaultdict(list)
@@ -84,35 +86,47 @@ def main():
     for i, uid in enumerate(all_cards, 1):
         updates = {}
 
-        # --- CLEAN VALUE CALC LOGIC ---
-        sold_prices = sold_data.get(uid, [])
-        active_prices = active_data.get(uid, [])
-        tcg_prices = tcg_data.get(uid, {})
+        # --- Clean Value Logic ---
+        sold_prices = raw_sold.get(uid, [])
+        sold_price_dates = sold_dates.get(uid, [])
+        filtered_sold = filter_outliers(sold_prices)
 
         median_sold = None
-        if sold_prices:
-            filtered = filter_outliers(sold_prices)
-            if len(filtered) >= 2:
-                median_sold = calculate_median(filtered)
+        if len(filtered_sold) >= 2:
+            median_sold = calculate_median(filtered_sold)
 
         median_active = None
-        if median_sold is None and active_prices:
-            filtered = filter_outliers(active_prices)
-            if len(filtered) >= 2:
-                median_active = calculate_median(filtered)
+        filtered_active = filter_outliers(active_data.get(uid, []))
+        if median_sold is None and len(filtered_active) >= 2:
+            median_active = calculate_median(filtered_active)
 
         tcg_price = None
         if median_sold is None and median_active is None:
-            if tcg_prices.get("market") is not None:
-                tcg_price = tcg_prices["market"]
-            elif tcg_prices.get("low") is not None:
-                tcg_price = tcg_prices["low"]
+            tcg_entry = tcg_data.get(uid, {})
+            if tcg_entry.get("market") is not None:
+                tcg_price = tcg_entry["market"]
+            elif tcg_entry.get("low") is not None:
+                tcg_price = tcg_entry["low"]
 
         clean = median_sold or median_active or tcg_price
         if clean is not None:
             updates["clean_avg_value"] = round(clean, 2)
 
-        # --- TIER LOGIC ---
+        # --- Add filtered supporting fields if valid ---
+        if filtered_sold:
+            updates["verified_sales_logged"] = len(filtered_sold)
+            updates["price_range_seen_min"] = round(min(filtered_sold), 2)
+            updates["price_range_seen_max"] = round(max(filtered_sold), 2)
+
+            # Get dates of matching filtered values
+            matched_dates = [
+                date for price, date in zip(sold_prices, sold_price_dates)
+                if price in filtered_sold
+            ]
+            if matched_dates:
+                updates["last_verified_sale"] = max(matched_dates)
+
+        # --- Tier Logic ---
         flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
         wishlist = flags["wishlist"]
         inventory = flags["inventory"]
@@ -132,7 +146,7 @@ def main():
                 tier = 8 if hot else 9
         updates["tier"] = tier
 
-        # --- Apply Update ---
+        # --- Apply DB Update ---
         if updates:
             set_clause = ', '.join([f"{key} = %s" for key in updates.keys()])
             values = list(updates.values()) + [uid]
