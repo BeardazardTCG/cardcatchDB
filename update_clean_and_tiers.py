@@ -40,20 +40,18 @@ def main():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    # --- Fetch sold price logs with date ---
     print("📥 Fetching price logs...")
     ninety_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=90)
+
     cur.execute("""
         SELECT unique_id, median_price, sold_date 
         FROM dailypricelog 
-        WHERE median_price IS NOT NULL AND sold_date >= %s
-    """, (ninety_days_ago,))
-    raw_sold = defaultdict(list)
-    sold_dates = defaultdict(list)
+        WHERE median_price IS NOT NULL
+    """)
+    sold_data = defaultdict(list)
     for uid, price, sold_date in cur.fetchall():
-        uid = uid.strip()
-        raw_sold[uid].append(float(price))
-        sold_dates[uid].append(sold_date)
+        if sold_date >= ninety_days_ago:
+            sold_data[uid.strip()].append(float(price))
 
     cur.execute("SELECT unique_id, median_price FROM activedailypricelog WHERE median_price IS NOT NULL")
     active_data = defaultdict(list)
@@ -87,86 +85,85 @@ def main():
 
     cur.execute("SELECT unique_id FROM mastercard_v2")
     all_cards = [row[0].strip() for row in cur.fetchall()]
+    conn.commit()
 
     for i, uid in enumerate(all_cards, 1):
-        updates = {}
+        try:
+            updates = {}
+            sold_prices = sold_data.get(uid, [])
+            active_prices = active_data.get(uid, [])
+            tcg_prices = tcg_data.get(uid, {})
 
-        # --- Clean Value Logic ---
-        sold_prices = raw_sold.get(uid, [])
-        sold_price_dates = sold_dates.get(uid, [])
-        filtered_sold = filter_outliers(sold_prices)
+            median_sold = None
+            if sold_prices:
+                filtered = filter_outliers(sold_prices)
+                if len(filtered) >= 2:
+                    median_sold = calculate_median(filtered)
 
-        median_sold = None
-        if len(filtered_sold) >= 2:
-            median_sold = calculate_median(filtered_sold)
+            median_active = None
+            if median_sold is None and active_prices:
+                filtered = filter_outliers(active_prices)
+                if len(filtered) >= 2:
+                    median_active = calculate_median(filtered)
 
-        median_active = None
-        filtered_active = filter_outliers(active_data.get(uid, []))
-        if median_sold is None and len(filtered_active) >= 2:
-            median_active = calculate_median(filtered_active)
+            tcg_price = None
+            if median_sold is None and median_active is None:
+                if tcg_prices.get("market") is not None:
+                    tcg_price = tcg_prices["market"]
+                elif tcg_prices.get("low") is not None:
+                    tcg_price = tcg_prices["low"]
 
-        tcg_price = None
-        if median_sold is None and median_active is None:
-            tcg_entry = tcg_data.get(uid, {})
-            if tcg_entry.get("market") is not None:
-                tcg_price = tcg_entry["market"]
-            elif tcg_entry.get("low") is not None:
-                tcg_price = tcg_entry["low"]
+            clean = median_sold or median_active or tcg_price
+            if clean is not None:
+                updates["clean_avg_value"] = round(clean, 2)
 
-        clean = median_sold or median_active or tcg_price
-        if clean is not None:
-            updates["clean_avg_value"] = round(clean, 2)
+            # Patch verified sales + range
+            filtered = filter_outliers(sold_prices)
+            if filtered:
+                updates["verified_sales_logged"] = len(filtered)
+                updates["price_range_seen_min"] = round(min(filtered), 2)
+                updates["price_range_seen_max"] = round(max(filtered), 2)
+                updates["last_verified_sale"] = max(
+                    d for (d_id, d, _) in [
+                        (u, p, sd) for u, prices in sold_data.items() if u == uid for p, sd in zip(prices, [ninety_days_ago]*len(prices))
+                    ]
+                ) if uid in sold_data else None
 
-        # --- Add filtered supporting fields if valid ---
-        if filtered_sold:
-            updates["verified_sales_logged"] = len(filtered_sold)
-            updates["price_range_seen_min"] = round(min(filtered_sold), 2)
-            updates["price_range_seen_max"] = round(max(filtered_sold), 2)
+            flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
+            wishlist = flags["wishlist"]
+            inventory = flags["inventory"]
+            hot = flags["hot_character"]
 
-            # Get dates of matching filtered values
-            matched_dates = [
-                date for price, date in zip(sold_prices, sold_price_dates)
-                if price in filtered_sold
-            ]
-            if matched_dates:
-                updates["last_verified_sale"] = max(matched_dates)
+            tier = None
+            if wishlist or inventory:
+                tier = 1
+            elif clean is not None:
+                if 7 <= clean <= 11:
+                    tier = 2 if hot else 3
+                elif clean > 11:
+                    tier = 4 if hot else 5
+                elif 3 <= clean < 7:
+                    tier = 6 if hot else 7
+                elif clean < 3:
+                    tier = 8 if hot else 9
+            updates["tier"] = tier
 
-        # --- Tier Logic ---
-        flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
-        wishlist = flags["wishlist"]
-        inventory = flags["inventory"]
-        hot = flags["hot_character"]
+            if updates:
+                set_clause = ', '.join([f"{key} = %s" for key in updates.keys()])
+                values = list(updates.values()) + [uid]
+                cur.execute(f"""
+                    UPDATE mastercard_v2
+                    SET {set_clause}
+                    WHERE unique_id = %s
+                """, values)
+                log_update(cur, uid, updates)
+                conn.commit()
+                if i % 500 == 0:
+                    print(f"🔁 Committed batch: {i - 499}–{i}")
+        except Exception as e:
+            print(f"❌ Error updating {uid}: {e}")
+            conn.rollback()
 
-        tier = None
-        if wishlist or inventory:
-            tier = 1
-        elif clean is not None:
-            if 7 <= clean <= 11:
-                tier = 2 if hot else 3
-            elif clean > 11:
-                tier = 4 if hot else 5
-            elif 3 <= clean < 7:
-                tier = 6 if hot else 7
-            elif clean < 3:
-                tier = 8 if hot else 9
-        updates["tier"] = tier
-
-        # --- Apply DB Update ---
-        if updates:
-            set_clause = ', '.join([f"{key} = %s" for key in updates.keys()])
-            values = list(updates.values()) + [uid]
-            cur.execute(f"""
-                UPDATE mastercard_v2
-                SET {set_clause}
-                WHERE unique_id = %s
-            """, values)
-            log_update(cur, uid, updates)
-
-        if i % 500 == 0:
-            conn.commit()
-            print(f"🔁 Committed batch: {i - 499}–{i}")
-
-    conn.commit()
     print("✅ All updates complete.")
     cur.close()
     conn.close()
