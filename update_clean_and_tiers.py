@@ -36,11 +36,11 @@ def log_update(cur, uid, changes):
     """, (uid, datetime.datetime.utcnow(), json.dumps(changes, default=serialize)))
 
 def main():
-    print("\ud83d\udd0c Connecting to database...")
+    print("Connecting to database...")
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    print("\ud83d\udce5 Fetching price logs...")
+    print("Fetching price logs...")
     ninety_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=90)
 
     cur.execute("""
@@ -49,11 +49,9 @@ def main():
         WHERE median_price IS NOT NULL
     """)
     sold_data = defaultdict(list)
-    sold_dates = defaultdict(list)
     for uid, price, sold_date in cur.fetchall():
         if sold_date >= ninety_days_ago:
             sold_data[uid.strip()].append(float(price))
-            sold_dates[uid.strip()].append(sold_date)
 
     cur.execute("SELECT unique_id, median_price FROM activedailypricelog WHERE median_price IS NOT NULL")
     active_data = defaultdict(list)
@@ -124,7 +122,6 @@ def main():
                 updates["verified_sales_logged"] = len(filtered)
                 updates["price_range_seen_min"] = round(min(filtered), 2)
                 updates["price_range_seen_max"] = round(max(filtered), 2)
-                # No update to sold_date field — it does not exist in the table
 
             flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
             wishlist = flags["wishlist"]
@@ -156,12 +153,12 @@ def main():
                 log_update(cur, uid, updates)
                 conn.commit()
                 if i % 500 == 0:
-                    print(f"\ud83d\udd01 Committed batch: {i - 499}\u2013{i}")
+                    print(f"Committed batch: {i - 499}–{i}")
         except Exception as e:
-            print(f"\u274c Error updating {uid}: {e}")
+            print(f"Error updating {uid}: {e}")
             conn.rollback()
 
-    print("\u2705 All updates complete.")
+    print("All updates complete.")
     cur.close()
     conn.close()
 
