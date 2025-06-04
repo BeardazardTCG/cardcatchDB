@@ -36,11 +36,11 @@ def log_update(cur, uid, changes):
     """, (uid, datetime.datetime.utcnow(), json.dumps(changes, default=serialize)))
 
 def main():
-    print("🔌 Connecting to database...")
+    print("\ud83d\udd0c Connecting to database...")
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    print("📥 Fetching price logs...")
+    print("\ud83d\udce5 Fetching price logs...")
     ninety_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=90)
 
     cur.execute("""
@@ -124,9 +124,7 @@ def main():
                 updates["verified_sales_logged"] = len(filtered)
                 updates["price_range_seen_min"] = round(min(filtered), 2)
                 updates["price_range_seen_max"] = round(max(filtered), 2)
-                dates = sold_dates.get(uid, [])
-                if dates:
-                    updates["sold_date"] = max(dates)
+                # No update to sold_date field — it does not exist in the table
 
             flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
             wishlist = flags["wishlist"]
@@ -158,12 +156,12 @@ def main():
                 log_update(cur, uid, updates)
                 conn.commit()
                 if i % 500 == 0:
-                    print(f"🔁 Committed batch: {i - 499}–{i}")
+                    print(f"\ud83d\udd01 Committed batch: {i - 499}\u2013{i}")
         except Exception as e:
-            print(f"❌ Error updating {uid}: {e}")
+            print(f"\u274c Error updating {uid}: {e}")
             conn.rollback()
 
-    print("✅ All updates complete.")
+    print("\u2705 All updates complete.")
     cur.close()
     conn.close()
 
