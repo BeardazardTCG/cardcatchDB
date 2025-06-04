@@ -35,10 +35,9 @@ def main():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor()
 
-    # ------------------- FETCH RAW DATA -------------------
+    # --- Fetch last 90 days sold data ---
     print("📥 Fetching price logs...")
-
-    seven_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=7)
+    ninety_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=90)
     cur.execute("""
         SELECT unique_id, median_price, sold_date 
         FROM dailypricelog 
@@ -46,7 +45,7 @@ def main():
     """)
     sold_data = defaultdict(list)
     for uid, price, sold_date in cur.fetchall():
-        if sold_date >= seven_days_ago:
+        if sold_date >= ninety_days_ago:
             sold_data[uid.strip()].append(float(price))
 
     cur.execute("SELECT unique_id, median_price FROM activedailypricelog WHERE median_price IS NOT NULL")
@@ -82,48 +81,38 @@ def main():
     cur.execute("SELECT unique_id FROM mastercard_v2")
     all_cards = [row[0].strip() for row in cur.fetchall()]
 
-    # ------------------- PROCESS + UPDATE -------------------
     for i, uid in enumerate(all_cards, 1):
         updates = {}
 
-        # Sold median
-        if uid in sold_data:
-            filtered = filter_outliers(sold_data[uid])
-            if len(filtered) > 0:
+        # --- CLEAN VALUE CALC LOGIC ---
+        sold_prices = sold_data.get(uid, [])
+        active_prices = active_data.get(uid, [])
+        tcg_prices = tcg_data.get(uid, {})
+
+        median_sold = None
+        if sold_prices:
+            filtered = filter_outliers(sold_prices)
+            if len(filtered) >= 2:
                 median_sold = calculate_median(filtered)
-                updates['sold_ebay_median'] = round(median_sold, 2)
 
-        # Active median
-        if uid in active_data:
-            filtered = filter_outliers(active_data[uid])
-            median_active = calculate_median(filtered)
-            if median_active:
-                updates['active_ebay_median'] = round(median_active, 2)
+        median_active = None
+        if median_sold is None and active_prices:
+            filtered = filter_outliers(active_prices)
+            if len(filtered) >= 2:
+                median_active = calculate_median(filtered)
 
-        # TCG
-        if uid in tcg_data:
-            if tcg_data[uid]['market'] is not None:
-                updates['tcg_market_price'] = round(tcg_data[uid]['market'], 2)
-            if tcg_data[uid]['low'] is not None:
-                updates['tcg_low_price'] = round(tcg_data[uid]['low'], 2)
+        tcg_price = None
+        if median_sold is None and median_active is None:
+            if tcg_prices.get("market") is not None:
+                tcg_price = tcg_prices["market"]
+            elif tcg_prices.get("low") is not None:
+                tcg_price = tcg_prices["low"]
 
-        # Clean Avg
-        sold = updates.get('sold_ebay_median')
-        active = updates.get('active_ebay_median')
-        tcg = updates.get('tcg_market_price')
-
-        clean = None
-        if sold is not None:
-            clean = sold
-        elif active is not None:
-            clean = active
-        elif tcg is not None:
-            clean = tcg
-
+        clean = median_sold or median_active or tcg_price
         if clean is not None:
-            updates['clean_avg_value'] = round(clean, 2)
+            updates["clean_avg_value"] = round(clean, 2)
 
-        # Tier Logic (Final 9-tier system)
+        # --- TIER LOGIC ---
         flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
         wishlist = flags["wishlist"]
         inventory = flags["inventory"]
@@ -143,6 +132,7 @@ def main():
                 tier = 8 if hot else 9
         updates["tier"] = tier
 
+        # --- Apply Update ---
         if updates:
             set_clause = ', '.join([f"{key} = %s" for key in updates.keys()])
             values = list(updates.values()) + [uid]
@@ -151,7 +141,6 @@ def main():
                 SET {set_clause}
                 WHERE unique_id = %s
             """, values)
-
             log_update(cur, uid, updates)
 
         if i % 500 == 0:
