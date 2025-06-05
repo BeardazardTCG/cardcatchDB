@@ -134,6 +134,14 @@ async def scrape_card(unique_id, query, tier):
 
         await session.commit()
         print(f"✅ Done: {unique_id} | Sold: {'✔️' if sold_success else '❌'} | Active: {'✔️' if active_success else '❌'}")
+
+        # === Log progress every 25 cards ===
+        if not hasattr(scrape_card, "count"):
+            scrape_card.count = 0
+        scrape_card.count += 1
+        if scrape_card.count % 25 == 0:
+            print(f"🔁 Progress: {scrape_card.count} cards scraped so far...", flush=True)
+
         await asyncio.sleep(CARD_DELAY)
 
 # === Run from JSON file ===
