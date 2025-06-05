@@ -1,179 +1,226 @@
-from bs4 import BeautifulSoup
 import requests
+from bs4 import BeautifulSoup
 import re
 from datetime import datetime
+import psycopg2
+from statistics import median
 
+# === DB CONFIG ===
+DB_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
+
+# === CONSTANTS ===
+HEADERS = {
+    "User-Agent": "Mozilla/5.0",
+    "Accept-Language": "en-GB,en;q=0.9"
+}
+
+EXCLUDED_TERMS = [
+    "psa", "graded", "bgs", "cgc", "beckett", "sgc",
+    "lot", "joblot", "bundle", "proxy", "custom", "fake",
+    "damaged", "played", "heavy", "poor", "excellent",
+    "japanese", "german", "french", "italian", "spanish", "korean", "chinese"
+]
+
+# === HELPERS ===
 def extract_sold_date(item):
-    spans = item.find_all("span")
-    for span in spans:
-        text = span.get_text(strip=True)
-        if text.lower().startswith("sold"):
-            match = re.search(r"Sold\s+(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
+    for span in item.find_all("span"):
+        text = span.get_text(strip=True).lower()
+        if text.startswith("sold"):
+            match = re.search(r"(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})", text)
             if match:
                 try:
-                    # Parse date in format "DD MMM YYYY"
-                    return datetime.strptime(match.group(0)[5:], "%d %b %Y").date()
+                    return datetime.strptime(match.group(0), "%d %b %Y").date()
                 except ValueError:
                     return None
     return None
 
-def parse_character_set_and_number(query):
+def clean_price(text):
+    try:
+        return float(re.sub(r"[^\d.]", "", text))
+    except:
+        return None
+
+def parse_card_meta(query):
     parts = query.split()
-    character = parts[0] if parts else ""
-    set_name = ""
+    character = parts[0].lower() if parts else ""
+    number_match = re.search(r"\d+/\d+", query)
+    card_number = number_match.group(0) if number_match else ""
+    digits_only = re.sub(r"[^\d]", "", card_number)
+    return character, digits_only
 
-    known_rarities = ["ex", "v", "vmax", "vstar", "gx", "illustration", "rare", "promo", "ultra"]
-    filtered = [p for p in parts if not re.match(r"\d+/\d+", p) and p.lower() not in known_rarities]
-    if len(filtered) > 1:
-        set_name = " ".join(filtered[1:])
+def is_valid_title(title, character, digits):
+    lower = title.lower()
+    if any(term in lower for term in EXCLUDED_TERMS):
+        return False
+    if character and character not in lower:
+        return False
+    if digits and digits not in re.sub(r"[^\d]", "", lower):
+        return False
+    if re.search(r"\b(x|\u00d7)?\d+\b", lower):  # e.g. "x3", "×2"
+        return False
+    return True
 
-    match = re.search(r"\d+/\d+", query)
-    card_number = match.group(0) if match else ""
+def apply_iqr_filter(prices):
+    if len(prices) < 4:
+        return prices  # too small to filter
+    sorted_prices = sorted(prices)
+    q1 = sorted_prices[len(prices) // 4]
+    q3 = sorted_prices[(len(prices) * 3) // 4]
+    iqr = q3 - q1
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+    return [p for p in prices if lower <= p <= upper]
 
-    return character.lower(), set_name, card_number
+def insert_raw_sale(conn, table, data):
+    with conn.cursor() as cur:
+        cur.execute(f"""
+            INSERT INTO {table} (character, card_number, title, price, date, url)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (data['character'], data['card_number'], data['title'], data['price'], data['date'], data['url']))
 
-def parse_ebay_sold_page(query, max_items=100):
-    character, set_name, card_number = parse_character_set_and_number(query)
-    card_number_digits = re.sub(r"[^\d]", "", card_number)
+def insert_summary(conn, table, summary):
+    with conn.cursor() as cur:
+        cur.execute(f"""
+            INSERT INTO {table} (character, card_number, median_price, low_price, high_price, sale_count, date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """, (
+            summary['character'], summary['card_number'],
+            summary['median'], summary['low'], summary['high'],
+            summary['count'], datetime.today().date()
+        ))
+
+# === SOLD SCRAPER ===
+def parse_ebay_sold_page(query):
+    character, digits = parse_card_meta(query)
+    results = []
+    prices = []
 
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
-        "LH_Sold": "1",
+        "_sacat": "183454",
         "LH_Complete": "1",
+        "LH_Sold": "1",
+        "LH_ItemCondition": "4000",
         "LH_PrefLoc": "1",
-        "_dmd": "2",
-        "_ipg": str(max_items),
-        "_sop": "13",
-        "_dcat": "183454",
-        "Graded": "No"
-    }
-
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-GB,en;q=0.9"
+        "_ipg": "200",
+        "_ex_kw": "+".join(EXCLUDED_TERMS)
     }
 
     try:
-        resp = requests.get(url, params=params, headers=headers, timeout=10)
-        print("✅ Fetched from:", resp.url)
+        resp = requests.get(url, headers=HEADERS, params=params, timeout=10)
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
-        print("Scraper error:", e)
-        return []
+        print("Sold scrape error:", e)
+        return
 
+    with psycopg2.connect(DB_URL) as conn:
+        for item in soup.select(".s-item"):
+            title_tag = item.select_one(".s-item__title")
+            price_tag = item.select_one(".s-item__price")
+            link_tag = item.select_one(".s-item__link")
+            sold_date = extract_sold_date(item)
+
+            if not all([title_tag, price_tag, link_tag, sold_date]):
+                continue
+
+            title = title_tag.text.strip()
+            url = link_tag['href']
+            price = clean_price(price_tag.text)
+
+            if not price or price < 1:
+                continue
+            if not is_valid_title(title, character, digits):
+                continue
+
+            data = {
+                "character": character,
+                "card_number": digits,
+                "title": title,
+                "price": price,
+                "date": sold_date,
+                "url": url
+            }
+            insert_raw_sale(conn, "raw_ebay_sold", data)
+            prices.append(price)
+
+        filtered = apply_iqr_filter(prices)
+        if filtered:
+            med = round(median(filtered), 2)
+            low = round(min(filtered), 2)
+            high = round(max(filtered), 2)
+            insert_summary(conn, "dailypricelog", {
+                "character": character,
+                "card_number": digits,
+                "median": med,
+                "low": low,
+                "high": high,
+                "count": len(filtered)
+            })
+
+# === ACTIVE SCRAPER ===
+def parse_ebay_active_page(query):
+    character, digits = parse_card_meta(query)
     results = []
-    count = 0
-
-    for item in soup.select(".s-item"):
-        if count >= max_items:
-            break
-
-        title_tag = item.select_one(".s-item__title")
-        price_tag = item.select_one(".s-item__price")
-        sold_date = extract_sold_date(item)
-        link_tag = item.select_one(".s-item__link")
-
-        if not title_tag or not price_tag or not sold_date or not link_tag:
-            continue
-
-        title = title_tag.text.strip()
-        title_lower = title.lower()
-        title_digits = re.sub(r"[^\d]", "", title)
-        url = link_tag['href']
-
-        # Card number and character matching for filtering
-        if card_number_digits and card_number_digits not in title_digits:
-            continue
-        if character and character not in title_lower:
-            continue
-
-        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
-        try:
-            price_float = float(price_clean)
-        except ValueError:
-            continue
-
-        results.append({
-            "character": character.title(),
-            "set": set_name,
-            "title": title,
-            "price": price_float,
-            "sold_date": str(sold_date),
-            "url": url
-        })
-        count += 1
-
-    return results
-
-def parse_ebay_active_page(query, max_items=30):
-    character, set_name, card_number = parse_character_set_and_number(query)
-    card_number_digits = re.sub(r"[^\d]", "", card_number)
+    prices = []
 
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
-        "LH_BIN": "1",           # Buy It Now only
-        "LH_PrefLoc": "1",       # UK only
-        "_ipg": str(max_items),
-        "_sop": "12",            # Best Match sort
-        "_dcat": "183454",
-        "Graded": "No"
-    }
-
-    headers = {
-        "User-Agent": "Mozilla/5.0",
-        "Accept-Language": "en-GB,en;q=0.9"
+        "_sacat": "183454",
+        "LH_BIN": "1",
+        "LH_ItemCondition": "4000",
+        "LH_PrefLoc": "1",
+        "_ipg": "200",
+        "_ex_kw": "+".join(EXCLUDED_TERMS)
     }
 
     try:
-        resp = requests.get(url, params=params, headers=headers, timeout=10)
+        resp = requests.get(url, headers=HEADERS, params=params, timeout=10)
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Active scrape error:", e)
-        return []
+        return
 
-    results = []
-    count = 0
+    with psycopg2.connect(DB_URL) as conn:
+        for item in soup.select(".s-item"):
+            title_tag = item.select_one(".s-item__title")
+            price_tag = item.select_one(".s-item__price")
+            link_tag = item.select_one(".s-item__link")
 
-    for item in soup.select(".s-item"):
-        if count >= max_items:
-            break
+            if not all([title_tag, price_tag, link_tag]):
+                continue
 
-        title_tag = item.select_one(".s-item__title")
-        price_tag = item.select_one(".s-item__price")
-        link_tag = item.select_one(".s-item__link")
+            title = title_tag.text.strip()
+            url = link_tag['href']
+            price = clean_price(price_tag.text)
 
-        if not title_tag or not price_tag or not link_tag:
-            continue
+            if not price or price < 1:
+                continue
+            if not is_valid_title(title, character, digits):
+                continue
 
-        title = title_tag.text.strip()
-        title_lower = title.lower()
-        title_digits = re.sub(r"[^\d]", "", title)
-        url = link_tag['href']
+            data = {
+                "character": character,
+                "card_number": digits,
+                "title": title,
+                "price": price,
+                "date": datetime.today().date(),
+                "url": url
+            }
+            insert_raw_sale(conn, "raw_ebay_active", data)
+            prices.append(price)
 
-        # Exclude common junk terms for active listings
-        if any(term in title_lower for term in ["proxy", "lot", "damaged", "jumbo", "binder", "custom"]):
-            continue
-        if character and character not in title_lower:
-            continue
-        if card_number_digits and card_number_digits not in title_digits:
-            continue
-
-        price_clean = re.sub(r"[^\d.]", "", price_tag.text)
-        try:
-            price_float = float(price_clean)
-        except ValueError:
-            continue
-
-        results.append({
-            "character": character.title(),
-            "set": set_name,
-            "title": title,
-            "price": price_float,
-            "url": url,
-            "listing_date": str(datetime.today().date())
-        })
-        count += 1
-
-    return results
+        filtered = apply_iqr_filter(prices)
+        if filtered:
+            med = round(median(filtered), 2)
+            low = round(min(filtered), 2)
+            high = round(max(filtered), 2)
+            insert_summary(conn, "activedailypricelog", {
+                "character": character,
+                "card_number": digits,
+                "median": med,
+                "low": low,
+                "high": high,
+                "count": len(filtered)
+            })
