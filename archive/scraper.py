@@ -81,12 +81,12 @@ def insert_raw_sale(conn, table, data):
 def insert_summary(conn, table, summary):
     with conn.cursor() as cur:
         cur.execute(f"""
-            INSERT INTO {table} (character, card_number, median_price, low_price, high_price, sale_count, date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO {table} (character, card_number, median_price, low_price, high_price, sale_count, sold_date, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
         """, (
             summary['character'], summary['card_number'],
             summary['median'], summary['low'], summary['high'],
-            summary['count'], datetime.today().date()
+            summary['count'], summary['sold_date']
         ))
 
 # === SOLD SCRAPER ===
@@ -94,6 +94,7 @@ def parse_ebay_sold_page(query):
     character, digits = parse_card_meta(query)
     results = []
     prices = []
+    sold_dates = []
 
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
@@ -143,19 +144,22 @@ def parse_ebay_sold_page(query):
             }
             insert_raw_sale(conn, "raw_ebay_sold", data)
             prices.append(price)
+            sold_dates.append(sold_date)
 
         filtered = apply_iqr_filter(prices)
         if filtered:
             med = round(median(filtered), 2)
             low = round(min(filtered), 2)
             high = round(max(filtered), 2)
+            summary_date = max(sold_dates) if sold_dates else datetime.today().date()
             insert_summary(conn, "dailypricelog", {
                 "character": character,
                 "card_number": digits,
                 "median": med,
                 "low": low,
                 "high": high,
-                "count": len(filtered)
+                "count": len(filtered),
+                "sold_date": summary_date
             })
 
 # === ACTIVE SCRAPER ===
@@ -222,5 +226,6 @@ def parse_ebay_active_page(query):
                 "median": med,
                 "low": low,
                 "high": high,
-                "count": len(filtered)
+                "count": len(filtered),
+                "sold_date": datetime.today().date()
             })
