@@ -1,5 +1,5 @@
 # historical_pricelog_cleanse.py
-# Purpose: Audit and clean dailypricelog entries with unsafe price spreads or weak median trust
+# Purpose: Cross-audit dailypricelog against mastercard_v2 to flag suspicious spread/mismatch
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -8,8 +8,8 @@ import datetime
 # === Config ===
 DATABASE_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 TRUSTED_FLAGGING_ENABLED = True  # Set to False for dry run
-SPREAD_THRESHOLD = 20.0           # e.g. if price range exceeds £20
-MEDIAN_MULTIPLIER = 3.0           # e.g. median > 3x min = flag
+SPREAD_THRESHOLD = 20.0           # e.g. if range > £20
+MEDIAN_MULTIPLIER = 3.0           # e.g. median > 3x min price = flag
 HIGH_PRICE_THRESHOLD = 100.0
 LOW_SAMPLE_LIMIT = 2
 BATCH_SIZE = 1000
@@ -20,10 +20,9 @@ def main():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Check for 'trusted' column
+    # Ensure trusted column exists
     cur.execute("""
-        SELECT column_name
-        FROM information_schema.columns
+        SELECT column_name FROM information_schema.columns
         WHERE table_name='dailypricelog' AND column_name='trusted'
     """)
     if not cur.fetchone():
@@ -34,7 +33,7 @@ def main():
     print("📦 Fetching row count...")
     cur.execute("SELECT COUNT(*) FROM dailypricelog WHERE median_price IS NOT NULL")
     total_rows = cur.fetchone()["count"]
-    print(f"🔎 Scanning {total_rows} rows...")
+    print(f"🔎 Scanning {total_rows} daily price rows...")
 
     flagged = 0
     updated = 0
@@ -43,10 +42,12 @@ def main():
 
     while offset < total_rows:
         cur.execute("""
-            SELECT id, unique_id, median_price, sale_count, price_range_seen_min, price_range_seen_max
-            FROM dailypricelog
-            WHERE median_price IS NOT NULL
-            ORDER BY id ASC
+            SELECT d.id, d.unique_id, d.median_price, d.sale_count,
+                   m.price_range_seen_min, m.price_range_seen_max
+            FROM dailypricelog d
+            LEFT JOIN mastercard_v2 m ON d.unique_id = m.unique_id
+            WHERE d.median_price IS NOT NULL
+            ORDER BY d.id ASC
             LIMIT %s OFFSET %s
         """, (BATCH_SIZE, offset))
 
