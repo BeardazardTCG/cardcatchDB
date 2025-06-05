@@ -55,10 +55,22 @@ async def scrape_card(unique_id, query, tier):
                 sold_date = item.get("sold_date")
                 price = item.get("price")
                 url = item.get("url")
-                title = item.get("title")
+                title = item.get("title", "")
                 condition = item.get("condition", "Unknown")
-                if not sold_date or price is None:
+
+                # === Restore filtering logic ===
+                if not sold_date or price is None or price == 0:
                     continue
+                lowered = title.lower()
+                if any(x in lowered for x in ["lot", "bundle", "playset", "proxy", "damage", "poor", "joblot"]):
+                    continue
+                if any(x in lowered for x in ["psa", "bgs", "cgc"]):
+                    continue
+                if condition.lower() in ["damaged", "poor"]:
+                    continue
+                if price < 0.5 or price > 500:
+                    continue
+
                 dt = datetime.strptime(sold_date, "%Y-%m-%d").date()
                 grouped_by_date[dt].append(price)
                 url_tracker[dt].add(url)
