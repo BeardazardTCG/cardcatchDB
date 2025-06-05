@@ -58,7 +58,7 @@ async def scrape_card(unique_id, query, tier):
                 title = item.get("title", "")
                 condition = item.get("condition", "Unknown")
 
-                # === Restore filtering logic ===
+                # === Apply robust filters ===
                 if not sold_date or price is None or price == 0:
                     continue
                 lowered = title.lower()
@@ -95,10 +95,17 @@ async def scrape_card(unique_id, query, tier):
                 average = calculate_average(filtered)
                 sale_count = len(filtered)
                 urls = json.dumps(list(url_tracker[sold_date]))
+                trusted = True  # ✅ mark as trusted after filter applied
 
                 await session.execute(text("""
-                    INSERT INTO dailypricelog (unique_id, sold_date, median_price, average_price, sale_count, query_used, urls_used)
-                    VALUES (:uid, :dt, :median, :avg, :count, :query, :urls)
+                    INSERT INTO dailypricelog (
+                        unique_id, sold_date, median_price, average_price,
+                        sale_count, query_used, urls_used, trusted
+                    )
+                    VALUES (
+                        :uid, :dt, :median, :avg,
+                        :count, :query, :urls, :trusted
+                    )
                 """), {
                     "uid": unique_id,
                     "dt": sold_date,
@@ -106,7 +113,8 @@ async def scrape_card(unique_id, query, tier):
                     "avg": average,
                     "count": sale_count,
                     "query": query,
-                    "urls": urls
+                    "urls": urls,
+                    "trusted": trusted
                 })
             sold_success = True
 
@@ -123,11 +131,20 @@ async def scrape_card(unique_id, query, tier):
             average = calculate_average(filtered)
             count = len(filtered)
             active_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={query.replace(' ', '+')}&LH_BIN=1&LH_PrefLoc=1"
+            trusted = True  # ✅ mark as trusted after filter applied
 
             if count > 0:
                 await session.execute(text("""
-                    INSERT INTO activedailypricelog (unique_id, active_date, median_price, average_price, sale_count, query_used, card_number, url_used, lowest_price)
-                    VALUES (:uid, :dt, :median, :avg, :count, :query, :card, :url, :low)
+                    INSERT INTO activedailypricelog (
+                        unique_id, active_date, median_price, average_price,
+                        sale_count, query_used, card_number, url_used,
+                        lowest_price, trusted
+                    )
+                    VALUES (
+                        :uid, :dt, :median, :avg,
+                        :count, :query, :card, :url,
+                        :low, :trusted
+                    )
                 """), {
                     "uid": unique_id,
                     "dt": datetime.utcnow().date(),
@@ -137,7 +154,8 @@ async def scrape_card(unique_id, query, tier):
                     "query": query,
                     "card": query.split()[-1],
                     "url": active_url,
-                    "low": best
+                    "low": best,
+                    "trusted": trusted
                 })
             active_success = True
 
