@@ -1,30 +1,18 @@
 # historical_pricelog_cleanse.py
-# Purpose: Audit and clean existing dailypricelog data for extreme or low-trust entries
+# Purpose: Audit and clean dailypricelog entries with unsafe price spreads or weak median trust
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import datetime
-import json
 
 # === Config ===
 DATABASE_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
-TRUSTED_FLAGGING_ENABLED = True  # Set to False to run in dry mode
-MIN_SALES_REQUIRED = 3
-MAX_MEDIAN_MULTIPLIER = 10  # If median > 10x min price in cluster → flag
-MAX_IQR_MULTIPLIER = 3.0    # If IQR span > 3x Q1 → flag
+TRUSTED_FLAGGING_ENABLED = True  # Set to False for dry run
+SPREAD_THRESHOLD = 20.0           # e.g. if price range exceeds £20
+MEDIAN_MULTIPLIER = 3.0           # e.g. median > 3x min = flag
+HIGH_PRICE_THRESHOLD = 100.0
+LOW_SAMPLE_LIMIT = 2
 BATCH_SIZE = 1000
-
-# === Helper: Filter outliers using IQR ===
-def filter_outliers(prices):
-    if not prices or len(prices) < 2:
-        return prices
-    sorted_prices = sorted(prices)
-    q1 = sorted_prices[len(prices) // 4]
-    q3 = sorted_prices[(len(sorted_prices) * 3) // 4]
-    iqr = q3 - q1
-    lower = q1 - 1.5 * iqr
-    upper = q3 + 1.5 * iqr
-    return [p for p in prices if lower <= p <= upper]
 
 # === Main ===
 def main():
@@ -32,7 +20,7 @@ def main():
     conn = psycopg2.connect(DATABASE_URL)
     cur = conn.cursor(cursor_factory=RealDictCursor)
 
-    # Check if 'trusted' column exists
+    # Check for 'trusted' column
     cur.execute("""
         SELECT column_name
         FROM information_schema.columns
@@ -43,10 +31,10 @@ def main():
         cur.execute("ALTER TABLE dailypricelog ADD COLUMN trusted BOOLEAN DEFAULT TRUE;")
         conn.commit()
 
-    print("📦 Streaming dailypricelog in batches...")
+    print("📦 Fetching row count...")
     cur.execute("SELECT COUNT(*) FROM dailypricelog WHERE median_price IS NOT NULL")
     total_rows = cur.fetchone()["count"]
-    print(f"🔎 Total rows to check: {total_rows}")
+    print(f"🔎 Scanning {total_rows} rows...")
 
     flagged = 0
     updated = 0
@@ -55,7 +43,7 @@ def main():
 
     while offset < total_rows:
         cur.execute("""
-            SELECT id, unique_id, sold_date, median_price, average_price, sale_count, query_used, urls_used
+            SELECT id, unique_id, median_price, sale_count, price_range_seen_min, price_range_seen_max
             FROM dailypricelog
             WHERE median_price IS NOT NULL
             ORDER BY id ASC
@@ -67,44 +55,39 @@ def main():
             break
 
         for row in rows:
-            prices = []
             try:
-                prices = [float(p) for p in json.loads(row['urls_used']) if isinstance(p, (int, float, str))]
-            except:
-                continue
+                median = float(row['median_price'])
+                count = row['sale_count'] or 0
+                min_price = float(row['price_range_seen_min']) if row['price_range_seen_min'] else None
+                max_price = float(row['price_range_seen_max']) if row['price_range_seen_max'] else None
 
-            median = float(row['median_price'])
-            count = row['sale_count'] or len(prices)
+                reason = None
 
-            if count < MIN_SALES_REQUIRED:
-                reason = f"Low sample ({count})"
-                flagged += 1
-            else:
-                clean = filter_outliers(prices)
-                if not clean or len(clean) < 2:
-                    reason = "All filtered"
+                if count < LOW_SAMPLE_LIMIT:
+                    reason = f"Low sample count ({count})"
+
+                elif min_price is not None and max_price is not None:
+                    spread = max_price - min_price
+                    if spread > SPREAD_THRESHOLD and median > MEDIAN_MULTIPLIER * min_price:
+                        reason = f"Spread too wide ({min_price}–{max_price}) and inflated median ({median})"
+
+                if not reason and median > HIGH_PRICE_THRESHOLD and count < 3:
+                    reason = f"High median ({median}) with low count ({count})"
+
+                if reason:
+                    print(f"🚩 Flagged ID {row['id']} ({row['unique_id']}) | Reason: {reason}")
                     flagged += 1
+                    if TRUSTED_FLAGGING_ENABLED:
+                        cur.execute("""
+                            UPDATE dailypricelog
+                            SET trusted = FALSE
+                            WHERE id = %s
+                        """, (row['id'],))
+                        updated += 1
                 else:
-                    span = max(clean) - min(clean)
-                    if median > MAX_MEDIAN_MULTIPLIER * min(clean):
-                        reason = f"Median {median} too high vs min {min(clean)}"
-                        flagged += 1
-                    elif span > MAX_IQR_MULTIPLIER * min(clean):
-                        reason = f"IQR span too wide: {span}"
-                        flagged += 1
-                    else:
-                        skipped += 1
-                        continue  # No issue
-
-            print(f"🚩 Flagged ID {row['id']} ({row['unique_id']}) | Reason: {reason}")
-
-            if TRUSTED_FLAGGING_ENABLED:
-                cur.execute("""
-                    UPDATE dailypricelog
-                    SET trusted = FALSE
-                    WHERE id = %s
-                """, (row['id'],))
-                updated += 1
+                    skipped += 1
+            except Exception as e:
+                print(f"⚠️ Error processing row ID {row['id']}: {e}")
 
         conn.commit()
         offset += BATCH_SIZE
