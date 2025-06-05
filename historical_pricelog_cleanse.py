@@ -12,6 +12,7 @@ TRUSTED_FLAGGING_ENABLED = True  # Set to False to run in dry mode
 MIN_SALES_REQUIRED = 3
 MAX_MEDIAN_MULTIPLIER = 10  # If median > 10x min price in cluster → flag
 MAX_IQR_MULTIPLIER = 3.0    # If IQR span > 3x Q1 → flag
+BATCH_SIZE = 1000
 
 # === Helper: Filter outliers using IQR ===
 def filter_outliers(prices):
@@ -42,60 +43,72 @@ def main():
         cur.execute("ALTER TABLE dailypricelog ADD COLUMN trusted BOOLEAN DEFAULT TRUE;")
         conn.commit()
 
-    print("📦 Fetching all dailypricelog rows...")
-    cur.execute("""
-        SELECT id, unique_id, sold_date, median_price, average_price, sale_count, query_used, urls_used
-        FROM dailypricelog
-        WHERE median_price IS NOT NULL
-    """)
-    rows = cur.fetchall()
+    print("📦 Streaming dailypricelog in batches...")
+    cur.execute("SELECT COUNT(*) FROM dailypricelog WHERE median_price IS NOT NULL")
+    total_rows = cur.fetchone()["count"]
+    print(f"🔎 Total rows to check: {total_rows}")
 
     flagged = 0
     updated = 0
     skipped = 0
+    offset = 0
 
-    print(f"🔎 Checking {len(rows)} records...")
-    for row in rows:
-        prices = []
-        try:
-            prices = [float(p) for p in json.loads(row['urls_used']) if isinstance(p, (int, float, str))]
-        except:
-            continue
+    while offset < total_rows:
+        cur.execute("""
+            SELECT id, unique_id, sold_date, median_price, average_price, sale_count, query_used, urls_used
+            FROM dailypricelog
+            WHERE median_price IS NOT NULL
+            ORDER BY id ASC
+            LIMIT %s OFFSET %s
+        """, (BATCH_SIZE, offset))
 
-        median = float(row['median_price'])
-        count = row['sale_count'] or len(prices)
+        rows = cur.fetchall()
+        if not rows:
+            break
 
-        if count < MIN_SALES_REQUIRED:
-            reason = f"Low sample ({count})"
-            flagged += 1
-        else:
-            clean = filter_outliers(prices)
-            if not clean or len(clean) < 2:
-                reason = "All filtered"
+        for row in rows:
+            prices = []
+            try:
+                prices = [float(p) for p in json.loads(row['urls_used']) if isinstance(p, (int, float, str))]
+            except:
+                continue
+
+            median = float(row['median_price'])
+            count = row['sale_count'] or len(prices)
+
+            if count < MIN_SALES_REQUIRED:
+                reason = f"Low sample ({count})"
                 flagged += 1
             else:
-                span = max(clean) - min(clean)
-                if median > MAX_MEDIAN_MULTIPLIER * min(clean):
-                    reason = f"Median {median} too high vs min {min(clean)}"
-                    flagged += 1
-                elif span > MAX_IQR_MULTIPLIER * min(clean):
-                    reason = f"IQR span too wide: {span}"
+                clean = filter_outliers(prices)
+                if not clean or len(clean) < 2:
+                    reason = "All filtered"
                     flagged += 1
                 else:
-                    skipped += 1
-                    continue  # No issue
+                    span = max(clean) - min(clean)
+                    if median > MAX_MEDIAN_MULTIPLIER * min(clean):
+                        reason = f"Median {median} too high vs min {min(clean)}"
+                        flagged += 1
+                    elif span > MAX_IQR_MULTIPLIER * min(clean):
+                        reason = f"IQR span too wide: {span}"
+                        flagged += 1
+                    else:
+                        skipped += 1
+                        continue  # No issue
 
-        print(f"🚩 Flagged ID {row['id']} ({row['unique_id']}) | Reason: {reason}")
+            print(f"🚩 Flagged ID {row['id']} ({row['unique_id']}) | Reason: {reason}")
 
-        if TRUSTED_FLAGGING_ENABLED:
-            cur.execute("""
-                UPDATE dailypricelog
-                SET trusted = FALSE
-                WHERE id = %s
-            """, (row['id'],))
-            updated += 1
+            if TRUSTED_FLAGGING_ENABLED:
+                cur.execute("""
+                    UPDATE dailypricelog
+                    SET trusted = FALSE
+                    WHERE id = %s
+                """, (row['id'],))
+                updated += 1
 
-    conn.commit()
+        conn.commit()
+        offset += BATCH_SIZE
+
     cur.close()
     conn.close()
     print(f"\n✅ Done. Flagged: {flagged}, Updated: {updated}, Skipped: {skipped}")
