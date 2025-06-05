@@ -55,8 +55,26 @@ async def scrape_card(unique_id, query, tier):
                 sold_date = item.get("sold_date")
                 price = item.get("price")
                 url = item.get("url")
+                title = item.get("title")
+                condition = item.get("condition", "Unknown")
+
                 if not sold_date or price is None:
                     continue
+
+                # Log raw entry
+                await session.execute(text("""
+                    INSERT INTO raw_ebay_sold (unique_id, query, title, price, quantity, date, url, condition)
+                    VALUES (:uid, :query, :title, :price, 1, :date, :url, :cond)
+                """), {
+                    "uid": unique_id,
+                    "query": query,
+                    "title": title,
+                    "price": price,
+                    "date": sold_date,
+                    "url": url,
+                    "cond": condition
+                })
+
                 dt = datetime.strptime(sold_date, "%Y-%m-%d").date()
                 grouped_by_date[dt].append(price)
                 url_tracker[dt].add(url)
@@ -88,7 +106,31 @@ async def scrape_card(unique_id, query, tier):
         # Active
         try:
             active_results = parse_ebay_active_page(query, max_items=MAX_ACTIVE_RESULTS)
-            prices = [item["price"] for item in active_results if "price" in item]
+            prices = []
+
+            for item in active_results:
+                price = item.get("price")
+                url = item.get("url")
+                title = item.get("title")
+
+                if price is None or not url:
+                    continue
+
+                # Log raw entry
+                await session.execute(text("""
+                    INSERT INTO raw_ebay_active (unique_id, query, title, price, quantity, date, url)
+                    VALUES (:uid, :query, :title, :price, 1, :dt, :url)
+                """), {
+                    "uid": unique_id,
+                    "query": query,
+                    "title": title,
+                    "price": price,
+                    "dt": datetime.utcnow().date(),
+                    "url": url
+                })
+
+                prices.append(price)
+
             filtered = filter_outliers(prices)
             best = min(filtered) if filtered else None
             median = calculate_median(filtered)
