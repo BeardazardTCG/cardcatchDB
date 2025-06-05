@@ -45,10 +45,11 @@ def main():
         print("Fetching price logs...")
         ninety_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=90)
 
+        # Only use trusted sold data
         cur.execute("""
             SELECT unique_id, median_price, sold_date 
             FROM dailypricelog 
-            WHERE median_price IS NOT NULL
+            WHERE median_price IS NOT NULL AND trusted = TRUE
         """)
         sold_data = defaultdict(list)
         for uid, price, sold_date in cur.fetchall():
@@ -172,3 +173,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
