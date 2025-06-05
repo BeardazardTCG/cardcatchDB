@@ -63,7 +63,7 @@ def get_cards_due():
     try:
         with psycopg2.connect(DATABASE_URL, connect_timeout=15) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
-                print("✅ DB connected. Pulling cards and sold_date snapshots...")
+                print("✅ DB connected. Pulling cards and scrape timestamps...")
 
                 # 1. All tiered cards
                 cur.execute("""
@@ -73,22 +73,34 @@ def get_cards_due():
                 """)
                 cards = cur.fetchall()
 
-                # 2. Most recent sold_date for each card
+                # 2. Most recent sold scrape timestamp for each card
                 cur.execute("""
-                    SELECT unique_id, MAX(sold_date) AS last_date
+                    SELECT unique_id, MAX(created_at) AS last_scrape
                     FROM dailypricelog
                     GROUP BY unique_id
                 """)
-                last_seen = {row["unique_id"]: row["last_date"] for row in cur.fetchall()}
+                sold_seen = {row["unique_id"]: row["last_scrape"] for row in cur.fetchall()}
 
-                # 3. Python filtering
+                # 3. Most recent active scrape timestamp for each card
+                cur.execute("""
+                    SELECT unique_id, MAX(created_at) AS last_scrape
+                    FROM activedailypricelog
+                    GROUP BY unique_id
+                """)
+                active_seen = {row["unique_id"]: row["last_scrape"] for row in cur.fetchall()}
+
+                # 4. Python filtering
                 for card in cards:
                     tier = card["tier"]
                     threshold = TIER_INTERVALS.get(tier)
                     if not threshold:
                         continue
-                    last_date = last_seen.get(card["unique_id"])
-                    if not last_date or (today - last_date) >= threshold:
+                    uid = card["unique_id"]
+                    latest_scrape = max(
+                        sold_seen.get(uid) or date(2000, 1, 1),
+                        active_seen.get(uid) or date(2000, 1, 1)
+                    )
+                    if (today - latest_scrape) >= threshold:
                         due_cards.append(card)
 
     except Exception as e:
