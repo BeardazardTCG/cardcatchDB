@@ -2,11 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from datetime import datetime
-import psycopg2
 from statistics import median
-
-# === DB CONFIG ===
-DB_URL = "postgresql://postgres:ckQFRJkrJluWsJnHsDhlhvbtSridadDF@metro.proxy.rlwy.net:52025/railway"
 
 # === CONSTANTS ===
 HEADERS = {
@@ -71,37 +67,10 @@ def apply_iqr_filter(prices):
     upper = q3 + 1.5 * iqr
     return [p for p in prices if lower <= p <= upper]
 
-def insert_raw_sale(conn, table, data):
-    with conn.cursor() as cur:
-        cur.execute(f"""
-            INSERT INTO {table} (
-                character, card_number, title, price, date, url, created_at
-            ) VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-        """, (
-            data['character'],
-            data['card_number'],
-            data['title'],
-            data['price'],
-            data['date'],
-            data['url']
-        ))
-
-def insert_summary(conn, table, summary):
-    with conn.cursor() as cur:
-        cur.execute(f"""
-            INSERT INTO {table} (character, card_number, median_price, low_price, high_price, sale_count, sold_date, created_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
-        """, (
-            summary['character'], summary['card_number'],
-            summary['median'], summary['low'], summary['high'],
-            summary['count'], summary['sold_date']
-        ))
-
 # === SOLD SCRAPER ===
 def parse_ebay_sold_page(query, max_items=120):
     character, digits = parse_card_meta(query)
-    prices = []
-    sold_dates = []
+    results = []
 
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
@@ -122,59 +91,40 @@ def parse_ebay_sold_page(query, max_items=120):
         print("Sold scrape error:", e)
         return []
 
-    with psycopg2.connect(DB_URL) as conn:
-        for item in soup.select(".s-item"):
-            title_tag = item.select_one(".s-item__title")
-            price_tag = item.select_one(".s-item__price")
-            link_tag = item.select_one(".s-item__link")
-            sold_date = extract_sold_date(item)
+    for item in soup.select(".s-item"):
+        title_tag = item.select_one(".s-item__title")
+        price_tag = item.select_one(".s-item__price")
+        link_tag = item.select_one(".s-item__link")
+        sold_date = extract_sold_date(item)
 
-            if not all([title_tag, price_tag, link_tag, sold_date]):
-                continue
+        if not all([title_tag, price_tag, link_tag, sold_date]):
+            continue
 
-            title = title_tag.text.strip()
-            url = link_tag['href']
-            price = clean_price(price_tag.text)
+        title = title_tag.text.strip()
+        url = link_tag['href']
+        price = clean_price(price_tag.text)
 
-            if not price or price < 1:
-                continue
-            if not is_valid_title(title, character, digits):
-                continue
+        if not price or price < 1:
+            continue
+        if not is_valid_title(title, character, digits):
+            continue
 
-            data = {
-                "character": character,
-                "card_number": digits,
-                "title": title,
-                "price": price,
-                "date": sold_date,
-                "url": url
-            }
-            insert_raw_sale(conn, "raw_ebay_sold", data)
-            prices.append(price)
-            sold_dates.append(sold_date)
+        results.append({
+            "character": character,
+            "card_number": digits,
+            "title": title,
+            "price": price,
+            "sold_date": sold_date.strftime("%Y-%m-%d"),
+            "url": url,
+            "condition": "Unknown"
+        })
 
-        filtered = apply_iqr_filter(prices)
-        if filtered:
-            med = round(median(filtered), 2)
-            low = round(min(filtered), 2)
-            high = round(max(filtered), 2)
-            summary_date = max(sold_dates) if sold_dates else datetime.today().date()
-            insert_summary(conn, "dailypricelog", {
-                "character": character,
-                "card_number": digits,
-                "median": med,
-                "low": low,
-                "high": high,
-                "count": len(filtered),
-                "sold_date": summary_date
-            })
-
-    return filtered
+    return results
 
 # === ACTIVE SCRAPER ===
 def parse_ebay_active_page(query, max_items=120):
     character, digits = parse_card_meta(query)
-    prices = []
+    results = []
 
     url = "https://www.ebay.co.uk/sch/i.html"
     params = {
@@ -194,48 +144,30 @@ def parse_ebay_active_page(query, max_items=120):
         print("Active scrape error:", e)
         return []
 
-    with psycopg2.connect(DB_URL) as conn:
-        for item in soup.select(".s-item"):
-            title_tag = item.select_one(".s-item__title")
-            price_tag = item.select_one(".s-item__price")
-            link_tag = item.select_one(".s-item__link")
+    for item in soup.select(".s-item"):
+        title_tag = item.select_one(".s-item__title")
+        price_tag = item.select_one(".s-item__price")
+        link_tag = item.select_one(".s-item__link")
 
-            if not all([title_tag, price_tag, link_tag]):
-                continue
+        if not all([title_tag, price_tag, link_tag]):
+            continue
 
-            title = title_tag.text.strip()
-            url = link_tag['href']
-            price = clean_price(price_tag.text)
+        title = title_tag.text.strip()
+        url = link_tag['href']
+        price = clean_price(price_tag.text)
 
-            if not price or price < 1:
-                continue
-            if not is_valid_title(title, character, digits):
-                continue
+        if not price or price < 1:
+            continue
+        if not is_valid_title(title, character, digits):
+            continue
 
-            data = {
-                "character": character,
-                "card_number": digits,
-                "title": title,
-                "price": price,
-                "date": datetime.today().date(),
-                "url": url
-            }
-            insert_raw_sale(conn, "raw_ebay_active", data)
-            prices.append(price)
+        results.append({
+            "character": character,
+            "card_number": digits,
+            "title": title,
+            "price": price,
+            "url": url,
+            "condition": "Unknown"
+        })
 
-        filtered = apply_iqr_filter(prices)
-        if filtered:
-            med = round(median(filtered), 2)
-            low = round(min(filtered), 2)
-            high = round(max(filtered), 2)
-            insert_summary(conn, "activedailypricelog", {
-                "character": character,
-                "card_number": digits,
-                "median": med,
-                "low": low,
-                "high": high,
-                "count": len(filtered),
-                "sold_date": datetime.today().date()
-            })
-
-    return filtered
+    return results
