@@ -10,15 +10,13 @@ from utils import (
     is_valid_condition,
     is_valid_title,
     detect_holo_type,
-    parse_card_meta  # optional, if externalized
+    parse_card_meta
 )
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept-Language": "en-GB,en;q=0.9"
 }
-
-# === Helpers ===
 
 def clean_price(text):
     try:
@@ -38,16 +36,6 @@ def extract_sold_date(item):
                     return None
     return None
 
-def parse_card_meta(query):
-    parts = query.split()
-    character = parts[0].lower() if parts else ""
-    number_match = re.search(r"\d+/\d+", query)
-    card_number = number_match.group(0) if number_match else ""
-    digits_only = re.sub(r"[^\d]", "", card_number)
-    return character, digits_only
-
-# === eBay URL builder ===
-
 def build_ebay_url(query, sold=False):
     base_url = "https://www.ebay.co.uk/sch/i.html"
     params = {
@@ -66,24 +54,28 @@ def build_ebay_url(query, sold=False):
         params["LH_BIN"] = "1"
     return f"{base_url}?{urlencode(params)}"
 
-# === Main Parsers ===
-
 def parse_ebay_sold_page(query, max_items=240):
     character, digits = parse_card_meta(query)
     results_raw = []
     results_filtered = []
     url = build_ebay_url(query, sold=True)
 
+    print(f"\n🔎 SOLD QUERY: {query}")
+    print(f"🔗 URL: {url}")
+
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
         soup = BeautifulSoup(resp.text, "html.parser")
+        items = soup.select(".s-item")
+        print(f"🔢 Found {len(items)} sold listings")
+
     except Exception as e:
-        print("Sold scrape error:", e)
+        print("❌ Sold scrape error:", e)
         return {"url": url, "raw": [], "filtered": []}
 
     ninety_days_ago = datetime.utcnow().date() - timedelta(days=90)
 
-    for item in soup.select(".s-item"):
+    for item in items:
         if len(results_raw) >= max_items:
             break
 
@@ -93,6 +85,12 @@ def parse_ebay_sold_page(query, max_items=240):
         sold_date = extract_sold_date(item)
 
         if not all([title_tag, price_tag, link_tag, sold_date]):
+            print("⚠️ Skipped - Missing:", {
+                "title": bool(title_tag),
+                "price": bool(price_tag),
+                "link": bool(link_tag),
+                "sold_date": bool(sold_date)
+            })
             continue
 
         title = title_tag.text.strip()
@@ -121,6 +119,7 @@ def parse_ebay_sold_page(query, max_items=240):
         ):
             results_filtered.append(result)
 
+    print(f"✅ Sold listings parsed: {len(results_raw)} raw | {len(results_filtered)} filtered")
     return {
         "url": url,
         "raw": results_raw,
@@ -133,14 +132,20 @@ def parse_ebay_active_page(query, max_items=240):
     results_filtered = []
     url = build_ebay_url(query, sold=False)
 
+    print(f"\n🔎 ACTIVE QUERY: {query}")
+    print(f"🔗 URL: {url}")
+
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
         soup = BeautifulSoup(resp.text, "html.parser")
+        items = soup.select(".s-item")
+        print(f"🔢 Found {len(items)} active listings")
+
     except Exception as e:
-        print("Active scrape error:", e)
+        print("❌ Active scrape error:", e)
         return {"url": url, "raw": [], "filtered": []}
 
-    for item in soup.select(".s-item"):
+    for item in items:
         if len(results_raw) >= max_items:
             break
 
@@ -149,6 +154,11 @@ def parse_ebay_active_page(query, max_items=240):
         link_tag = item.select_one(".s-item__link")
 
         if not all([title_tag, price_tag, link_tag]):
+            print("⚠️ Skipped - Missing:", {
+                "title": bool(title_tag),
+                "price": bool(price_tag),
+                "link": bool(link_tag)
+            })
             continue
 
         title = title_tag.text.strip()
@@ -175,6 +185,7 @@ def parse_ebay_active_page(query, max_items=240):
         ):
             results_filtered.append(result)
 
+    print(f"✅ Active listings parsed: {len(results_raw)} raw | {len(results_filtered)} filtered")
     return {
         "url": url,
         "raw": results_raw,
