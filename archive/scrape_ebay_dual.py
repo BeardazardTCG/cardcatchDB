@@ -48,75 +48,78 @@ async def scrape_card(unique_id, query, tier):
         # Sold
         try:
             sold_results = parse_ebay_sold_page(query, max_items=MAX_SOLD_RESULTS)
-            grouped_by_date = defaultdict(list)
-            url_tracker = defaultdict(set)
+            if not sold_results:
+                print("⚠️ No sold results returned.")
+            else:
+                grouped_by_date = defaultdict(list)
+                url_tracker = defaultdict(set)
 
-            for item in sold_results:
-                sold_date = item.get("sold_date")
-                price = item.get("price")
-                url = item.get("url")
-                title = item.get("title", "")
-                condition = item.get("condition", "Unknown")
+                for item in sold_results:
+                    sold_date = item.get("sold_date")
+                    price = item.get("price")
+                    url = item.get("url")
+                    title = item.get("title", "")
+                    condition = item.get("condition", "Unknown")
 
-                # === Apply robust filters ===
-                if not sold_date or price is None or price == 0:
-                    continue
-                lowered = title.lower()
-                if any(x in lowered for x in ["lot", "bundle", "playset", "proxy", "damage", "poor", "joblot"]):
-                    continue
-                if any(x in lowered for x in ["psa", "bgs", "cgc"]):
-                    continue
-                if condition.lower() in ["damaged", "poor"]:
-                    continue
-                if price < 0.5 or price > 500:
-                    continue
+                    if not sold_date or price is None or price == 0:
+                        continue
+                    lowered = title.lower()
+                    if any(x in lowered for x in ["lot", "bundle", "playset", "proxy", "damage", "poor", "joblot"]):
+                        continue
+                    if any(x in lowered for x in ["psa", "bgs", "cgc"]):
+                        continue
+                    if condition.lower() in ["damaged", "poor"]:
+                        continue
+                    if price < 0.5 or price > 500:
+                        continue
 
-                dt = datetime.strptime(sold_date, "%Y-%m-%d").date()
-                grouped_by_date[dt].append(price)
-                url_tracker[dt].add(url)
+                    dt = datetime.strptime(sold_date, "%Y-%m-%d").date()
+                    grouped_by_date[dt].append(price)
+                    url_tracker[dt].add(url)
 
-                # Insert raw listing
-                await session.execute(text("""
-                    INSERT INTO raw_ebay_sold (unique_id, query, title, price, quantity, date, url, condition)
-                    VALUES (:uid, :query, :title, :price, 1, :date, :url, :condition)
-                """), {
-                    "uid": unique_id,
-                    "query": query,
-                    "title": title,
-                    "price": price,
-                    "date": dt,
-                    "url": url,
-                    "condition": condition
-                })
+                    await session.execute(text("""
+                        INSERT INTO raw_ebay_sold (unique_id, query, title, price, quantity, date, url, condition)
+                        VALUES (:uid, :query, :title, :price, 1, :date, :url, :condition)
+                    """), {
+                        "uid": unique_id,
+                        "query": query,
+                        "title": title,
+                        "price": price,
+                        "date": dt,
+                        "url": url,
+                        "condition": condition
+                    })
 
-            for sold_date, prices in grouped_by_date.items():
-                filtered = filter_outliers(prices)
-                median = calculate_median(filtered)
-                average = calculate_average(filtered)
-                sale_count = len(filtered)
-                urls = json.dumps(list(url_tracker[sold_date]))
-                trusted = True  # ✅ mark as trusted after filter applied
+                for sold_date, prices in grouped_by_date.items():
+                    filtered = filter_outliers(prices)
+                    if not filtered:
+                        continue
+                    median_val = calculate_median(filtered)
+                    average = calculate_average(filtered)
+                    sale_count = len(filtered)
+                    urls = json.dumps(list(url_tracker[sold_date]))
+                    trusted = True
 
-                await session.execute(text("""
-                    INSERT INTO dailypricelog (
-                        unique_id, sold_date, median_price, average_price,
-                        sale_count, query_used, urls_used, trusted
-                    )
-                    VALUES (
-                        :uid, :dt, :median, :avg,
-                        :count, :query, :urls, :trusted
-                    )
-                """), {
-                    "uid": unique_id,
-                    "dt": sold_date,
-                    "median": median,
-                    "avg": average,
-                    "count": sale_count,
-                    "query": query,
-                    "urls": urls,
-                    "trusted": trusted
-                })
-            sold_success = True
+                    await session.execute(text("""
+                        INSERT INTO dailypricelog (
+                            unique_id, sold_date, median_price, average_price,
+                            sale_count, query_used, urls_used, trusted
+                        )
+                        VALUES (
+                            :uid, :dt, :median, :avg,
+                            :count, :query, :urls, :trusted
+                        )
+                    """), {
+                        "uid": unique_id,
+                        "dt": sold_date,
+                        "median": median_val,
+                        "avg": average,
+                        "count": sale_count,
+                        "query": query,
+                        "urls": urls,
+                        "trusted": trusted
+                    })
+                sold_success = True
 
         except Exception as e:
             print(f"❌ Sold error for {unique_id}: {e}")
@@ -124,53 +127,49 @@ async def scrape_card(unique_id, query, tier):
         # Active
         try:
             active_results = parse_ebay_active_page(query, max_items=MAX_ACTIVE_RESULTS)
-            prices = [item["price"] for item in active_results if "price" in item]
-            filtered = filter_outliers(prices)
-            best = min(filtered) if filtered else None
-            median = calculate_median(filtered)
-            average = calculate_average(filtered)
-            count = len(filtered)
-            active_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={query.replace(' ', '+')}&LH_BIN=1&LH_PrefLoc=1"
-            trusted = True  # ✅ mark as trusted after filter applied
+            if not active_results:
+                print("⚠️ No active results returned.")
+            else:
+                prices = [item["price"] for item in active_results if "price" in item]
+                filtered = filter_outliers(prices)
+                best = min(filtered) if filtered else None
+                median_val = calculate_median(filtered)
+                average = calculate_average(filtered)
+                count = len(filtered)
+                active_url = f"https://www.ebay.co.uk/sch/i.html?_nkw={query.replace(' ', '+')}&LH_BIN=1&LH_PrefLoc=1"
+                trusted = True
 
-            if count > 0:
-                await session.execute(text("""
-                    INSERT INTO activedailypricelog (
-                        unique_id, active_date, median_price, average_price,
-                        sale_count, query_used, card_number, url_used,
-                        lowest_price, trusted
-                    )
-                    VALUES (
-                        :uid, :dt, :median, :avg,
-                        :count, :query, :card, :url,
-                        :low, :trusted
-                    )
-                """), {
-                    "uid": unique_id,
-                    "dt": datetime.utcnow().date(),
-                    "median": median,
-                    "avg": average,
-                    "count": count,
-                    "query": query,
-                    "card": query.split()[-1],
-                    "url": active_url,
-                    "low": best,
-                    "trusted": trusted
-                })
-            active_success = True
+                if count > 0:
+                    await session.execute(text("""
+                        INSERT INTO activedailypricelog (
+                            unique_id, active_date, median_price, average_price,
+                            sale_count, query_used, card_number, url_used,
+                            lowest_price, trusted
+                        )
+                        VALUES (
+                            :uid, :dt, :median, :avg,
+                            :count, :query, :card, :url,
+                            :low, :trusted
+                        )
+                    """), {
+                        "uid": unique_id,
+                        "dt": datetime.utcnow().date(),
+                        "median": median_val,
+                        "avg": average,
+                        "count": count,
+                        "query": query,
+                        "card": query.split()[-1],
+                        "url": active_url,
+                        "low": best,
+                        "trusted": trusted
+                    })
+                active_success = True
 
         except Exception as e:
             print(f"❌ Active error for {unique_id}: {e}")
 
         await session.commit()
         print(f"✅ Done: {unique_id} | Sold: {'✔️' if sold_success else '❌'} | Active: {'✔️' if active_success else '❌'}")
-
-        # === Log progress every 25 cards ===
-        if not hasattr(scrape_card, "count"):
-            scrape_card.count = 0
-        scrape_card.count += 1
-        if scrape_card.count % 25 == 0:
-            print(f"🔁 Progress: {scrape_card.count} cards scraped so far...", flush=True)
 
         await asyncio.sleep(CARD_DELAY)
 
