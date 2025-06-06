@@ -56,13 +56,13 @@ def is_valid_title(title, character, digits):
         return False
     if digits and digits not in re.sub(r"[^\d]", "", lower):
         return False
-    if re.search(r"\b(x|\u00d7)?\d+\b", lower):  # e.g. "x3", "×2"
+    if re.search(r"\b(x|\u00d7)?\d+\b", lower):
         return False
     return True
 
 def apply_iqr_filter(prices):
     if len(prices) < 4:
-        return prices  # too small to filter
+        return prices
     sorted_prices = sorted(prices)
     q1 = sorted_prices[len(prices) // 4]
     q3 = sorted_prices[(len(prices) * 3) // 4]
@@ -100,7 +100,6 @@ def insert_summary(conn, table, summary):
 # === SOLD SCRAPER ===
 def parse_ebay_sold_page(query, max_items=120):
     character, digits = parse_card_meta(query)
-    results = []
     prices = []
     sold_dates = []
 
@@ -121,7 +120,7 @@ def parse_ebay_sold_page(query, max_items=120):
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Sold scrape error:", e)
-        return
+        return []
 
     with psycopg2.connect(DB_URL) as conn:
         for item in soup.select(".s-item"):
@@ -170,10 +169,11 @@ def parse_ebay_sold_page(query, max_items=120):
                 "sold_date": summary_date
             })
 
+    return filtered
+
 # === ACTIVE SCRAPER ===
 def parse_ebay_active_page(query, max_items=120):
     character, digits = parse_card_meta(query)
-    results = []
     prices = []
 
     url = "https://www.ebay.co.uk/sch/i.html"
@@ -192,7 +192,7 @@ def parse_ebay_active_page(query, max_items=120):
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Active scrape error:", e)
-        return
+        return []
 
     with psycopg2.connect(DB_URL) as conn:
         for item in soup.select(".s-item"):
@@ -237,3 +237,5 @@ def parse_ebay_active_page(query, max_items=120):
                 "count": len(filtered),
                 "sold_date": datetime.today().date()
             })
+
+    return filtered
