@@ -1,20 +1,30 @@
 import requests
 from bs4 import BeautifulSoup
 import re
-from datetime import datetime
-from statistics import median
+from datetime import datetime, timedelta
+from urllib.parse import urlencode
+
+from utils import (
+    EXCLUDED_TERMS,
+    is_valid_price,
+    is_valid_condition,
+    is_valid_title,
+    detect_holo_type,
+    parse_card_meta  # optional, if externalized
+)
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
     "Accept-Language": "en-GB,en;q=0.9"
 }
 
-EXCLUDED_TERMS = [
-    "psa", "graded", "bgs", "cgc", "beckett", "sgc",
-    "lot", "joblot", "bundle", "proxy", "custom", "fake",
-    "damaged", "played", "heavy", "poor", "excellent",
-    "japanese", "german", "french", "italian", "spanish", "korean", "chinese"
-]
+# === Helpers ===
+
+def clean_price(text):
+    try:
+        return float(re.sub(r"[^\d.]", "", text))
+    except:
+        return None
 
 def extract_sold_date(item):
     for span in item.find_all("span"):
@@ -28,12 +38,6 @@ def extract_sold_date(item):
                     return None
     return None
 
-def clean_price(text):
-    try:
-        return float(re.sub(r"[^\d.]", "", text))
-    except:
-        return None
-
 def parse_card_meta(query):
     parts = query.split()
     character = parts[0].lower() if parts else ""
@@ -42,42 +46,47 @@ def parse_card_meta(query):
     digits_only = re.sub(r"[^\d]", "", card_number)
     return character, digits_only
 
-def is_valid_title(title, character, digits):
-    lower = title.lower()
-    if any(term in lower for term in EXCLUDED_TERMS):
-        return False
-    if character and character not in lower:
-        return False
-    if digits and digits not in re.sub(r"[^\d]", "", lower):
-        return False
-    if re.search(r"\b(x|\u00d7)?\d+\b", lower):
-        return False
-    return True
+# === eBay URL builder ===
 
-def parse_ebay_sold_page(query, max_items=120):
-    character, digits = parse_card_meta(query)
-    results = []
-
-    url = "https://www.ebay.co.uk/sch/i.html"
+def build_ebay_url(query, sold=False):
+    base_url = "https://www.ebay.co.uk/sch/i.html"
     params = {
         "_nkw": query,
         "_sacat": "183454",
-        "LH_Complete": "1",
-        "LH_Sold": "1",
-        "LH_ItemCondition": "4000",
+        "_ipg": "240",
+        "_in_kw": "4",
         "LH_PrefLoc": "1",
-        "_ipg": "200",
+        "LH_ViewType": "Gallery",
         "_ex_kw": "+".join(EXCLUDED_TERMS)
     }
+    if sold:
+        params["LH_Complete"] = "1"
+        params["LH_Sold"] = "1"
+    else:
+        params["LH_BIN"] = "1"
+    return f"{base_url}?{urlencode(params)}"
+
+# === Main Parsers ===
+
+def parse_ebay_sold_page(query, max_items=240):
+    character, digits = parse_card_meta(query)
+    results_raw = []
+    results_filtered = []
+    url = build_ebay_url(query, sold=True)
 
     try:
-        resp = requests.get(url, headers=HEADERS, params=params, timeout=10)
+        resp = requests.get(url, headers=HEADERS, timeout=12)
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Sold scrape error:", e)
-        return []
+        return {"url": url, "raw": [], "filtered": []}
+
+    ninety_days_ago = datetime.utcnow().date() - timedelta(days=90)
 
     for item in soup.select(".s-item"):
+        if len(results_raw) >= max_items:
+            break
+
         title_tag = item.select_one(".s-item__title")
         price_tag = item.select_one(".s-item__price")
         link_tag = item.select_one(".s-item__link")
@@ -87,49 +96,54 @@ def parse_ebay_sold_page(query, max_items=120):
             continue
 
         title = title_tag.text.strip()
-        url = link_tag['href']
+        url_item = link_tag['href']
         price = clean_price(price_tag.text)
+        holo_type = detect_holo_type(title)
+        condition = "Unknown"
 
-        if not price or price < 1:
-            continue
-        if not is_valid_title(title, character, digits):
-            continue
-
-        results.append({
+        result = {
             "character": character,
             "card_number": digits,
             "title": title,
             "price": price,
             "sold_date": sold_date.strftime("%Y-%m-%d"),
-            "url": url,
-            "condition": "Unknown"
-        })
+            "url": url_item,
+            "condition": condition,
+            "holo_type": holo_type
+        }
 
-    return results
+        results_raw.append(result)
 
-def parse_ebay_active_page(query, max_items=120):
-    character, digits = parse_card_meta(query)
-    results = []
+        if (
+            is_valid_price(price) and
+            is_valid_title(title, character, digits) and
+            sold_date >= ninety_days_ago
+        ):
+            results_filtered.append(result)
 
-    url = "https://www.ebay.co.uk/sch/i.html"
-    params = {
-        "_nkw": query,
-        "_sacat": "183454",
-        "LH_BIN": "1",
-        "LH_ItemCondition": "4000",
-        "LH_PrefLoc": "1",
-        "_ipg": "200",
-        "_ex_kw": "+".join(EXCLUDED_TERMS)
+    return {
+        "url": url,
+        "raw": results_raw,
+        "filtered": results_filtered
     }
 
+def parse_ebay_active_page(query, max_items=240):
+    character, digits = parse_card_meta(query)
+    results_raw = []
+    results_filtered = []
+    url = build_ebay_url(query, sold=False)
+
     try:
-        resp = requests.get(url, headers=HEADERS, params=params, timeout=10)
+        resp = requests.get(url, headers=HEADERS, timeout=12)
         soup = BeautifulSoup(resp.text, "html.parser")
     except Exception as e:
         print("Active scrape error:", e)
-        return []
+        return {"url": url, "raw": [], "filtered": []}
 
     for item in soup.select(".s-item"):
+        if len(results_raw) >= max_items:
+            break
+
         title_tag = item.select_one(".s-item__title")
         price_tag = item.select_one(".s-item__price")
         link_tag = item.select_one(".s-item__link")
@@ -138,21 +152,31 @@ def parse_ebay_active_page(query, max_items=120):
             continue
 
         title = title_tag.text.strip()
-        url = link_tag['href']
+        url_item = link_tag['href']
         price = clean_price(price_tag.text)
+        holo_type = detect_holo_type(title)
+        condition = "Unknown"
 
-        if not price or price < 1:
-            continue
-        if not is_valid_title(title, character, digits):
-            continue
-
-        results.append({
+        result = {
             "character": character,
             "card_number": digits,
             "title": title,
             "price": price,
-            "url": url,
-            "condition": "Unknown"
-        })
+            "url": url_item,
+            "condition": condition,
+            "holo_type": holo_type
+        }
 
-    return results
+        results_raw.append(result)
+
+        if (
+            is_valid_price(price) and
+            is_valid_title(title, character, digits)
+        ):
+            results_filtered.append(result)
+
+    return {
+        "url": url,
+        "raw": results_raw,
+        "filtered": results_filtered
+    }
