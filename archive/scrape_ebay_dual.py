@@ -25,7 +25,7 @@ if DATABASE_URL.startswith("postgresql://"):
 # === Import CardCatch core ===
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from utils import filter_outliers, calculate_median, calculate_average
-from scraper import parse_ebay_sold_page, parse_ebay_active_page
+from scraper import parse_ebay_sold_page, parse_ebay_active_page, parse_card_meta
 
 # === DB Setup ===
 engine = create_async_engine(DATABASE_URL, echo=False)
@@ -130,7 +130,39 @@ async def scrape_card(unique_id, query, tier):
             if not active_results:
                 print("⚠️ No active results returned.")
             else:
-                prices = [item["price"] for item in active_results if "price" in item]
+                prices = []
+                for item in active_results:
+                    price = item.get("price")
+                    url = item.get("url")
+                    title = item.get("title", "")
+                    condition = item.get("condition", "Unknown")
+
+                    if not price or price < 0.5 or price > 500:
+                        continue
+                    lowered = title.lower()
+                    if any(x in lowered for x in ["lot", "bundle", "playset", "proxy", "damage", "poor", "joblot"]):
+                        continue
+                    if any(x in lowered for x in ["psa", "bgs", "cgc"]):
+                        continue
+                    if condition.lower() in ["damaged", "poor"]:
+                        continue
+
+                    # Log raw active
+                    await session.execute(text("""
+                        INSERT INTO raw_ebay_active (unique_id, query, title, price, quantity, date, url, condition)
+                        VALUES (:uid, :query, :title, :price, 1, :date, :url, :condition)
+                    """), {
+                        "uid": unique_id,
+                        "query": query,
+                        "title": title,
+                        "price": price,
+                        "date": datetime.utcnow().date(),
+                        "url": url,
+                        "condition": condition
+                    })
+
+                    prices.append(price)
+
                 filtered = filter_outliers(prices)
                 best = min(filtered) if filtered else None
                 median_val = calculate_median(filtered)
@@ -140,6 +172,7 @@ async def scrape_card(unique_id, query, tier):
                 trusted = True
 
                 if count > 0:
+                    _, digits = parse_card_meta(query)
                     await session.execute(text("""
                         INSERT INTO activedailypricelog (
                             unique_id, active_date, median_price, average_price,
@@ -158,7 +191,7 @@ async def scrape_card(unique_id, query, tier):
                         "avg": average,
                         "count": count,
                         "query": query,
-                        "card": query.split()[-1],
+                        "card": digits,
                         "url": active_url,
                         "low": best,
                         "trusted": trusted
@@ -170,7 +203,6 @@ async def scrape_card(unique_id, query, tier):
 
         await session.commit()
         print(f"✅ Done: {unique_id} | Sold: {'✔️' if sold_success else '❌'} | Active: {'✔️' if active_success else '❌'}")
-
         await asyncio.sleep(CARD_DELAY)
 
 # === Run from JSON file ===
