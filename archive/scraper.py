@@ -90,7 +90,7 @@ def insert_summary(conn, table, summary):
         ))
 
 # === SOLD SCRAPER ===
-def parse_ebay_sold_page(query):
+def parse_ebay_sold_page(query, max_items=120):
     character, digits = parse_card_meta(query)
     results = []
     prices = []
@@ -163,7 +163,7 @@ def parse_ebay_sold_page(query):
             })
 
 # === ACTIVE SCRAPER ===
-def parse_ebay_active_page(query):
+def parse_ebay_active_page(query, max_items=120):
     character, digits = parse_card_meta(query)
     results = []
     prices = []
