@@ -74,9 +74,17 @@ def apply_iqr_filter(prices):
 def insert_raw_sale(conn, table, data):
     with conn.cursor() as cur:
         cur.execute(f"""
-            INSERT INTO {table} (character, card_number, title, price, date, url)
-            VALUES (%s, %s, %s, %s, %s, %s)
-        """, (data['character'], data['card_number'], data['title'], data['price'], data['date'], data['url']))
+            INSERT INTO {table} (
+                character, card_number, title, price, date, url, created_at
+            ) VALUES (%s, %s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
+        """, (
+            data['character'],
+            data['card_number'],
+            data['title'],
+            data['price'],
+            data['date'],
+            data['url']
+        ))
 
 def insert_summary(conn, table, summary):
     with conn.cursor() as cur:
