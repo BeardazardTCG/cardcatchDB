@@ -73,7 +73,7 @@ def get_cards_due():
                 """)
                 cards = cur.fetchall()
 
-                # 2. Most recent sold scrape timestamp for each card
+                # 2. Most recent created_at for sold data
                 cur.execute("""
                     SELECT unique_id, MAX(created_at) AS last_scrape
                     FROM dailypricelog
@@ -81,7 +81,7 @@ def get_cards_due():
                 """)
                 sold_seen = {row["unique_id"]: row["last_scrape"] for row in cur.fetchall()}
 
-                # 3. Most recent active scrape timestamp for each card
+                # 3. Most recent created_at for active data
                 cur.execute("""
                     SELECT unique_id, MAX(created_at) AS last_scrape
                     FROM activedailypricelog
@@ -95,12 +95,14 @@ def get_cards_due():
                     threshold = TIER_INTERVALS.get(tier)
                     if not threshold:
                         continue
+
                     uid = card["unique_id"]
-                    latest_scrape = max(
-                        sold_seen.get(uid) or date(2000, 1, 1),
-                        active_seen.get(uid) or date(2000, 1, 1)
+                    latest_scrape_date = max(
+                        (sold_seen.get(uid) or datetime(2000, 1, 1)).date(),
+                        (active_seen.get(uid) or datetime(2000, 1, 1)).date()
                     )
-                    if (today - latest_scrape.date()) >= threshold:
+
+                    if (today - latest_scrape_date) >= threshold:
                         due_cards.append(card)
 
     except Exception as e:
