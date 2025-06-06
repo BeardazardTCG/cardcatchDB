@@ -42,9 +42,11 @@ async def scrape_card(unique_id, query, tier):
         # === SOLD listings ===
         try:
             sold_result = parse_ebay_sold_page(query, max_items=MAX_SOLD_RESULTS)
-            sold_raw = sold_result["raw"]
-            sold_filtered = sold_result["filtered"]
-            search_url = sold_result["url"]
+            sold_raw = sold_result.get("raw", [])
+            sold_filtered = sold_result.get("filtered", [])
+            search_url = sold_result.get("url", "")
+
+            print(f"🔍 Sold raw: {len(sold_raw)} | Filtered: {len(sold_filtered)}")
 
             for item in sold_raw:
                 await session.execute(text("""
@@ -53,12 +55,12 @@ async def scrape_card(unique_id, query, tier):
                 """), {
                     "uid": unique_id,
                     "query": query,
-                    "title": item["title"],
-                    "price": item["price"],
-                    "date": item["sold_date"],
-                    "url": item["url"],
-                    "condition": item["condition"],
-                    "holo": item["holo_type"]
+                    "title": item.get("title"),
+                    "price": item.get("price"),
+                    "date": item.get("sold_date"),
+                    "url": item.get("url"),
+                    "condition": item.get("condition"),
+                    "holo": item.get("holo_type")
                 })
 
             if not sold_filtered:
@@ -118,9 +120,11 @@ async def scrape_card(unique_id, query, tier):
         # === ACTIVE listings ===
         try:
             active_result = parse_ebay_active_page(query, max_items=MAX_ACTIVE_RESULTS)
-            active_raw = active_result["raw"]
-            active_filtered = active_result["filtered"]
-            search_url = active_result["url"]
+            active_raw = active_result.get("raw", [])
+            active_filtered = active_result.get("filtered", [])
+            search_url = active_result.get("url", "")
+
+            print(f"🔍 Active raw: {len(active_raw)} | Filtered: {len(active_filtered)}")
 
             prices = []
             for item in active_raw:
@@ -130,14 +134,14 @@ async def scrape_card(unique_id, query, tier):
                 """), {
                     "uid": unique_id,
                     "query": query,
-                    "title": item["title"],
-                    "price": item["price"],
+                    "title": item.get("title"),
+                    "price": item.get("price"),
                     "date": datetime.utcnow().date(),
-                    "url": item["url"],
-                    "condition": item["condition"],
-                    "holo": item["holo_type"]
+                    "url": item.get("url"),
+                    "condition": item.get("condition"),
+                    "holo": item.get("holo_type")
                 })
-                prices.append(item["price"])
+                prices.append(item.get("price"))
 
             filtered = filter_outliers(prices)
             best = min(filtered) if filtered else None
