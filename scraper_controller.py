@@ -100,7 +100,7 @@ def get_cards_due():
                         sold_seen.get(uid) or date(2000, 1, 1),
                         active_seen.get(uid) or date(2000, 1, 1)
                     )
-                    if (today - latest_scrape) >= threshold:
+                    if (today - latest_scrape.date()) >= threshold:
                         due_cards.append(card)
 
     except Exception as e:
