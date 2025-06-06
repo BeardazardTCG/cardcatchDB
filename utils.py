@@ -4,6 +4,7 @@ EXCLUDED_TERMS = [
     "psa", "bgs", "cgc", "graded", "beckett", "sgc",
     "lot", "joblot", "bundle", "proxy", "custom",
     "fake", "counterfeit", "damage", "damaged", "played", "heavy", "poor",
+    "choose", "multi",
     "japanese", "german", "french", "italian", "spanish", "korean", "chinese"
 ]
 
@@ -47,16 +48,40 @@ def is_valid_condition(condition):
 def is_valid_title(title, character, digits):
     """Title exclusion logic shared across all eBay scrapers"""
     lowered = title.lower()
+
+    # Block keyword terms
     if any(term in lowered for term in EXCLUDED_TERMS):
         return False
+
+    # Must contain character
     if character and character not in lowered:
         return False
+
+    # Must contain card number
     if digits:
         numeric = "".join(filter(str.isdigit, lowered))
         if digits not in numeric:
             return False
+
     # Reject bundles like "x4" or "×3"
     if "x" in lowered or "×" in lowered:
         if any(char.isdigit() for char in lowered.split("x")[0]):
             return False
+
+    # Reject "&", "+" indicating multi-card listing
+    if "&" in lowered or "+" in lowered:
+        return False
+
     return True
+
+def detect_holo_type(title):
+    """Attempts to detect Holo / Non-Holo / Reverse Holo from title"""
+    lowered = title.lower()
+
+    if "reverse holo" in lowered or "rev holo" in lowered or "rh" in lowered:
+        return "Reverse Holo"
+    if "non holo" in lowered or "non-holo" in lowered or "nh" in lowered:
+        return "Non-Holo"
+    if "holo" in lowered or "holofoil" in lowered or "holo rare" in lowered:
+        return "Holo"
+    return "Unknown"
