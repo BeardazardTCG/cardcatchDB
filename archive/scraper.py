@@ -48,7 +48,7 @@ def build_ebay_url(query, sold=False, max_items=120):
         "_nkw": full_query,
         "_sacat": "183454",
         "_ipg": str(min(max_items, 120)),  # Enforce 200 cap
-        "_in_kw": "4",
+        "_in_kw": "3",
         "LH_PrefLoc": "1",
         "LH_ViewType": "Gallery",
         "_ex_kw": "+".join(EXCLUDED_TERMS)
