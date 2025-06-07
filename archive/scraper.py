@@ -37,26 +37,24 @@ def extract_sold_date(item):
     return None
 
 def build_ebay_url(query, sold=False, max_items=120):
-    # === Safety cleanup ===
-    query = query.replace("’", "").replace("'", "")  # strip quotes
-    query = query.replace("Black Star Promos", "SM Promo")
-
-    words = query.split()
-    if len(words) > 5:
-        query = " ".join(words[:5])  # truncate to 5 keywords max
-
-    exclusions = "-psa -bgs -graded -lot -bundle"
-    full_query = f"{query} {exclusions}"
-
     base_url = "https://www.ebay.co.uk/sch/i.html"
+
+    excluded_terms = [
+        "psa", "bgs", "cgc", "graded", "lot", "joblot", "bundle", "proxy", "custom",
+        "fake", "counterfeit", "damage", "damaged", "played", "heavy", "poor",
+        "japanese", "german", "french", "italian", "spanish", "korean", "chinese"
+    ]
+
     params = {
-        "_nkw": full_query,
-        "_sacat": "183454",
+        "_nkw": query,  # No keyword edits, raw input expected
+        "_in_kw": "4",
+        "_ex_kw": "+".join(excluded_terms),
+        "_sacat": "1",
+        "_sop": "1",               # Sort by newly listed
+        "_dmd": "2",               # Remove "Best Match"
         "_ipg": str(min(max_items, 120)),
-        "_in_kw": "3",  # Softens keyword strictness
         "LH_PrefLoc": "1",
-        "LH_ViewType": "Gallery",
-        "_ex_kw": "+".join(EXCLUDED_TERMS)
+        "rt": "nc"
     }
 
     if sold:
@@ -78,7 +76,7 @@ def parse_ebay_sold_page(query, max_items=120):
 
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
-        if "Expensive keywords" in resp.text or "can't be greater than 200" in resp.text:
+        if "Expensive keywords" in resp.text or "can't be greater than" in resp.text:
             raise Exception("⚠️ eBay blocked this query due to keyword limits or item cap.")
         soup = BeautifulSoup(resp.text, "html.parser")
         items = soup.select(".s-item")
@@ -152,7 +150,7 @@ def parse_ebay_active_page(query, max_items=120):
 
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
-        if "Expensive keywords" in resp.text or "can't be greater than 200" in resp.text:
+        if "Expensive keywords" in resp.text or "can't be greater than" in resp.text:
             raise Exception("⚠️ eBay blocked this query due to keyword limits or item cap.")
         soup = BeautifulSoup(resp.text, "html.parser")
         items = soup.select(".s-item")
