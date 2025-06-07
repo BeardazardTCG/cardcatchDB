@@ -41,7 +41,7 @@ def build_ebay_url(query, sold=False):
     params = {
         "_nkw": query,
         "_sacat": "183454",
-        "_ipg": "240",
+        "_ipg": "180",
         "_in_kw": "4",
         "LH_PrefLoc": "1",
         "LH_ViewType": "Gallery",
