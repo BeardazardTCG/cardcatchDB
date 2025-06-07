@@ -26,8 +26,8 @@ engine = create_async_engine(DATABASE_URL, echo=False)
 async_session = async_sessionmaker(engine, expire_on_commit=False)
 
 # === Config ===
-MAX_SOLD_RESULTS = 180
-MAX_ACTIVE_RESULTS = 180
+MAX_SOLD_RESULTS = 120
+MAX_ACTIVE_RESULTS = 120
 CONCURRENT_LIMIT = 5
 CARD_DELAY = 0.75
 
