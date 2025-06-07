@@ -1,5 +1,3 @@
-# scrape_ebay_dual.py
-
 import os
 import sys
 import json
@@ -47,6 +45,8 @@ async def scrape_card(unique_id, query, tier):
             search_url = sold_result.get("url", "")
 
             print(f"🔍 Sold raw: {len(sold_raw)} | Filtered: {len(sold_filtered)}")
+            if not sold_raw and not sold_filtered:
+                print(f"⚠️ No sold listings returned at all — possible eBay block or scrape fail for {unique_id}")
 
             for item in sold_raw:
                 await session.execute(text("""
@@ -85,6 +85,7 @@ async def scrape_card(unique_id, query, tier):
                 for sold_date, prices in grouped_by_date.items():
                     filtered = filter_outliers(prices)
                     if not filtered:
+                        print(f"⚠️ Sold prices filtered out completely for {unique_id} on {sold_date}")
                         continue
                     median_val = calculate_median(filtered)
                     average = calculate_average(filtered)
@@ -125,6 +126,8 @@ async def scrape_card(unique_id, query, tier):
             search_url = active_result.get("url", "")
 
             print(f"🔍 Active raw: {len(active_raw)} | Filtered: {len(active_filtered)}")
+            if not active_raw and not active_filtered:
+                print(f"⚠️ No active listings returned at all — possible eBay block or scrape fail for {unique_id}")
 
             prices = []
             for item in active_raw:
