@@ -37,9 +37,14 @@ def extract_sold_date(item):
     return None
 
 def build_ebay_url(query, sold=False, max_items=120):
-    # Basic cleanup for problematic terms
-    query = query.replace("’", "'")
-    query = query.replace("Black Star Promos", "SM Promo")  # Reduce eBay throttling
+    # === Safety cleanup ===
+    query = query.replace("’", "").replace("'", "")  # strip quotes
+    query = query.replace("Black Star Promos", "SM Promo")
+
+    words = query.split()
+    if len(words) > 5:
+        query = " ".join(words[:5])  # truncate to 5 keywords max
+
     exclusions = "-psa -bgs -graded -lot -bundle"
     full_query = f"{query} {exclusions}"
 
@@ -47,8 +52,8 @@ def build_ebay_url(query, sold=False, max_items=120):
     params = {
         "_nkw": full_query,
         "_sacat": "183454",
-        "_ipg": str(min(max_items, 120)),  # Enforce 200 cap
-        "_in_kw": "3",
+        "_ipg": str(min(max_items, 120)),
+        "_in_kw": "3",  # Softens keyword strictness
         "LH_PrefLoc": "1",
         "LH_ViewType": "Gallery",
         "_ex_kw": "+".join(EXCLUDED_TERMS)
