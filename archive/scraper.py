@@ -5,7 +5,6 @@ from datetime import datetime, timedelta
 from urllib.parse import urlencode
 
 from utils import (
-    EXCLUDED_TERMS,
     is_valid_price,
     is_valid_condition,
     is_valid_title,
@@ -14,7 +13,7 @@ from utils import (
 )
 
 HEADERS = {
-    "User-Agent": "Mozilla/5.0",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
     "Accept-Language": "en-GB,en;q=0.9"
 }
 
@@ -39,21 +38,14 @@ def extract_sold_date(item):
 def build_ebay_url(query, sold=False, max_items=120):
     base_url = "https://www.ebay.co.uk/sch/i.html"
 
-    excluded_terms = [
-        "psa", "bgs", "cgc", "graded", "lot", "joblot", "bundle", "proxy", "custom",
-        "fake", "counterfeit", "damage", "damaged", "played", "heavy", "poor",
-        "japanese", "german", "french", "italian", "spanish", "korean", "chinese"
-    ]
-
     params = {
-        "_nkw": query,  # No keyword edits, raw input expected
+        "_nkw": query,
         "_in_kw": "4",
-        "_ex_kw": "+".join(excluded_terms),
         "_sacat": "1",
-        "_sop": "1",               # Sort by newly listed
-        "_dmd": "2",               # Remove "Best Match"
-        "_ipg": str(min(max_items, 120)),
         "LH_PrefLoc": "1",
+        "_sop": "1",
+        "_dmd": "2",
+        "_ipg": str(min(max_items, 120)),
         "rt": "nc"
     }
 
