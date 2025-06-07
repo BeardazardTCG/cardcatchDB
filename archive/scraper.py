@@ -36,35 +36,45 @@ def extract_sold_date(item):
                     return None
     return None
 
-def build_ebay_url(query, sold=False):
+def build_ebay_url(query, sold=False, max_items=180):
+    # Basic cleanup for problematic terms
+    query = query.replace("’", "'")
+    query = query.replace("Black Star Promos", "SM Promo")  # Reduce eBay throttling
+    exclusions = "-psa -bgs -graded -lot -bundle"
+    full_query = f"{query} {exclusions}"
+
     base_url = "https://www.ebay.co.uk/sch/i.html"
     params = {
-        "_nkw": query,
+        "_nkw": full_query,
         "_sacat": "183454",
-        "_ipg": "180",
+        "_ipg": str(min(max_items, 200)),  # Enforce 200 cap
         "_in_kw": "4",
         "LH_PrefLoc": "1",
         "LH_ViewType": "Gallery",
         "_ex_kw": "+".join(EXCLUDED_TERMS)
     }
+
     if sold:
         params["LH_Complete"] = "1"
         params["LH_Sold"] = "1"
     else:
         params["LH_BIN"] = "1"
+
     return f"{base_url}?{urlencode(params)}"
 
 def parse_ebay_sold_page(query, max_items=240):
     character, digits = parse_card_meta(query)
     results_raw = []
     results_filtered = []
-    url = build_ebay_url(query, sold=True)
+    url = build_ebay_url(query, sold=True, max_items=max_items)
 
     print(f"\n🔎 SOLD QUERY: {query}")
     print(f"🔗 URL: {url}")
 
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
+        if "Expensive keywords" in resp.text or "can't be greater than 200" in resp.text:
+            raise Exception("⚠️ eBay blocked this query due to keyword limits or item cap.")
         soup = BeautifulSoup(resp.text, "html.parser")
         items = soup.select(".s-item")
         print(f"🔢 Found {len(items)} sold listings")
@@ -130,13 +140,15 @@ def parse_ebay_active_page(query, max_items=240):
     character, digits = parse_card_meta(query)
     results_raw = []
     results_filtered = []
-    url = build_ebay_url(query, sold=False)
+    url = build_ebay_url(query, sold=False, max_items=max_items)
 
     print(f"\n🔎 ACTIVE QUERY: {query}")
     print(f"🔗 URL: {url}")
 
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
+        if "Expensive keywords" in resp.text or "can't be greater than 200" in resp.text:
+            raise Exception("⚠️ eBay blocked this query due to keyword limits or item cap.")
         soup = BeautifulSoup(resp.text, "html.parser")
         items = soup.select(".s-item")
         print(f"🔢 Found {len(items)} active listings")
