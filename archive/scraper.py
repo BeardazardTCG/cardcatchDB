@@ -36,7 +36,7 @@ def extract_sold_date(item):
                     return None
     return None
 
-def build_ebay_url(query, sold=False, max_items=180):
+def build_ebay_url(query, sold=False, max_items=120):
     # Basic cleanup for problematic terms
     query = query.replace("’", "'")
     query = query.replace("Black Star Promos", "SM Promo")  # Reduce eBay throttling
@@ -47,7 +47,7 @@ def build_ebay_url(query, sold=False, max_items=180):
     params = {
         "_nkw": full_query,
         "_sacat": "183454",
-        "_ipg": str(min(max_items, 200)),  # Enforce 200 cap
+        "_ipg": str(min(max_items, 120)),  # Enforce 200 cap
         "_in_kw": "4",
         "LH_PrefLoc": "1",
         "LH_ViewType": "Gallery",
@@ -62,7 +62,7 @@ def build_ebay_url(query, sold=False, max_items=180):
 
     return f"{base_url}?{urlencode(params)}"
 
-def parse_ebay_sold_page(query, max_items=240):
+def parse_ebay_sold_page(query, max_items=120):
     character, digits = parse_card_meta(query)
     results_raw = []
     results_filtered = []
@@ -136,7 +136,7 @@ def parse_ebay_sold_page(query, max_items=240):
         "filtered": results_filtered
     }
 
-def parse_ebay_active_page(query, max_items=240):
+def parse_ebay_active_page(query, max_items=120):
     character, digits = parse_card_meta(query)
     results_raw = []
     results_filtered = []
