@@ -60,7 +60,7 @@ async def scrape_card(unique_id, query, tier):
                     "query": query,
                     "title": item.get("title"),
                     "price": item.get("price"),
-                    "date": item.get("sold_date"),
+                    "date": datetime.strptime(item.get("sold_date"), "%Y-%m-%d").date(),
                     "url": item.get("url"),
                     "condition": item.get("condition"),
                     "holo": item.get("holo_type")
