@@ -7,6 +7,7 @@ from collections import defaultdict
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from sqlalchemy import text
+import traceback
 
 # === Load .env and force async driver ===
 load_dotenv()
@@ -49,6 +50,8 @@ async def scrape_card(unique_id, query, tier):
                 print(f"⚠️ No sold listings returned at all — possible eBay block or scrape fail for {unique_id}")
 
             for item in sold_raw:
+                if not item.get("price") or not item.get("sold_date"):
+                    continue
                 await session.execute(text("""
                     INSERT INTO raw_ebay_sold (unique_id, query, title, price, quantity, date, url, condition, holo_type)
                     VALUES (:uid, :query, :title, :price, 1, :date, :url, :condition, :holo)
@@ -62,6 +65,7 @@ async def scrape_card(unique_id, query, tier):
                     "condition": item.get("condition"),
                     "holo": item.get("holo_type")
                 })
+            await session.commit()
 
             if not sold_filtered:
                 await session.execute(text("""
@@ -73,6 +77,7 @@ async def scrape_card(unique_id, query, tier):
                     "url": search_url,
                     "reason": "No filtered results"
                 })
+                await session.commit()
             else:
                 grouped_by_date = defaultdict(list)
                 url_tracker = defaultdict(set)
@@ -91,7 +96,6 @@ async def scrape_card(unique_id, query, tier):
                     average = calculate_average(filtered)
                     sale_count = len(filtered)
                     urls = json.dumps(list(url_tracker[sold_date]))
-                    trusted = True
 
                     await session.execute(text("""
                         INSERT INTO dailypricelog (
@@ -100,7 +104,7 @@ async def scrape_card(unique_id, query, tier):
                         )
                         VALUES (
                             :uid, :dt, :median, :avg,
-                            :count, :query, :urls, :trusted
+                            :count, :query, :urls, TRUE
                         )
                     """), {
                         "uid": unique_id,
@@ -109,14 +113,14 @@ async def scrape_card(unique_id, query, tier):
                         "avg": average,
                         "count": sale_count,
                         "query": query,
-                        "urls": urls,
-                        "trusted": trusted
+                        "urls": urls
                     })
-
+                await session.commit()
             sold_success = True
 
         except Exception as e:
             print(f"❌ Sold error for {unique_id}: {e}")
+            traceback.print_exc()
 
         # === ACTIVE listings ===
         try:
@@ -131,6 +135,8 @@ async def scrape_card(unique_id, query, tier):
 
             prices = []
             for item in active_raw:
+                if not item.get("price"):
+                    continue
                 await session.execute(text("""
                     INSERT INTO raw_ebay_active (unique_id, query, title, price, quantity, date, url, condition, holo_type)
                     VALUES (:uid, :query, :title, :price, 1, :date, :url, :condition, :holo)
@@ -145,15 +151,14 @@ async def scrape_card(unique_id, query, tier):
                     "holo": item.get("holo_type")
                 })
                 prices.append(item.get("price"))
+            await session.commit()
 
             filtered = filter_outliers(prices)
-            best = min(filtered) if filtered else None
-            median_val = calculate_median(filtered)
-            average = calculate_average(filtered)
-            count = len(filtered)
-            trusted = True
-
-            if count > 0:
+            if filtered:
+                median_val = calculate_median(filtered)
+                average = calculate_average(filtered)
+                best = min(filtered)
+                count = len(filtered)
                 _, digits = parse_card_meta(query)
                 await session.execute(text("""
                     INSERT INTO activedailypricelog (
@@ -164,7 +169,7 @@ async def scrape_card(unique_id, query, tier):
                     VALUES (
                         :uid, :dt, :median, :avg,
                         :count, :query, :card, :url,
-                        :low, :trusted
+                        :low, TRUE
                     )
                 """), {
                     "uid": unique_id,
@@ -175,16 +180,16 @@ async def scrape_card(unique_id, query, tier):
                     "query": query,
                     "card": digits,
                     "url": search_url,
-                    "low": best,
-                    "trusted": trusted
+                    "low": best
                 })
+                await session.commit()
 
             active_success = True
 
         except Exception as e:
             print(f"❌ Active error for {unique_id}: {e}")
+            traceback.print_exc()
 
-        await session.commit()
         print(f"✅ Done: {unique_id} | Sold: {'✔️' if sold_success else '❌'} | Active: {'✔️' if active_success else '❌'}")
         await asyncio.sleep(CARD_DELAY)
 
