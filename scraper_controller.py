@@ -2,6 +2,7 @@ import os
 import sys
 import json
 import subprocess
+import argparse
 from datetime import datetime, timedelta, date
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -54,7 +55,7 @@ def log_failure(source, message):
     except Exception as e:
         print(f"❌ Failed to log scrape failure: {e}")
 
-# === Pull card list from DB ===
+# === Pull cards from DB ===
 def get_cards_due():
     print("📡 Connecting to DB and checking for due cards...")
     today = date.today()
@@ -65,31 +66,15 @@ def get_cards_due():
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
                 print("✅ DB connected. Pulling cards and scrape timestamps...")
 
-                # 1. All tiered cards
-                cur.execute("""
-                    SELECT unique_id, query, tier
-                    FROM mastercard_v2
-                    WHERE tier IS NOT NULL
-                """)
+                cur.execute("""SELECT unique_id, query, tier FROM mastercard_v2 WHERE tier IS NOT NULL""")
                 cards = cur.fetchall()
 
-                # 2. Most recent created_at for sold data
-                cur.execute("""
-                    SELECT unique_id, MAX(created_at) AS last_scrape
-                    FROM dailypricelog
-                    GROUP BY unique_id
-                """)
+                cur.execute("""SELECT unique_id, MAX(created_at) AS last_scrape FROM dailypricelog GROUP BY unique_id""")
                 sold_seen = {row["unique_id"]: row["last_scrape"] for row in cur.fetchall()}
 
-                # 3. Most recent created_at for active data
-                cur.execute("""
-                    SELECT unique_id, MAX(created_at) AS last_scrape
-                    FROM activedailypricelog
-                    GROUP BY unique_id
-                """)
+                cur.execute("""SELECT unique_id, MAX(created_at) AS last_scrape FROM activedailypricelog GROUP BY unique_id""")
                 active_seen = {row["unique_id"]: row["last_scrape"] for row in cur.fetchall()}
 
-                # 4. Python filtering
                 for card in cards:
                     tier = card["tier"]
                     threshold = TIER_INTERVALS.get(tier)
@@ -114,7 +99,24 @@ def get_cards_due():
     print(f"✅ {len(due_cards)} cards are due for scraping.")
     return due_cards
 
-# === Call scraper script ===
+def get_cards_by_tiers(tiers):
+    print(f"📡 Fetching all cards in Tier(s) {tiers}...")
+    try:
+        with psycopg2.connect(DATABASE_URL) as conn:
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                placeholders = ','.join(['%s'] * len(tiers))
+                cur.execute(f"""
+                    SELECT unique_id, query, tier FROM mastercard_v2
+                    WHERE tier IN ({placeholders})
+                """, tuple(tiers))
+                cards = cur.fetchall()
+                print(f"✅ Found {len(cards)} cards across tiers {tiers}")
+                return cards
+    except Exception as e:
+        print(f"❌ Failed to fetch tier(s): {e}")
+        return []
+
+# === Script wrappers ===
 def call_dual_scraper():
     try:
         print("🚀 Running dual eBay scraper...")
@@ -147,22 +149,31 @@ def call_tcg_scraper():
         log_scrape_event("tcg", "fail", 0, str(e))
         log_failure("tcg", str(e))
 
-# === Main ===
+# === MAIN ===
 if __name__ == "__main__":
     try:
         print("🟢 Starting CardCatch Scraper Controller...")
-        due_cards = get_cards_due()
 
-        # === Write cards_due.json for the dual scraper ===
-        try:
-            with open("cards_due.json", "w", encoding="utf-8") as f:
-                json.dump(due_cards, f, indent=2)
-            print(f"📄 Wrote {len(due_cards)} cards to cards_due.json")
-        except Exception as e:
-            print(f"❌ Failed to write cards_due.json: {e}")
-            log_failure("controller", f"JSON write failed: {e}")
+        parser = argparse.ArgumentParser()
+        parser.add_argument("--tier", type=str, help="Comma-separated tier(s) to manually scrape, e.g. 4 or 2,5,6")
+        args = parser.parse_args()
+
+        if args.tier:
+            tier_values = [int(t.strip()) for t in args.tier.split(",")]
+            print(f"⚙️ Manual override: Scraping Tier(s): {tier_values}")
+            due_cards = get_cards_by_tiers(tier_values)
+        else:
+            due_cards = get_cards_due()
 
         if due_cards:
+            try:
+                with open("cards_due.json", "w", encoding="utf-8") as f:
+                    json.dump(due_cards, f, indent=2)
+                print(f"📄 Wrote {len(due_cards)} cards to cards_due.json")
+            except Exception as e:
+                print(f"❌ Failed to write cards_due.json: {e}")
+                log_failure("controller", f"JSON write failed: {e}")
+
             call_dual_scraper()
             call_tcg_scraper()
 
@@ -181,8 +192,8 @@ if __name__ == "__main__":
                 log_scrape_event("post_scrape_update", "fail", 0, str(e))
                 log_failure("post_scrape_update", str(e))
         else:
-            print("🛌 No cards due today.")
-            log_scrape_event("controller", "no_due_cards", 0, "No cards met scrape conditions.")
+            print("🛌 No cards to scrape.")
+            log_scrape_event("controller", "no_due_cards", 0, "Nothing to run.")
 
     except Exception as e:
         print(f"🔥 Fatal controller crash: {e}")
