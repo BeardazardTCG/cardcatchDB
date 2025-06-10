@@ -12,7 +12,6 @@ load_dotenv()
 
 # Fix DATABASE_URL for psycopg2
 DATABASE_URL = os.getenv("DATABASE_URL").replace("postgresql+asyncpg", "postgres")
-
 API_URL = os.getenv("TCG_API_URL", "https://cardcatchdb.onrender.com/tcg-prices-batch-async")
 API_KEY = os.getenv("API_KEY")  # Now used as x-api-key
 BATCH_SIZE = int(os.getenv("BATCH_SIZE", "333"))
@@ -26,6 +25,18 @@ def normalize_card_id(card_id: str) -> str:
 
 def get_card_ids():
     print("📡 Connecting to DB and pulling card IDs...")
+
+    # Check for scoped scrape list from controller
+    try:
+        with open("cards_due.json") as f:
+            due_cards = json.load(f)
+            limited_ids = [normalize_card_id(card["unique_id"]) for card in due_cards]
+            print(f"🔒 Scoped to {len(limited_ids)} cards from cards_due.json")
+            return limited_ids
+    except Exception as e:
+        print(f"⚠️ Could not use cards_due.json (fallback to all): {e}")
+
+    # Default full run fallback
     with psycopg2.connect(DATABASE_URL) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT unique_id FROM mastercard_v2 WHERE tcg_market_price IS NULL")
@@ -40,12 +51,7 @@ def insert_pricing_logs(data):
     for d in data:
         if d.get("market") is None and d.get("low") is None:
             continue
-        records.append((
-            d.get("card_id"),
-            d.get("market"),
-            d.get("low"),
-            today
-        ))
+        records.append((d.get("card_id"), d.get("market"), d.get("low"), today))
     if not records:
         print("⚠️ No valid pricing data to insert.")
         return
