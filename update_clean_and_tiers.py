@@ -10,8 +10,8 @@ def filter_outliers(prices):
     if not prices:
         return []
     sorted_prices = sorted(prices)
-    q1 = sorted_prices[len(sorted_prices) // 4]
-    q3 = sorted_prices[(len(sorted_prices) * 3) // 4]
+    q1 = sorted_prices[len(prices) // 4]
+    q3 = sorted_prices[(len(prices) * 3) // 4]
     iqr = q3 - q1
     lower = q1 - 1.5 * iqr
     upper = q3 + 1.5 * iqr
@@ -45,7 +45,6 @@ def main():
         print("Fetching price logs...")
         ninety_days_ago = datetime.datetime.utcnow().date() - datetime.timedelta(days=90)
 
-        # Only use trusted sold data
         cur.execute("""
             SELECT unique_id, median_price, sold_date 
             FROM dailypricelog 
@@ -86,8 +85,19 @@ def main():
                 "hot_character": hot_character
             }
 
+        # 🔒 Try scoping to cards_due.json
+        try:
+            with open("cards_due.json") as f:
+                scoped_ids = set(card["unique_id"].strip() for card in json.load(f))
+                print(f"🔒 Limiting post-scrape updates to {len(scoped_ids)} cards from cards_due.json")
+        except Exception as e:
+            scoped_ids = None
+            print(f"⚠️ No cards_due.json found or invalid. Running full update. ({e})")
+
         cur.execute("SELECT unique_id FROM mastercard_v2")
         all_cards = [row[0].strip() for row in cur.fetchall()]
+        if scoped_ids:
+            all_cards = [uid for uid in all_cards if uid in scoped_ids]
         conn.commit()
 
         for i, uid in enumerate(all_cards, 1):
@@ -167,10 +177,19 @@ def main():
         print("✅ All updates complete.")
         cur.close()
         conn.close()
+
+        # Clean up scoped list after run
+        import os
+        if os.path.exists("cards_due.json"):
+            try:
+                os.remove("cards_due.json")
+                print("🧹 Removed cards_due.json after clean update.")
+            except Exception as e:
+                print(f"⚠️ Could not remove cards_due.json: {e}")
+
     except Exception as e:
         print(f"💥 Fatal error during execution: {e}")
         traceback.print_exc()
 
 if __name__ == "__main__":
     main()
-
