@@ -55,8 +55,13 @@ def log_failure(source, message):
     except Exception as e:
         print(f"❌ Failed to log scrape failure: {e}")
 
-# === Pull cards from DB ===
-def get_cards_due():
+# === Pull cards from DB or override ===
+def load_cards_due():
+    if os.path.exists("cards_due.json"):
+        print("📁 Loading card list from cards_due.json override...")
+        with open("cards_due.json", "r") as f:
+            return json.load(f)
+
     print("📡 Connecting to DB and checking for due cards...")
     today = date.today()
     due_cards = []
@@ -163,7 +168,7 @@ if __name__ == "__main__":
             print(f"⚙️ Manual override: Scraping Tier(s): {tier_values}")
             due_cards = get_cards_by_tiers(tier_values)
         else:
-            due_cards = get_cards_due()
+            due_cards = load_cards_due()
 
         if due_cards:
             try:
