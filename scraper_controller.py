@@ -62,7 +62,7 @@ def load_cards_due():
         with open("cards_due.json", "r") as f:
             return json.load(f)
 
-    print("📡 Connecting to DB and checking for due cards...")
+    print("📱 Connecting to DB and checking for due cards...")
     today = date.today()
     due_cards = []
 
@@ -105,7 +105,7 @@ def load_cards_due():
     return due_cards
 
 def get_cards_by_tiers(tiers):
-    print(f"📡 Fetching all cards in Tier(s) {tiers}...")
+    print(f"📱 Fetching all cards in Tier(s) {tiers}...")
     try:
         with psycopg2.connect(DATABASE_URL) as conn:
             with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -161,12 +161,25 @@ if __name__ == "__main__":
 
         parser = argparse.ArgumentParser()
         parser.add_argument("--tier", type=str, help="Comma-separated tier(s) to manually scrape, e.g. 4 or 2,5,6")
+        parser.add_argument("--force-all", action="store_true", help="Force scrape all cards regardless of freshness or tier")
         args = parser.parse_args()
 
         if args.tier:
             tier_values = [int(t.strip()) for t in args.tier.split(",")]
             print(f"⚙️ Manual override: Scraping Tier(s): {tier_values}")
             due_cards = get_cards_by_tiers(tier_values)
+        elif getattr(args, "force_all", False):
+            print("⚙️ FORCE ALL mode: scraping every card in mastercard_v2...")
+            try:
+                with psycopg2.connect(DATABASE_URL) as conn:
+                    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                        cur.execute("SELECT unique_id, query, tier FROM mastercard_v2 WHERE query IS NOT NULL")
+                        due_cards = cur.fetchall()
+                        print(f"✅ Pulled {len(due_cards)} total cards for full rescrape.")
+            except Exception as e:
+                print(f"❌ Failed to load full card list: {e}")
+                log_failure("controller", f"Force all error: {e}")
+                due_cards = []
         else:
             due_cards = load_cards_due()
 
@@ -183,7 +196,7 @@ if __name__ == "__main__":
             call_tcg_scraper()
 
             try:
-                print("🧮 Running post-scrape update (clean values + tier recalculation)...")
+                print("🧶 Running post-scrape update (clean values + tier recalculation)...")
                 result = subprocess.run(
                     [sys.executable, "update_clean_and_tiers.py"],
                     check=True,
@@ -197,7 +210,7 @@ if __name__ == "__main__":
                 log_scrape_event("post_scrape_update", "fail", 0, str(e))
                 log_failure("post_scrape_update", str(e))
         else:
-            print("🛌 No cards to scrape.")
+            print("🛋️ No cards to scrape.")
             log_scrape_event("controller", "no_due_cards", 0, "Nothing to run.")
 
     except Exception as e:
