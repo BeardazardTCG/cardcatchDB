@@ -166,12 +166,12 @@ async def scrape_card(unique_id, query, tier):
                 """), {
                     "uid": unique_id,
                     "query": query,
-                    "title": item.get("title"),
-                    "price": item.get("price"),
+                    "title": item["title"],
+                    "price": item["price"],
                     "date": datetime.utcnow().date(),
-                    "url": item.get("url"),
-                    "condition": item.get("condition"),
-                    "holo": item.get("holo_type")
+                    "url": item["url"],
+                    "condition": item["condition"],
+                    "holo": item["holo_type"]
                 })
                 prices.append(item.get("price"))
             await session.commit()
@@ -217,4 +217,23 @@ async def scrape_card(unique_id, query, tier):
         await asyncio.sleep(CARD_DELAY)
 
 # === Run full batch from cards_due.json ===
-async def run
+async def run_dual_scraper():
+    try:
+        with open("cards_due.json", "r") as f:
+            cards = json.load(f)
+    except Exception as e:
+        print(f"❌ Failed to load cards_due.json: {e}")
+        return
+
+    print(f"🔁 Starting run on {len(cards)} cards from file")
+    sem = asyncio.Semaphore(CONCURRENT_LIMIT)
+    tasks = [run_card_with_semaphore(c["unique_id"], c["query"], c["tier"], sem) for c in cards]
+    await asyncio.gather(*tasks)
+    print("✅ scrape_ebay_dual.py finished")
+
+async def run_card_with_semaphore(uid, q, t, sem):
+    async with sem:
+        await scrape_card(uid, q, t)
+
+if __name__ == "__main__":
+    asyncio.run(run_dual_scraper())
