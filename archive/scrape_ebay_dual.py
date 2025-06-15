@@ -2,7 +2,7 @@ import os
 import sys
 import json
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 from collections import defaultdict
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -17,7 +17,7 @@ if DATABASE_URL.startswith("postgresql://"):
 
 # === Import shared logic ===
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import filter_outliers, calculate_median, calculate_average, parse_card_meta
+from utils import filter_outliers, calculate_median, calculate_average, parse_card_meta, is_valid_price, is_valid_title
 from scraper import parse_ebay_sold_page, parse_ebay_active_page
 
 # === DB setup ===
@@ -52,19 +52,42 @@ async def scrape_card(unique_id, query, tier):
             for item in sold_raw:
                 if not item.get("price") or not item.get("sold_date"):
                     continue
+
+                # Determine inclusion and reason(s)
+                reasons = []
+                if not is_valid_price(item["price"]):
+                    reasons.append("price")
+                if not is_valid_title(item["title"], item["character"], item["card_number"]):
+                    reasons.append("title")
+                if datetime.strptime(item["sold_date"], "%Y-%m-%d").date() < (datetime.utcnow().date() - timedelta(days=90)):
+                    reasons.append("date")
+
+                included = not reasons
+                reason_excluded = None if included else ",".join(reasons)
+
+                # Insert into raw_ebay_sold_debug
                 await session.execute(text("""
-                    INSERT INTO raw_ebay_sold (unique_id, query, title, price, quantity, date, url, condition, holo_type)
-                    VALUES (:uid, :query, :title, :price, 1, :date, :url, :condition, :holo)
+                    INSERT INTO raw_ebay_sold_debug (
+                        unique_id, query_used, title, price, sold_date,
+                        url, condition, holo_type, included, reason_excluded
+                    )
+                    VALUES (
+                        :uid, :query, :title, :price, :sold_date,
+                        :url, :condition, :holo, :included, :reason
+                    )
                 """), {
                     "uid": unique_id,
                     "query": query,
-                    "title": item.get("title"),
-                    "price": item.get("price"),
-                    "date": datetime.strptime(item.get("sold_date"), "%Y-%m-%d").date(),
-                    "url": item.get("url"),
-                    "condition": item.get("condition"),
-                    "holo": item.get("holo_type")
+                    "title": item["title"],
+                    "price": item["price"],
+                    "sold_date": datetime.strptime(item["sold_date"], "%Y-%m-%d").date(),
+                    "url": item["url"],
+                    "condition": item["condition"],
+                    "holo": item["holo_type"],
+                    "included": included,
+                    "reason": reason_excluded
                 })
+
             await session.commit()
 
             if not sold_filtered:
@@ -194,23 +217,4 @@ async def scrape_card(unique_id, query, tier):
         await asyncio.sleep(CARD_DELAY)
 
 # === Run full batch from cards_due.json ===
-async def run_dual_scraper():
-    try:
-        with open("cards_due.json", "r") as f:
-            cards = json.load(f)
-    except Exception as e:
-        print(f"❌ Failed to load cards_due.json: {e}")
-        return
-
-    print(f"🔁 Starting run on {len(cards)} cards from file")
-    sem = asyncio.Semaphore(CONCURRENT_LIMIT)
-    tasks = [run_card_with_semaphore(c["unique_id"], c["query"], c["tier"], sem) for c in cards]
-    await asyncio.gather(*tasks)
-    print("✅ scrape_ebay_dual.py finished")
-
-async def run_card_with_semaphore(uid, q, t, sem):
-    async with sem:
-        await scrape_card(uid, q, t)
-
-if __name__ == "__main__":
-    asyncio.run(run_dual_scraper())
+async def run
