@@ -1,5 +1,3 @@
-# utils.py
-
 import re
 
 EXCLUDED_TERMS = [
@@ -56,11 +54,13 @@ def is_valid_title(title, character, digits):
         numeric = "".join(filter(str.isdigit, lowered))
         if digits not in numeric:
             return False
-    # Allow x1 but block bulk quantities like 2x, 3x, etc.
-if re.search(r"(?:^|\\s)[2-9]x|x[2-9]|\\dx\\d", lowered):
-    return False
+
+    # Block bulk/multi quantities like 2x, 3x, 4x etc.
+    if re.search(r"(?:^|\s)[2-9]x|x[2-9]|\dx\d", lowered):
+        return False
     if "&" in lowered or "+" in lowered:
         return False
+
     return True
 
 def detect_holo_type(title):
