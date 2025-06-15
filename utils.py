@@ -56,9 +56,9 @@ def is_valid_title(title, character, digits):
         numeric = "".join(filter(str.isdigit, lowered))
         if digits not in numeric:
             return False
-    if "x" in lowered or "×" in lowered:
-        if any(char.isdigit() for char in lowered.split("x")[0]):
-            return False
+    # Allow x1 but block bulk quantities like 2x, 3x, etc.
+if re.search(r"(?:^|\\s)[2-9]x|x[2-9]|\\dx\\d", lowered):
+    return False
     if "&" in lowered or "+" in lowered:
         return False
     return True
