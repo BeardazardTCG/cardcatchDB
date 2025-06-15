@@ -36,17 +36,18 @@ def extract_sold_date(item):
     return None
 
 def build_ebay_url(query, sold=False, max_items=120):
-    base_url = "https://www.ebay.co.uk/sch/i.html"
+    base_url = "https://www.ebay.co.uk/sch/183454/i.html"
 
     params = {
         "_nkw": query,
         "_in_kw": "4",
-        "_sacat": "1",
-        "LH_PrefLoc": "1",
         "_sop": "1",
         "_dmd": "2",
         "_ipg": str(min(max_items, 120)),
-        "rt": "nc"
+        "rt": "nc",
+        "LH_PrefLoc": "1",
+        "Graded": "No",
+        "_dcat": "183454"
     }
 
     if sold:
