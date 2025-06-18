@@ -1,0 +1,8270 @@
+[
+  {
+    "unique_id": "sm8-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-203",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-58",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm9-161",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-152",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-206",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-61",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm8-8",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex16-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex16-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-142",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3-198",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-6",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-28",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-29",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4-210",
+    "tier": 2
+  },
+  {
+    "unique_id": "base6-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-27",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-30",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex5-11",
+    "tier": 2
+  },
+  {
+    "unique_id": "base6-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-142",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-39",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-42",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-57",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-155",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-170",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-153",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-61",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-27",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-158",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-158",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-117",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-51",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-76",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-114",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm8-195",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-97",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy5-91",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex2-72",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex2-73",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex2-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "base1-42",
+    "tier": 4
+  },
+  {
+    "unique_id": "base1-77",
+    "tier": 3
+  },
+  {
+    "unique_id": "base4-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-103",
+    "tier": 3
+  },
+  {
+    "unique_id": "base4-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-101",
+    "tier": 3
+  },
+  {
+    "unique_id": "base4-15",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-105",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-5",
+    "tier": 2
+  },
+  {
+    "unique_id": "base1-3",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-9",
+    "tier": 2
+  },
+  {
+    "unique_id": "base6-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-26",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-38",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-40",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-41",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-94",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw2-98",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw3-14",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw5-111",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw6-124",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-108",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw7-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-147",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-148",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-152",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-74",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw7-77",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex2-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex3-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw8-3",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw8-48",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-109",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-113",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-52",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw9-53",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-56",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw9-64",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "dc1-14",
+    "tier": 1
+  },
+  {
+    "unique_id": "dc1-21",
+    "tier": 3
+  },
+  {
+    "unique_id": "dc1-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "dc1-32",
+    "tier": 1
+  },
+  {
+    "unique_id": "dc1-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp1-23",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp1-6",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp1-69",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp1-7",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp2-42",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp2-8",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw5-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp3-20",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp3-34",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm12-250",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp3-4",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp3-7",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp4-103",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp5-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp5-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-140",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-3",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp6-34",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp6-36",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp6-6",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp6-7",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp6-8",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp7-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp7-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp7-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "dv1-5",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard1-15",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-28",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-32",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-41",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard1-58",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard1-65",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-67",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard1-79",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard1-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-131",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-18",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-39",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-7",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-72",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-88",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard2-90",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard2-93",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard2-94",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard2-96",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-133",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard3-121",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-109",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard3-66",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard3-61",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard3-94",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex10-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex10-111",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex10-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex10-86",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex1-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex1-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-28",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex11-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-83",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-63",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex12-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm12-227",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex12-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex12-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex13-1",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm12-256",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex13-105",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex13-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex13-12",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex13-26",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex13-29",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex13-3",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex13-5",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex13-97",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex1-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex14-10",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex14-3",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm12-255",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex14-5",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex14-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex14-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-75",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex15-89",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex15-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex16-1",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex16-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex16-108",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex2-1",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex3-87",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex3-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-15",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-6",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex4-71",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex4-89",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-87",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex5-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-10",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex6-17",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex7-29",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm2-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex8-20",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex8-94",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex7-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex9-15",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex9-59",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex9-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex9-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex9-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-13",
+    "tier": 3
+  },
+  {
+    "unique_id": "g1-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-25",
+    "tier": 2
+  },
+  {
+    "unique_id": "g1-28",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-36",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss1-11",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss1-112",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss1-118",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss1-122",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss1-17",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss1-2",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss1-24",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp1-122",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss1-91",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss1-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-78",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-8",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss2-84",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-91",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-28",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-41",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-82",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-87",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-88",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-21",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-91",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-93",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss4-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-96",
+    "tier": 2
+  },
+  {
+    "unique_id": "mcd19-9",
+    "tier": 3
+  },
+  {
+    "unique_id": "mcd19-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd19-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd19-12",
+    "tier": 3
+  },
+  {
+    "unique_id": "mcd19-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd19-7",
+    "tier": 3
+  },
+  {
+    "unique_id": "mcd21-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd21-9",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp7-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm7-165",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-144",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard2-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-19",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-25",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-48",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-30",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-60",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-65",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-66",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-84",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-40",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw10-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw11-54",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-51",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-26",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-38",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-54",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "np-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-63",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-24",
+    "tier": 4
+  },
+  {
+    "unique_id": "np-25",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-30",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-119",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-81",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-67",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-76",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-80",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw8-14",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-110",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-84",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-111",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-112",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-114",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-122",
+    "tier": 2
+  },
+  {
+    "unique_id": "pl1-123",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-124",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-125",
+    "tier": 2
+  },
+  {
+    "unique_id": "pl1-126",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-127",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-16",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl1-17",
+    "tier": 4
+  },
+  {
+    "unique_id": "pl1-36",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl1-47",
+    "tier": 4
+  },
+  {
+    "unique_id": "col1-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp3-131",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp4-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-15",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-10",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-55",
+    "tier": 2
+  },
+  {
+    "unique_id": "basep-15",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp2-93",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl2-104",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl2-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex10-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-111",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-100",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex6-111",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-5",
+    "tier": 3
+  },
+  {
+    "unique_id": "fut20-3",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-7",
+    "tier": 2
+  },
+  {
+    "unique_id": "g1-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-142",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-143",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-144",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-27",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl3-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl4-11",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss2-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl4-30",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss4-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl4-5",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl4-6",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss4-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd12-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd12-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl4-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop1-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-152",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop1-5",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop1-7",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop2-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-157",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop3-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop3-4",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop4-3",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop4-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop4-6",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop5-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop5-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-11",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop6-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-72",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-81",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-82",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-49",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop8-13",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm6-132",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop8-2",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop8-8",
+    "tier": 3
+  },
+  {
+    "unique_id": "ru1-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-14",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-15",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl4-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl4-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop3-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop5-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex5-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-3",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-194",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-195",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-199",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-20",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-200",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-203",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-191",
+    "tier": 1
+  },
+  {
+    "unique_id": "bp-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-192",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-217",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-221",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-204",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-222",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-224",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-225",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-57",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-61",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-218",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-221",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-230",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm11-222",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-225",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-228",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-241",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-242",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-255",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm115-44",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-156",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm115-66",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-71",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-78",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-79",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-156",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-165",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-212",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-219",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-220",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-222",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-224",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-225",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-125",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-126",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-226",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-233",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-216",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-34",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm11-220",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-234",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm11-237",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-252",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-247",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-253",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-260",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-140",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-266",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-48",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-38",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-75",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-139",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-142",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-143",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-148",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm2-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-160",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-60",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-20",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-200",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm115-67",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm1-157",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-72",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-39",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-72",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-118",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-157",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-158",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-216",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-234",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-238",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm12-239",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-247",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm5-143",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-196",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-161",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-269",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm5-163",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-165",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-215",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-216",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-218",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-220",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-189",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-163",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-153",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm6-140",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-150",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-152",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm3-154",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm3-157",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm7-156",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-27",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm35-77",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-122",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm75-73",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-113",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-78",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-201",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-221",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-168",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm8-225",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-155",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-60",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-162",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-165",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-170",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-171",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-174",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-184",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-190",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-196",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-33",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-236",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-53",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-172",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-63",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-139",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-24",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-56",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-193",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-144",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm3-64",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-223",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-162",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-167",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-173",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-174",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-181",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-226",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-228",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-70",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-77",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv2-265",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-274",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex8-22",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex8-18",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm11-219",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-224",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-209",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-214",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-223",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-230",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm8-232",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4-214",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-236",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-240",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-53",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm9-113",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-151",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-240",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-241",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-242",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-244",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-25",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard3-46",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex8-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex8-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-88",
+    "tier": 4
+  },
+  {
+    "unique_id": "base4-8",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex5-88",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv1-221",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv1-228",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex6-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp7-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-110",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex16-77",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex16-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-18",
+    "tier": 3
+  },
+  {
+    "unique_id": "pgo-83",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-196",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-198",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv2-199",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv2-200",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex16-89",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-78",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv2-206",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw6-127",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-128",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-210",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-211",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-222",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv9-180",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-237",
+    "tier": 3
+  },
+  {
+    "unique_id": "svp-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-116",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-34",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-150",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-260",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv2-262",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-272",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-54",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-78",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-79",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-88",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-223",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex2-15",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex2-12",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm12-259",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-74",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-206",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-217",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh1-201",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-120",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv3-204",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-106",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv3-223",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3-228",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-257",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-168",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-179",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv3pt5-181",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-130",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-194",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv3pt5-195",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv3pt5-198",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-201",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-202",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-205",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-147",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4-139",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4-188",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4-213",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4-225",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4-244",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4-261",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4-265",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-120",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-129",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-133",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh2-189",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-167",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-176",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv4pt5-206",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-207",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-210",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4pt5-216",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-235",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-236",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-96",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv5-163",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv5-174",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv5-166",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv5-179",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv5-186",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv5-194",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv6-173",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv6-221",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6-223",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-71",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-222",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-160",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-31",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm9-112",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm2-133",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6pt5-69",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-134",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6pt5-76",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv6pt5-82",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv6pt5-88",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv6pt5-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-136",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-19",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm9-187",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-176",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-188",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-43",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv7-149",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv7-153",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv7-154",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv7-155",
+    "tier": 3
+  },
+  {
+    "unique_id": "base6-45",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv7-30",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy10-122",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-69",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-110",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-47",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-113",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy1-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-21",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-27",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-138",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-79",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-140",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-69",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-113",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-156",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-147",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-148",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-153",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-52",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex5-50",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv8-201",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv8-205",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv8-199",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy6-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-206",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-220",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv8-224",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv8-234",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy6-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-222",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy6-58",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-61",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-75",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-238",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-251",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-236",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-76",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-57",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy7-43",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-158",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-238",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-131",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-87",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-88",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-91",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-144",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4-190",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv8pt5-167",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-175",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-176",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-180",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-154",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-156",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-157",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-158",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-163",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-164",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-138",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh1-209",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-151",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-75",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-118",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-119",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-26",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-52",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-77",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4-194",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-158",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-21",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-76",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-243",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-155",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-138",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-160",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4-200",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4-207",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm4-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-137",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-119",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv9-160",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv9-167",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv9-168",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv9-170",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv9-163",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv9-175",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv9-189",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-144",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-83",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-3",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-118",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-35",
+    "tier": 3
+  },
+  {
+    "unique_id": "svp-124",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-131",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-132",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-133",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-133",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-134",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw8-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-5",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-142",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-143",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-161",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-115",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-117",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-27",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-30",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex12-83",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-39",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-44",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-52",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-53",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-55",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-56",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-65",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-66",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-74",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-20",
+    "tier": 2
+  },
+  {
+    "unique_id": "pgo-30",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-74",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp2-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-8",
+    "tier": 3
+  },
+  {
+    "unique_id": "basep-10",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-81",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-89",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "fut20-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "fut20-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-160",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl2-9",
+    "tier": 2
+  },
+  {
+    "unique_id": "pl3-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh10-170",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh10-171",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh10-181",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl3-30",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss4-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop2-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop1-2",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh10-192",
+    "tier": 2
+  },
+  {
+    "unique_id": "pgo-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-196",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh10-203",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh10-207",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh10-212",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh10-201",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh10-206",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh10-209",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-213",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm6-135",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl4-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-205",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-54",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-214",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-249",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-251",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex5-1",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm12-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-80",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-127",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-155",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm3-149",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm35-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-72",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh11-179",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4-226",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-200",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh11-204",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh11-200",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh11-206",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh11-212",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh11-213",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4-241",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh11-210",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh11-215",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh11-217",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv4-259",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4-262",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh1-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh1-189",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh1-190",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh1-195",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh1-197",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh1-202",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh1-205",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh1-208",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh1-210",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh1-211",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw11-24",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh1-213",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh12-172",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-173",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh12-181",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh12-190",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-199",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh12-200",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-209",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-210",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-211",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh12-212",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh12-213",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy11-116",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh12pt5-153",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex6-2",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm6-138",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-46",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy3-54",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-122",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-103",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh1-212",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4-227",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy8-160",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-162",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-116",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex10-42",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex8-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh2-154",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh2-178",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy9-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh2-179",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh2-181",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh2-182",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh2-196",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh2-198",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh2-200",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh2-206",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh2-208",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-95",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4pt5-136",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-139",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm10-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-149",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh3-119",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex8-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-179",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh3-177",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh3-190",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh3-183",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh3-193",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4pt5-183",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh3-195",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh3-196",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw5-30",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-186",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh35-77",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh35-78",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw4-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh4-138",
+    "tier": 2
+  },
+  {
+    "unique_id": "pl1-118",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-173",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard3-45",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh4-173",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4pt5-215",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh4-167",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh4-168",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy1-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh4-177",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh4-185",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh4-188",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh4-189",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh4-195",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh4-201",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh4-202",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv4pt5-232",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-75",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-217",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv4pt5-234",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-74",
+    "tier": 4
+  },
+  {
+    "unique_id": "svp-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-82",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-73",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-215",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-30",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex6-3",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh5-142",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh5-147",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh5-148",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh5-157",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh5-171",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh5-173",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh5-175",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh5-176",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh5-178",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh5-181",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm35-74",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh6-184",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh6-176",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh6-181",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh6-192",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm8-132",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh6-198",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-204",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-206",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-209",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-214",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh6-215",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-216",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh6-228",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-229",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-231",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm8-226",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-169",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-185",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh7-171",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-172",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-174",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-175",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-179",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-180",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-184",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-187",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh7-188",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-189",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-217",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-212",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-225",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh7-228",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-232",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh7-29",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-65",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh8-260",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh8-266",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh8-267",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh8-268",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh8-271",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh8-273",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh8-280",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh8-282",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh9-123",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv4pt5-201",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-136",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm9-164",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-116",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-117",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-118",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-119",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-123",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-124",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-125",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-20",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-26",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-169",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-88",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy10-55",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw1-20",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy1-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-111",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-112",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-93",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard3-56",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-74",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-76",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy11-115",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-143",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-144",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-68",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy11-79",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-111",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy12-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-15",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy12-16",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy12-25",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy12-46",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy12-52",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-65",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-53",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy1-30",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-46",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-109",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-110",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-112",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-20",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy3-19",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy4-109",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy4-112",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy4-113",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-116",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-118",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-149",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-150",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-151",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-152",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy5-155",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-157",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy5-164",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy5-38",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-54",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-52",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy6-97",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy7-15",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy7-21",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-183",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy8-145",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard3-128",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy8-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-20",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy8-55",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh10-198",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy9-116",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-117",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-122",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-123",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-110",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-208",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm12-146",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy9-66",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy10-72",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-99",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm5-162",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-170",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-164",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-204",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw3-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw2-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-232",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-237",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw3-34",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv1-205",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw3-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-14",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard1-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh1-215",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw4-38",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-24",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard3-101",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex6-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-83",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv7-171",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-62",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-63",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-64",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex6-60",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex6-67",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw6-117",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-218",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-79",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-135",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-154",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex7-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-13",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex7-14",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-183",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-181",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex7-18",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex7-26",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm9-182",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-42",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard1-44",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv2-259",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-185",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-41",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex7-42",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv1-238",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv1-240",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-46",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv1-246",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv1-258",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex7-65",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6pt5-78",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-82",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-107",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex7-91",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard3-57",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm6-87",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-176",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh12-179",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw4-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh12-183",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-188",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh12-187",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-95",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex7-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "col1-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-262",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-30",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex9-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex13-81",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex14-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm75-67",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-66",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-68",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-234",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-71",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop6-16",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex9-77",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-56",
+    "tier": 4
+  },
+  {
+    "unique_id": "basep-52",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-224",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm8-231",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm8-227",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-14",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw7-144",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh2-43",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh2-71",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh2-93",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm2-135",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm2-151",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv1-227",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard3-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-60",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-37",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop2-9",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss2-26",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv2-261",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6pt5-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-3",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss2-20",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw6-123",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-271",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw7-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw6-46",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-5",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw5-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-97",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss2-6",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv1-256",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh5-149",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh45-70",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-257",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-116",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss2-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-82",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-87",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh6-224",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh5-159",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard1-101",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex8-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-65",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh5-160",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-8",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss3-26",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss3-3",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss3-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-24",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss3-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-84",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh5-165",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-235",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss3-89",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-2",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw6-118",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-28",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard1-120",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss4-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh5-170",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-49",
+    "tier": 2
+  },
+  {
+    "unique_id": "mcd12-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh2-26",
+    "tier": 4
+  },
+  {
+    "unique_id": "mcd12-8",
+    "tier": 4
+  },
+  {
+    "unique_id": "mcd12-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd12-2",
+    "tier": 3
+  },
+  {
+    "unique_id": "mcd12-3",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd12-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd12-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-114",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv6pt5-77",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv6pt5-85",
+    "tier": 4
+  },
+  {
+    "unique_id": "mcd19-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd19-3",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd19-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6pt5-89",
+    "tier": 4
+  },
+  {
+    "unique_id": "mcd19-2",
+    "tier": 3
+  },
+  {
+    "unique_id": "mcd19-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "mcd21-3",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm2-148",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex8-7",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard1-68",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw7-137",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-138",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw6-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm115-69",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-186",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "ru1-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-129",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv4pt5-106",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4pt5-108",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv4-209",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw6-122",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-22",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm3-132",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm5-116",
+    "tier": 4
+  },
+  {
+    "unique_id": "pl2-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-142",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-152",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm3-140",
+    "tier": 2
+  },
+  {
+    "unique_id": "pgo-78",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss3-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-110",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-15",
+    "tier": 4
+  },
+  {
+    "unique_id": "pl2-12",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw8-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-155",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm3-160",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard3-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "base1-12",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm11-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw3-101",
+    "tier": 4
+  },
+  {
+    "unique_id": "np-26",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8pt5-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex2-4",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss3-81",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-49",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp5-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-141",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex13-18",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss4-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv1-217",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex3-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-162",
+    "tier": 2
+  },
+  {
+    "unique_id": "col1-1",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm4-102",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw8-136",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-44",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex7-83",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm3-164",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard1-91",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy1-80",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex7-89",
+    "tier": 4
+  },
+  {
+    "unique_id": "pl2-40",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl3-15",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex15-21",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex13-78",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm7-102",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw8-17",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw8-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard3-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw8-25",
+    "tier": 1
+  },
+  {
+    "unique_id": "col1-52",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw9-115",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-117",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw9-107",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw9-48",
+    "tier": 4
+  },
+  {
+    "unique_id": "pl4-15",
+    "tier": 4
+  },
+  {
+    "unique_id": "pl4-32",
+    "tier": 4
+  },
+  {
+    "unique_id": "bw9-99",
+    "tier": 3
+  },
+  {
+    "unique_id": "cel25-7",
+    "tier": 3
+  },
+  {
+    "unique_id": "cel25-25",
+    "tier": 1
+  },
+  {
+    "unique_id": "col1-10",
+    "tier": 3
+  },
+  {
+    "unique_id": "col1-35",
+    "tier": 2
+  },
+  {
+    "unique_id": "col1-27",
+    "tier": 4
+  },
+  {
+    "unique_id": "col1-33",
+    "tier": 1
+  },
+  {
+    "unique_id": "col1-44",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl4-9",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm10-216",
+    "tier": 2
+  },
+  {
+    "unique_id": "col1-8",
+    "tier": 4
+  },
+  {
+    "unique_id": "pop1-9",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop2-11",
+    "tier": 4
+  },
+  {
+    "unique_id": "det1-9",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp1-14",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm7-109",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp1-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp1-33",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp1-126",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp1-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop3-5",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop3-6",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp1-13",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop3-9",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop4-10",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop4-13",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop2-2",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp1-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp2-23",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp2-122",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp2-13",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop5-6",
+    "tier": 4
+  },
+  {
+    "unique_id": "col1-20",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop6-13",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp3-1",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp3-18",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp3-3",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp3-13",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp3-19",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp3-21",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp4-10",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp4-104",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp4-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp4-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp4-25",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp5-1",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp5-19",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp5-33",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp5-32",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp6-50",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp6-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-218",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp7-6",
+    "tier": 3
+  },
+  {
+    "unique_id": "dv1-21",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-130",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard2-133",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard2-120",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-137",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard2-27",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-15",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-77",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex10-116",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex10-16",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex10-27",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex10-46",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex11-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex1-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-29",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex11-106",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex11-39",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-93",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex12-12",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex12-16",
+    "tier": 3
+  },
+  {
+    "unique_id": "pop7-1",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop7-10",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex13-96",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex15-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex1-8",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex1-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex16-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-140",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm10-158",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-197",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-219",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-220",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-82",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-132",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm11-214",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-217",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard3-141",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard3-140",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard3-67",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm10-211",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv5-180",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv5-198",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv5-203",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv5-173",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv6-168",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6-130",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv6-211",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6-217",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6-218",
+    "tier": 1
+  },
+  {
+    "unique_id": "dc1-15",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3-225",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-196",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6pt5-84",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm1-144",
+    "tier": 4
+  },
+  {
+    "unique_id": "base1-58",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm7-14",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm12-215",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-221",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-261",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-267",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-226",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex9-8",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm1-27",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm1-35",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp7-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-132",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-150",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv1-204",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-154",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-165",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-74",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm2-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-85",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard1-84",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm11-231",
+    "tier": 1
+  },
+  {
+    "unique_id": "fut20-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex2-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm11-239",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-130",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp3-132",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp7-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-145",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm3-148",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-130",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-236",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-144",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm3-169",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-162",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm35-10",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex13-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-235",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-73",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-71",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-108",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm11-245",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-80",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm11-249",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop5-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-57",
+    "tier": 4
+  },
+  {
+    "unique_id": "hgss1-96",
+    "tier": 2
+  },
+  {
+    "unique_id": "pl3-147",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-153",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp1-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-172",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-174",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv1-255",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm9-160",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh6-187",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp7-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-5",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm11-223",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop4-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-263",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-192",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv8-208",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv8-217",
+    "tier": 4
+  },
+  {
+    "unique_id": "dp3-16",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy10-54",
+    "tier": 4
+  },
+  {
+    "unique_id": "ecard1-61",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss4-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-237",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-39",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm1-150",
+    "tier": 2
+  },
+  {
+    "unique_id": "pl3-98",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv7-146",
+    "tier": 3
+  },
+  {
+    "unique_id": "sv8-247",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv8-248",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop7-3",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm11-253",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex2-46",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex9-102",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv3-201",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-213",
+    "tier": 2
+  },
+  {
+    "unique_id": "svp-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh6-165",
+    "tier": 3
+  },
+  {
+    "unique_id": "swsh6-217",
+    "tier": 3
+  },
+  {
+    "unique_id": "pl3-1",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy11-109",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-152",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv5-196",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard1-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard1-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-64",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp5-3",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy11-78",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm1-153",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-154",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp5-25",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm115-42",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm7-169",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm7-175",
+    "tier": 1
+  },
+  {
+    "unique_id": "base1-83",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp5-15",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex14-13",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm7-176",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm7-178",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh10-177",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-177",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-102",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-107",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm35-78",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-28",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm4-109",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm4-110",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-107",
+    "tier": 4
+  },
+  {
+    "unique_id": "sm4-112",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop3-11",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm7-180",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard2-60",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm10-202",
+    "tier": 3
+  },
+  {
+    "unique_id": "ecard2-9",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex3-8",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm7-28",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex14-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-184",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex3-89",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex3-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex3-91",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex3-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-63",
+    "tier": 3
+  },
+  {
+    "unique_id": "mcd12-12",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh10-176",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex3-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-101",
+    "tier": 4
+  },
+  {
+    "unique_id": "swsh11-211",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex4-17",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex3-33",
+    "tier": 4
+  },
+  {
+    "unique_id": "sv9-169",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex4-21",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex4-3",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm6-123",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh10-204",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm6-136",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-109",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-28",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv2-248",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-78",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy3-61",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex4-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm12-211",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-213",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw5-29",
+    "tier": 3
+  },
+  {
+    "unique_id": "bw5-12",
+    "tier": 2
+  },
+  {
+    "unique_id": "sv9-178",
+    "tier": 4
+  },
+  {
+    "unique_id": "base4-108",
+    "tier": 4
+  },
+  {
+    "unique_id": "ex4-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-91",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex5-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3-186",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm7-48",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex5-4",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-12",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-13",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm5-100",
+    "tier": 3
+  },
+  {
+    "unique_id": "base4-17",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-19",
+    "tier": 2
+  },
+  {
+    "unique_id": "base4-22",
+    "tier": 3
+  },
+  {
+    "unique_id": "base4-23",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp6-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-23",
+    "tier": 4
+  },
+  {
+    "unique_id": "xy5-104",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy5-163",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy5-154",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-55",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-26",
+    "tier": 1
+  },
+  {
+    "unique_id": "base1-21",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex2-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex3-26",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss2-10",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm12-258",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss2-85",
+    "tier": 3
+  },
+  {
+    "unique_id": "hgss2-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-254",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-17",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-158",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy6-92",
+    "tier": 4
+  },
+  {
+    "unique_id": "basep-2",
+    "tier": 3
+  },
+  {
+    "unique_id": "base4-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-32",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop4-9",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm10-198",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-201",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-1",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp6-27",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp6-143",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex9-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss1-107",
+    "tier": 3
+  },
+  {
+    "unique_id": "basep-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-210",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-61",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-157",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-227",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop9-15",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw4-54",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-139",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp3-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-103",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-143",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh2-202",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex12-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-33",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-79",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss4-87",
+    "tier": 2
+  },
+  {
+    "unique_id": "ecard2-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "base6-49",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh9-153",
+    "tier": 1
+  },
+  {
+    "unique_id": "col1-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss3-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd21-17",
+    "tier": 3
+  },
+  {
+    "unique_id": "sm10-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-107",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-130",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-92",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-94",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-95",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-215",
+    "tier": 1
+  },
+  {
+    "unique_id": "base1-76",
+    "tier": 2
+  },
+  {
+    "unique_id": "mcd19-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-4",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-20",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp3-9",
+    "tier": 2
+  },
+  {
+    "unique_id": "base1-63",
+    "tier": 3
+  },
+  {
+    "unique_id": "basep-14",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex2-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-171",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6-163",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-135",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl2-108",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp5-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex2-25",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex7-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-211",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-137",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-28",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-45",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-47",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-89",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw8-132",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp2-18",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm4-119",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv3pt5-186",
+    "tier": 1
+  },
+  {
+    "unique_id": "base1-86",
+    "tier": 3
+  },
+  {
+    "unique_id": "base6-33",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-13",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-135",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-136",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-170",
+    "tier": 1
+  },
+  {
+    "unique_id": "svp-148",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-80",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-24",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw10-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "base4-62",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw10-100",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex12-88",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp7-10",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp4-4",
+    "tier": 3
+  },
+  {
+    "unique_id": "dp7-11",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex10-19",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex10-3",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex10-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-68",
+    "tier": 2
+  },
+  {
+    "unique_id": "bw4-82",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-101",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw7-85",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm12-184",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw8-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-87",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl1-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex1-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp2-124",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy2-41",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp6-24",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss1-30",
+    "tier": 2
+  },
+  {
+    "unique_id": "hgss1-28",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-19",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-23",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-20",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex5-15",
+    "tier": 2
+  },
+  {
+    "unique_id": "dp5-99",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop9-3",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy4-34",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm12-264",
+    "tier": 2
+  },
+  {
+    "unique_id": "mcd12-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex14-11",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy6-77",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-28",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-145",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex15-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-66",
+    "tier": 1
+  },
+  {
+    "unique_id": "hgss3-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "basep-42",
+    "tier": 1
+  },
+  {
+    "unique_id": "mcd21-20",
+    "tier": 2
+  },
+  {
+    "unique_id": "mcd21-24",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard3-71",
+    "tier": 1
+  },
+  {
+    "unique_id": "dp1-8",
+    "tier": 3
+  },
+  {
+    "unique_id": "ex11-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "fut20-2",
+    "tier": 1
+  },
+  {
+    "unique_id": "g1-24",
+    "tier": 1
+  },
+  {
+    "unique_id": "pl3-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop3-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex1-14",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop5-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop5-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop6-10",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop7-9",
+    "tier": 2
+  },
+  {
+    "unique_id": "pop8-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop8-14",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop8-9",
+    "tier": 2
+  },
+  {
+    "unique_id": "mcd12-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-182",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-233",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-229",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-160",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-230",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-227",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-244",
+    "tier": 1
+  },
+  {
+    "unique_id": "pop1-6",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm115-16",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm115-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm115-9",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-246",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-248",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-131",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-207",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-163",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm10-208",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-61",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-89",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm11-152",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-156",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-157",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-133",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-136",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-155",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-139",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-153",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-156",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-137",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-134",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-53",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm35-75",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-88",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm3-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-66",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-142",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-146",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-147",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm2-149",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-115",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm4-117",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-144",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-139",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-140",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm5-141",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-120",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-122",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-124",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-125",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-126",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-20",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm6-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex13-44",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-154",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6pt5-87",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-45",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-52",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-171",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-172",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-88",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw11-77",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-18",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-37",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm75-41",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv1-241",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw4-5",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex11-24",
+    "tier": 2
+  },
+  {
+    "unique_id": "ex13-19",
+    "tier": 1
+  },
+  {
+    "unique_id": "bw8-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "pgo-88",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm1-146",
+    "tier": 3
+  },
+  {
+    "unique_id": "xy10-25",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy10-84",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh7-203",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-22",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-197",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-11",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy12-72",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy1-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-198",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-207",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-219",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-1",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-166",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-191",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-167",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-168",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-90",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-159",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-149",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-205",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-202",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-204",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6-222",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-96",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-97",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv6-196",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh11-205",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh1-206",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh3-2",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm9-195",
+    "tier": 2
+  },
+  {
+    "unique_id": "swsh7-18",
+    "tier": 2
+  },
+  {
+    "unique_id": "xy2-79",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-105",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-91",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-55",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-74",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy3-64",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-114",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-115",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy4-121",
+    "tier": 1
+  },
+  {
+    "unique_id": "ex4-35",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-86",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy5-93",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-59",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-60",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-98",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy6-62",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-28",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-25",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-27",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-68",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-7",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-8",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy7-85",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-155",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy8-21",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-114",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-115",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-32",
+    "tier": 1
+  },
+  {
+    "unique_id": "xy9-74",
+    "tier": 1
+  },
+  {
+    "unique_id": "ecard2-80",
+    "tier": 2
+  },
+  {
+    "unique_id": "np-21",
+    "tier": 1
+  },
+  {
+    "unique_id": "np-29",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm7-31",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-52",
+    "tier": 1
+  },
+  {
+    "unique_id": "swsh11-197",
+    "tier": 2
+  },
+  {
+    "unique_id": "sm8-199",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm8-34",
+    "tier": 1
+  },
+  {
+    "unique_id": "sm9-106",
+    "tier": 1
+  },
+  {
+    "unique_id": "sv2-275",
+    "tier": 1
+  }
+]
