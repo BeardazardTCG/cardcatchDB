@@ -85,7 +85,6 @@ def main():
                 "hot_character": hot_character
             }
 
-        # 🔒 Try scoping to cards_due.json
         try:
             with open("cards_due.json") as f:
                 scoped_ids = set(card["unique_id"].strip() for card in json.load(f))
@@ -109,15 +108,15 @@ def main():
 
                 median_sold = None
                 if sold_prices:
-                    filtered = filter_outliers(sold_prices)
-                    if len(filtered) >= 2:
-                        median_sold = calculate_median(filtered)
+                    filtered_sold = filter_outliers(sold_prices)
+                    if len(filtered_sold) >= 2:
+                        median_sold = calculate_median(filtered_sold)
 
                 median_active = None
                 if median_sold is None and active_prices:
-                    filtered = filter_outliers(active_prices)
-                    if len(filtered) >= 2:
-                        median_active = calculate_median(filtered)
+                    filtered_active = filter_outliers(active_prices)
+                    if len(filtered_active) >= 2:
+                        median_active = calculate_median(filtered_active)
 
                 tcg_price = None
                 if median_sold is None and median_active is None:
@@ -130,11 +129,10 @@ def main():
                 if clean is not None:
                     updates["clean_avg_value"] = round(clean, 2)
 
-                filtered = filter_outliers(sold_prices)
-                if filtered:
-                    updates["verified_sales_logged"] = len(filtered)
-                    updates["price_range_seen_min"] = round(min(filtered), 2)
-                    updates["price_range_seen_max"] = round(max(filtered), 2)
+                if filtered_sold:
+                    updates["verified_sales_logged"] = len(filtered_sold)
+                    updates["price_range_seen_min"] = round(min(filtered_sold), 2)
+                    updates["price_range_seen_max"] = round(max(filtered_sold), 2)
 
                 flags = flag_data.get(uid, {"wishlist": False, "inventory": False, "hot_character": False})
                 wishlist = flags["wishlist"]
@@ -167,8 +165,9 @@ def main():
                     with open("clean_log.txt", "a") as f:
                         f.write(f"✅ Updated {uid} at {datetime.datetime.utcnow().isoformat()} | {updates}\n")
                     conn.commit()
-                    if i % 500 == 0:
-                        print(f"🔁 Committed batch: {i - 499}–{i}", flush=True)
+                    print(f"✅ {uid} | sold={median_sold} active={median_active} tcg={tcg_price} → tier {tier}")
+                else:
+                    print(f"⚠️ Skipped {uid} — no usable price data")
             except Exception as e:
                 print(f"❌ Error updating {uid}: {e}")
                 traceback.print_exc()
@@ -178,7 +177,6 @@ def main():
         cur.close()
         conn.close()
 
-        # Clean up scoped list after run
         import os
         if os.path.exists("cards_due.json"):
             try:
