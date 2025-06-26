@@ -128,11 +128,9 @@ def call_dual_scraper():
         result = subprocess.run(
             [sys.executable, "archive/scrape_ebay_dual.py"],
             check=True,
-            capture_output=True,
-            text=True
+            stdout=sys.stdout,
+            stderr=sys.stderr
         )
-        print(result.stdout)
-        print(result.stderr)
         print(f"🔁 Scraper finished with return code {result.returncode}")
         log_scrape_event("ebay_dual", "success", -1)
     except subprocess.CalledProcessError as e:
@@ -146,11 +144,9 @@ def call_tcg_scraper():
         result = subprocess.run(
             [sys.executable, "tcg_price_updater.py"],
             check=True,
-            capture_output=True,
-            text=True
+            stdout=sys.stdout,
+            stderr=sys.stderr
         )
-        print(result.stdout)
-        print(result.stderr)
         print(f"🔁 TCG scraper finished with return code {result.returncode}")
         log_scrape_event("tcg", "success", -1)
     except subprocess.CalledProcessError as e:
@@ -204,11 +200,9 @@ if __name__ == "__main__":
                 result = subprocess.run(
                     [sys.executable, "update_clean_and_tiers.py"],
                     check=True,
-                    capture_output=True,
-                    text=True
+                    stdout=sys.stdout,
+                    stderr=sys.stderr
                 )
-                print(result.stdout)
-                print(result.stderr)
                 print(f"🔁 Post-scrape update finished with return code {result.returncode}")
                 log_scrape_event("post_scrape_update", "success", -1)
             except subprocess.CalledProcessError as e:
