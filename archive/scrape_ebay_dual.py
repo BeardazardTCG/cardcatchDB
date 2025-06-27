@@ -176,38 +176,42 @@ async def scrape_card(unique_id, query, tier):
                 prices.append(item.get("price"))
             await session.commit()
 
-filtered = filter_outliers(prices)
-if filtered:
-    median_val = calculate_median(filtered)
-    average = calculate_average(filtered)
-    best = min(filtered)
-    count = len(filtered)
-    _, digits = parse_card_meta(query)
-    await session.execute(text("""
-        INSERT INTO activedailypricelog (
-            unique_id, active_date, median_price, average_price,
-            sale_count, query_used, card_number, url_used,
-            lowest_price, trusted
-        )
-        VALUES (
-            :uid, :dt, :median, :avg,
-            :count, :query, :card, :url,
-            :low, TRUE
-        )
-    """), {
-        "uid": unique_id,
-        "dt": datetime.utcnow().date(),
-        "median": median_val,
-        "avg": average,
-        "count": count,
-        "query": query,
-        "card": digits,
-        "url": search_url,
-        "low": best
-    })
-    await session.commit()
-else:
-    print(f"⚠️ No usable active prices for {unique_id} → skipping activedailypricelog insert")
+            try:
+                filtered = filter_outliers(prices)
+                if filtered:
+                    median_val = calculate_median(filtered)
+                    average = calculate_average(filtered)
+                    best = min(filtered)
+                    count = len(filtered)
+                    _, digits = parse_card_meta(query)
+                    await session.execute(text("""
+                        INSERT INTO activedailypricelog (
+                            unique_id, active_date, median_price, average_price,
+                            sale_count, query_used, card_number, url_used,
+                            lowest_price, trusted
+                        )
+                        VALUES (
+                            :uid, :dt, :median, :avg,
+                            :count, :query, :card, :url,
+                            :low, TRUE
+                        )
+                    """), {
+                        "uid": unique_id,
+                        "dt": datetime.utcnow().date(),
+                        "median": median_val,
+                        "avg": average,
+                        "count": count,
+                        "query": query,
+                        "card": digits,
+                        "url": search_url,
+                        "low": best
+                    })
+                    await session.commit()
+                else:
+                    print(f"⚠️ No usable active prices for {unique_id} → skipping activedailypricelog insert")
+            except Exception as e:
+                print(f"❌ Error filtering active prices for {unique_id}: {e}")
+                traceback.print_exc()
 
             active_success = True
 
