@@ -106,11 +106,11 @@ def main():
                 active_prices = active_data.get(uid, [])
                 tcg_prices = tcg_data.get(uid, {})
 
-                filtered_sold = []  # Always define this so it's safe below
+                filtered_sold = []
                 median_sold = None
                 if sold_prices:
                     filtered_sold = filter_outliers(sold_prices)
-                    if len(filtered_sold) >= 2:
+                    if filtered_sold:
                         median_sold = calculate_median(filtered_sold)
 
                 filtered_active = []
