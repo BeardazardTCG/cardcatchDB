@@ -38,6 +38,10 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 API_BASE_URL = "https://api.pokemontcg.io/v2"
 PAGE_SIZE = 250
+DEFAULT_SINCE_DATE = "2025-03-28"
+HTTP_TIMEOUT_SECONDS = 60.0
+MAX_HTTP_RETRIES = 3
+HTTP_RETRY_BACKOFF_SECONDS = 1.0
 DEFAULT_TIER = 3
 TARGET_TABLE = "mastercard_v2"
 
@@ -70,7 +74,10 @@ IMPORT_COLUMNS = [
 
 @dataclass
 class ImportStats:
+    sets_fetched: int = 0
     sets_checked: int = 0
+    sets_skipped_by_date: int = 0
+    sets_skipped_unparseable_date: int = 0
     cards_checked: int = 0
     inserted: int = 0
     skipped: int = 0
@@ -103,6 +110,15 @@ def parse_args() -> argparse.Namespace:
         default=10,
         help="Number of would-insert examples to print during dry-run (default: 10).",
     )
+    parser.add_argument(
+        "--since-date",
+        type=parse_iso_date_arg,
+        default=parse_iso_date_arg(DEFAULT_SINCE_DATE),
+        help=(
+            "Only fetch cards for PokémonTCG.io sets with releaseDate after this "
+            f"date, in YYYY-MM-DD format (default: {DEFAULT_SINCE_DATE})."
+        ),
+    )
     return parser.parse_args()
 
 
@@ -123,6 +139,15 @@ def slugify(value: str | None) -> str | None:
     return slug or None
 
 
+def parse_iso_date_arg(value: str) -> date:
+    parsed = parse_iso_date(value)
+    if parsed is None:
+        raise argparse.ArgumentTypeError(
+            f"invalid date {value!r}; expected YYYY-MM-DD"
+        )
+    return parsed
+
+
 def parse_iso_date(value: str | None) -> date | None:
     if not value or not isinstance(value, str):
         return None
@@ -135,6 +160,26 @@ def parse_iso_date(value: str | None) -> date | None:
         return date.fromisoformat(normalized)
     except ValueError:
         return None
+
+
+def filter_sets_after_date(
+    sets: Iterable[dict[str, Any]], since_date: date
+) -> tuple[list[dict[str, Any]], int, int]:
+    filtered_sets: list[dict[str, Any]] = []
+    skipped_by_date = 0
+    skipped_unparseable = 0
+
+    for pokemon_set in sets:
+        release_date = parse_iso_date(pokemon_set.get("releaseDate"))
+        if release_date is None:
+            skipped_unparseable += 1
+            continue
+        if release_date <= since_date:
+            skipped_by_date += 1
+            continue
+        filtered_sets.append(pokemon_set)
+
+    return filtered_sets, skipped_by_date, skipped_unparseable
 
 
 def compact_json(value: Any) -> str | None:
@@ -183,11 +228,53 @@ def build_import_row(card: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+class PokemonTCGFetchError(RuntimeError):
+    """Raised when a PokémonTCG.io endpoint cannot be fetched after retries."""
+
+
+async def fetch_page_with_retries(
+    client: httpx.AsyncClient,
+    endpoint: str,
+    *,
+    params: dict[str, Any],
+    page: int,
+) -> dict[str, Any]:
+    request_params = {**params, "page": page}
+    for attempt in range(1, MAX_HTTP_RETRIES + 1):
+        try:
+            response = await client.get(
+                f"{API_BASE_URL}/{endpoint}",
+                params=request_params,
+            )
+            response.raise_for_status()
+            return response.json()
+        except httpx.ReadTimeout as exc:
+            if attempt >= MAX_HTTP_RETRIES:
+                raise PokemonTCGFetchError(
+                    "Timed out fetching PokémonTCG.io "
+                    f"endpoint={endpoint!r} page={page} after "
+                    f"{MAX_HTTP_RETRIES} attempts."
+                ) from exc
+
+            backoff = HTTP_RETRY_BACKOFF_SECONDS * attempt
+            print(
+                "⚠️ Read timeout fetching PokémonTCG.io "
+                f"endpoint={endpoint!r} page={page}; retrying "
+                f"{attempt + 1}/{MAX_HTTP_RETRIES} after {backoff:.1f}s."
+            )
+            await asyncio.sleep(backoff)
+
+    raise PokemonTCGFetchError(
+        f"Unable to fetch PokémonTCG.io endpoint={endpoint!r} page={page}."
+    )
+
+
 async def fetch_all_pages(
     client: httpx.AsyncClient,
     endpoint: str,
     *,
     params: dict[str, Any] | None = None,
+    continue_on_timeout: bool = False,
 ) -> list[dict[str, Any]]:
     params = dict(params or {})
     params.setdefault("pageSize", PAGE_SIZE)
@@ -195,12 +282,19 @@ async def fetch_all_pages(
     all_items: list[dict[str, Any]] = []
 
     while True:
-        response = await client.get(
-            f"{API_BASE_URL}/{endpoint}",
-            params={**params, "page": page},
-        )
-        response.raise_for_status()
-        payload = response.json()
+        try:
+            payload = await fetch_page_with_retries(
+                client,
+                endpoint,
+                params=params,
+                page=page,
+            )
+        except PokemonTCGFetchError as exc:
+            if not continue_on_timeout:
+                raise
+            print(f"⚠️ {exc} Continuing with the next set.")
+            break
+
         items = payload.get("data") or []
         all_items.extend(items)
 
@@ -300,7 +394,10 @@ async def main() -> None:
     engine = create_async_engine(normalize_database_url(database_url), echo=False)
     stats = ImportStats()
 
-    async with httpx.AsyncClient(headers=headers, timeout=httpx.Timeout(30.0)) as client:
+    async with httpx.AsyncClient(
+        headers=headers,
+        timeout=httpx.Timeout(HTTP_TIMEOUT_SECONDS),
+    ) as client:
         sets = await fetch_all_pages(
             client,
             "sets",
@@ -308,6 +405,10 @@ async def main() -> None:
                 "orderBy": "releaseDate",
                 "select": "id,name,ptcgoCode,releaseDate,images",
             },
+        )
+        stats.sets_fetched = len(sets)
+        sets, stats.sets_skipped_by_date, stats.sets_skipped_unparseable_date = (
+            filter_sets_after_date(sets, args.since_date)
         )
         stats.sets_checked = len(sets)
         set_names_by_id = {pokemon_set.get("id"): pokemon_set.get("name") for pokemon_set in sets}
@@ -342,6 +443,7 @@ async def main() -> None:
                             "subtypes,images,set"
                         ),
                     },
+                    continue_on_timeout=True,
                 )
 
                 for card in cards:
@@ -387,6 +489,13 @@ async def main() -> None:
     else:
         print("✅ Import complete.")
 
+    print(f"Since date: {args.since_date.isoformat()} (exclusive)")
+    print(f"Sets fetched: {stats.sets_fetched}")
+    print(f"Sets skipped by date: {stats.sets_skipped_by_date}")
+    print(
+        "Sets skipped with unparseable releaseDate: "
+        f"{stats.sets_skipped_unparseable_date}"
+    )
     print(f"Sets checked: {stats.sets_checked}")
     print(f"Cards checked: {stats.cards_checked}")
     print(f"Inserted: {stats.inserted if not args.dry_run else 0}")
