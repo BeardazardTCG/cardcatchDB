@@ -6,7 +6,9 @@ from urllib.parse import parse_qs, urlparse
 
 from playwright.sync_api import sync_playwright
 
-AUTH_STATE_PATH = Path(__file__).resolve().parents[1] / "auth" / "ebay-storage-state.json"
+AUTH_STATE_PATH = (
+    Path(__file__).resolve().parents[1] / "auth" / "ebay-storage-state.json"
+)
 SEARCH_API_PATH = "/sh/research/api/search"
 
 TEST_CASES = [
@@ -25,9 +27,36 @@ TEST_CASES = [
 ]
 
 EXCLUSION_TERMS = [
-    "bundle", "lot", "job lot", "collection", "bulk", "playset", "2x", "3x", "4x", "5x", "6x",
-    "proxy", "custom", "digital", "booster", "pack", "box", "tin", "elite trainer", "etb", "case",
-    "psa", "bgs", "cgc", "ace", "sgc", "tag", "pristine", "slab", "graded",
+    "bundle",
+    "lot",
+    "job lot",
+    "collection",
+    "bulk",
+    "playset",
+    "2x",
+    "3x",
+    "4x",
+    "5x",
+    "6x",
+    "proxy",
+    "custom",
+    "digital",
+    "booster",
+    "pack",
+    "box",
+    "tin",
+    "elite trainer",
+    "etb",
+    "case",
+    "psa",
+    "bgs",
+    "cgc",
+    "ace",
+    "sgc",
+    "tag",
+    "pristine",
+    "slab",
+    "graded",
 ]
 
 
@@ -59,12 +88,74 @@ def top_level_keys(payload: Any) -> list[str]:
 
 def compact_preview(payload: Any, max_chars: int = 800) -> str:
     try:
-        preview = json.dumps(payload, ensure_ascii=False, separators=(",", ":"), default=str)
+        preview = json.dumps(
+            payload, ensure_ascii=False, separators=(",", ":"), default=str
+        )
     except TypeError:
         preview = repr(payload)
     if len(preview) > max_chars:
         return f"{preview[:max_chars]}..."
     return preview
+
+
+def parse_concatenated_json_modules(body: str) -> tuple[list[Any], str | None]:
+    decoder = json.JSONDecoder()
+    modules: list[Any] = []
+    index = 0
+    length = len(body)
+
+    while index < length:
+        while index < length and body[index].isspace():
+            index += 1
+        if index >= length:
+            break
+
+        try:
+            module, next_index = decoder.raw_decode(body, index)
+        except json.JSONDecodeError as exc:
+            return modules, f"{exc.msg}: line {exc.lineno} column {exc.colno}"
+
+        modules.append(module)
+        index = next_index
+
+    return modules, None
+
+
+def module_type(module: Any) -> str:
+    if isinstance(module, dict):
+        value = module.get("_type")
+        if isinstance(value, str):
+            return value
+    return ""
+
+
+def find_module_by_type(modules: list[Any], wanted_type: str) -> dict[str, Any]:
+    for module in modules:
+        if isinstance(module, dict) and module.get("_type") == wanted_type:
+            return module
+    return {}
+
+
+def first_text_span_text(value: Any) -> str:
+    if not isinstance(value, dict):
+        return ""
+    text_spans = value.get("textSpans")
+    if not isinstance(text_spans, list) or not text_spans:
+        return ""
+    first_span = text_spans[0]
+    if not isinstance(first_span, dict):
+        return ""
+    text = first_span.get("text")
+    return text.strip() if isinstance(text, str) else ""
+
+
+def nested_get(payload: Any, path: list[str]) -> Any:
+    node = payload
+    for key in path:
+        if not isinstance(node, dict):
+            return None
+        node = node.get(key)
+    return node
 
 
 def collect_listings(payload: Any) -> list[dict[str, Any]]:
@@ -89,6 +180,14 @@ def collect_listings(payload: Any) -> list[dict[str, Any]]:
 
 
 def extract_title(item: dict[str, Any]) -> str:
+    title = first_text_span_text(nested_get(item, ["listing", "title"]))
+    if title:
+        return title
+
+    extended_title = nested_get(item, ["listing", "extendedTitle", "value"])
+    if isinstance(extended_title, str) and extended_title.strip():
+        return extended_title.strip()
+
     for key in ("title", "name", "itemTitle"):
         value = item.get(key)
         if isinstance(value, str) and value.strip():
@@ -97,6 +196,12 @@ def extract_title(item: dict[str, Any]) -> str:
 
 
 def extract_price(item: dict[str, Any]) -> Any:
+    avg_sales_price = first_text_span_text(
+        nested_get(item, ["avgsalesprice", "avgsalesprice"])
+    )
+    if avg_sales_price:
+        return avg_sales_price
+
     for key in ("price", "soldPrice", "averageSoldPrice", "value"):
         value = item.get(key)
         if isinstance(value, (int, float, str)):
@@ -107,6 +212,18 @@ def extract_price(item: dict[str, Any]) -> Any:
                 if isinstance(nested, (int, float, str)):
                     return nested
     return None
+
+
+def extract_listing_details(item: dict[str, Any]) -> dict[str, Any]:
+    item_id = nested_get(item, ["listing", "itemId", "value"])
+    return {
+        "title": extract_title(item),
+        "price": extract_price(item),
+        "items_sold": first_text_span_text(item.get("itemssold")),
+        "total_sales": first_text_span_text(item.get("totalsales")),
+        "date_last_sold": first_text_span_text(item.get("datelastsold")),
+        "item_id": item_id if isinstance(item_id, str) else "",
+    }
 
 
 def to_float(value: Any) -> float | None:
@@ -120,6 +237,13 @@ def to_float(value: Any) -> float | None:
         except ValueError:
             return None
     return None
+
+
+def extract_search_results(module: dict[str, Any]) -> list[dict[str, Any]]:
+    results = module.get("results")
+    if isinstance(results, list):
+        return [result for result in results if isinstance(result, dict)]
+    return []
 
 
 def listing_score(payload: Any) -> int:
@@ -155,9 +279,32 @@ def extract_aggregate_metrics(
     if not isinstance(payload, dict):
         return {}
 
+    if payload.get("_type") == "ResearchAggregateModule":
+        aggregate: dict[str, Any] = {}
+        sections = payload.get("sections")
+        if not isinstance(sections, list):
+            return aggregate
+
+        for section in sections:
+            if not isinstance(section, dict):
+                continue
+            data_items = section.get("dataItems")
+            if not isinstance(data_items, list):
+                continue
+            for data_item in data_items:
+                if not isinstance(data_item, dict):
+                    continue
+                header = first_text_span_text(data_item.get("header"))
+                value = first_text_span_text(data_item.get("value"))
+                if header:
+                    aggregate[header] = value
+        return aggregate
+
     module_names = {module.lower() for module in modules or []}
 
-    aggregate = find_named_dict(payload, {"aggregates", "aggregate", "summary", "metrics"})
+    aggregate = find_named_dict(
+        payload, {"aggregates", "aggregate", "summary", "metrics"}
+    )
     if aggregate:
         return aggregate
 
@@ -226,19 +373,36 @@ def run_diagnostic() -> None:
                 if not looks_like_search_api(response.url):
                     return
 
+                body = ""
                 parse_error = None
                 try:
-                    payload = response.json()
+                    body = response.text()
+                    parsed_modules, parse_error = parse_concatenated_json_modules(body)
                 except Exception as exc:
-                    payload = None
+                    parsed_modules = []
                     parse_error = str(exc)
+
+                module_types = [
+                    module_type(module)
+                    for module in parsed_modules
+                    if module_type(module)
+                ]
 
                 captures.append(
                     {
                         "url": response.url,
                         "status": response.status,
                         "modules": module_query_params(response.url),
-                        "payload": payload,
+                        "payload": parsed_modules,
+                        "body_preview": body[:800],
+                        "parsed_module_count": len(parsed_modules),
+                        "module_types": module_types,
+                        "research_aggregate_module": find_module_by_type(
+                            parsed_modules, "ResearchAggregateModule"
+                        ),
+                        "search_results_module": find_module_by_type(
+                            parsed_modules, "SearchResultsModule"
+                        ),
                         "parse_error": parse_error,
                     }
                 )
@@ -255,7 +419,8 @@ def run_diagnostic() -> None:
             if not captures:
                 print("listing API URL: (none)")
                 print("aggregate API URL: (none)")
-                print("module names: []")
+                print("parsed module count: 0")
+                print("module types found: []")
                 print("aggregate metrics: {}")
                 print("first 10 listing titles: []")
                 print("first 10 prices: []")
@@ -265,28 +430,56 @@ def run_diagnostic() -> None:
                 continue
 
             for index, capture in enumerate(captures, start=1):
-                payload = capture.get("payload")
-                listings_in_response = collect_listings(payload)
+                search_results_module = capture.get("search_results_module")
+                listings_in_response = (
+                    extract_search_results(search_results_module)
+                    if isinstance(search_results_module, dict)
+                    else []
+                )
                 print(f"\nresponse #{index}")
                 print(f"API URL: {capture.get('url')}")
                 print(f"HTTP status: {capture.get('status')}")
                 print(f"module query params: {capture.get('modules', [])}")
-                print(f"payload type: {payload_type_name(payload)}")
-                if isinstance(payload, dict):
-                    print(f"top-level keys: {top_level_keys(payload)}")
+                print(f"parsed module count: {capture.get('parsed_module_count', 0)}")
+                print(f"module types found: {capture.get('module_types', [])}")
                 if capture.get("parse_error"):
                     print(f"parse error: {capture.get('parse_error')}")
                 if not listings_in_response:
-                    print(f"compact preview: {compact_preview(payload)}")
+                    print(f"body preview: {capture.get('body_preview', '')}")
 
-            listing_capture = best_listing_capture(captures)
-            aggregate_capture = best_aggregate_capture(captures)
-            listing_payload = listing_capture.get("payload") if listing_capture else {}
-            aggregate_payload = aggregate_capture.get("payload") if aggregate_capture else {}
+            listing_capture = next(
+                (
+                    capture
+                    for capture in captures
+                    if capture.get("search_results_module")
+                ),
+                None,
+            )
+            aggregate_capture = next(
+                (
+                    capture
+                    for capture in captures
+                    if capture.get("research_aggregate_module")
+                ),
+                None,
+            )
+            search_results_module = (
+                listing_capture.get("search_results_module") if listing_capture else {}
+            )
+            aggregate_module = (
+                aggregate_capture.get("research_aggregate_module")
+                if aggregate_capture
+                else {}
+            )
 
-            listings = collect_listings(listing_payload)
-            titles = [extract_title(item) for item in listings]
-            prices_raw = [extract_price(item) for item in listings]
+            listings = (
+                extract_search_results(search_results_module)
+                if isinstance(search_results_module, dict)
+                else []
+            )
+            listing_details = [extract_listing_details(item) for item in listings]
+            titles = [details["title"] for details in listing_details]
+            prices_raw = [details["price"] for details in listing_details]
 
             trusted_prices: list[float] = []
             excluded = 0
@@ -303,21 +496,44 @@ def run_diagnostic() -> None:
                     trusted_prices.append(price_num)
 
             aggregate = extract_aggregate_metrics(
-                aggregate_payload,
+                aggregate_module,
                 aggregate_capture.get("modules", []) if aggregate_capture else [],
             )
 
+            selected_module_types = sorted(
+                {
+                    module_type
+                    for capture in captures
+                    for module_type in capture.get("module_types", [])
+                }
+            )
+            parsed_module_count = sum(
+                int(capture.get("parsed_module_count", 0)) for capture in captures
+            )
+
             print("\nselected diagnostic responses")
-            print(f"listing API URL: {listing_capture.get('url') if listing_capture else '(none)'}")
-            print(f"listing modules: {listing_capture.get('modules', []) if listing_capture else []}")
-            print(f"aggregate API URL: {aggregate_capture.get('url') if aggregate_capture else '(none)'}")
-            print(f"aggregate modules: {aggregate_capture.get('modules', []) if aggregate_capture else []}")
+            print(
+                f"listing API URL: {listing_capture.get('url') if listing_capture else '(none)'}"
+            )
+            print(
+                f"listing modules: {listing_capture.get('modules', []) if listing_capture else []}"
+            )
+            print(
+                f"aggregate API URL: {aggregate_capture.get('url') if aggregate_capture else '(none)'}"
+            )
+            print(
+                f"aggregate modules: {aggregate_capture.get('modules', []) if aggregate_capture else []}"
+            )
+            print(f"parsed module count: {parsed_module_count}")
+            print(f"module types found: {selected_module_types}")
             print(f"aggregate metrics: {aggregate}")
             print(f"first 10 listing titles: {titles[:10]}")
             print(f"first 10 prices: {prices_raw[:10]}")
             print(f"exclusion counts: {{'excluded': {excluded}, 'kept': {kept}}}")
             print(f"trusted listing count: {len(trusted_prices)}")
-            print(f"rough trusted average: {round(mean(trusted_prices), 2) if trusted_prices else None}")
+            print(
+                f"rough trusted average: {round(mean(trusted_prices), 2) if trusted_prices else None}"
+            )
 
         browser.close()
 
