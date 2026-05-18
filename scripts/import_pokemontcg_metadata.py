@@ -14,7 +14,7 @@ Optional:
 
 Safety guarantees:
   - Only INSERT statements are issued; existing mastercard_v2 rows are never updated.
-  - Rows are skipped when either unique_id or card_id already exists.
+  - Rows are skipped when unique_id already exists.
   - Pricing tables/columns are not read from or written to.
   - PokémonTCG.io card numbers are preserved exactly as returned by the API.
 """
@@ -44,7 +44,6 @@ TARGET_TABLE = "mastercard_v2"
 # Keep this list intentionally narrow and metadata-only. Do not add price fields here.
 IMPORT_COLUMNS = [
     "unique_id",
-    "card_id",
     "card_name",
     "set_name",
     "set_id",
@@ -152,7 +151,6 @@ def build_import_row(card: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "unique_id": card.get("id"),
-        "card_id": card.get("id"),
         "card_name": card_name,
         "set_name": set_name,
         "set_id": card_set.get("id"),
@@ -206,16 +204,13 @@ async def fetch_all_pages(
     return all_items
 
 
-async def get_existing_ids(conn) -> tuple[set[str], set[str]]:
-    result = await conn.execute(text(f"SELECT unique_id, card_id FROM {TARGET_TABLE}"))
+async def get_existing_ids(conn) -> set[str]:
+    result = await conn.execute(text(f"SELECT unique_id FROM {TARGET_TABLE}"))
     unique_ids: set[str] = set()
-    card_ids: set[str] = set()
-    for unique_id, card_id in result.fetchall():
+    for (unique_id,) in result.fetchall():
         if unique_id:
             unique_ids.add(str(unique_id).strip())
-        if card_id:
-            card_ids.add(str(card_id).strip())
-    return unique_ids, card_ids
+    return unique_ids
 
 
 async def get_column_types(conn) -> dict[str, str]:
@@ -241,10 +236,9 @@ def missing_columns(column_types: dict[str, str]) -> list[str]:
     return [column for column in IMPORT_COLUMNS if column not in column_types]
 
 
-def should_skip(row: dict[str, Any], existing_unique_ids: set[str], existing_card_ids: set[str]) -> bool:
+def should_skip(row: dict[str, Any], existing_unique_ids: set[str]) -> bool:
     unique_id = str(row["unique_id"]).strip() if row.get("unique_id") else None
-    card_id = str(row["card_id"]).strip() if row.get("card_id") else None
-    return not unique_id or unique_id in existing_unique_ids or (card_id is not None and card_id in existing_card_ids)
+    return not unique_id or unique_id in existing_unique_ids
 
 
 def sql_value_expression(column: str, data_type: str) -> str:
@@ -259,15 +253,13 @@ def build_insert_statement(columns: Iterable[str], column_types: dict[str, str])
     column_list = list(columns)
     quoted_columns = ", ".join(f'"{column}"' for column in column_list)
     values = ", ".join(sql_value_expression(column, column_types[column]) for column in column_list)
-    where_clauses = ["NOT EXISTS (SELECT 1 FROM mastercard_v2 WHERE unique_id = :unique_id)"]
-    if "card_id" in column_list:
-        where_clauses.append("NOT EXISTS (SELECT 1 FROM mastercard_v2 WHERE card_id = :card_id)")
+    where_clause = f"NOT EXISTS (SELECT 1 FROM {TARGET_TABLE} WHERE unique_id = :unique_id)"
 
     stmt = text(
         f"""
         INSERT INTO {TARGET_TABLE} ({quoted_columns})
         SELECT {values}
-        WHERE {' AND '.join(where_clauses)}
+        WHERE {where_clause}
         """
     )
     for column in column_list:
@@ -321,7 +313,7 @@ async def main() -> None:
                     f"they will be skipped: {', '.join(unavailable)}"
                 )
 
-            existing_unique_ids, existing_card_ids = await get_existing_ids(conn)
+            existing_unique_ids = await get_existing_ids(conn)
             rows_to_insert: list[dict[str, Any]] = []
             cards_by_missing_set: dict[str, int] = {}
 
@@ -347,7 +339,7 @@ async def main() -> None:
                 for card in cards:
                     stats.cards_checked += 1
                     row = build_import_row(card)
-                    if should_skip(row, existing_unique_ids, existing_card_ids):
+                    if should_skip(row, existing_unique_ids):
                         stats.skipped += 1
                         continue
 
