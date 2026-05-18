@@ -1,2 +1,5 @@
 auth/*.json
 auth/ebay-storage-state.json
+
+auth/chrome-profile/
+auth/chrome-profile/**
