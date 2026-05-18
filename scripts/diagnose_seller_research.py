@@ -97,7 +97,10 @@ def run_diagnostic() -> None:
         return
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=False)
+        browser = playwright.chromium.launch(
+            channel="chrome",
+            headless=False,
+        )
         context = browser.new_context(storage_state=str(AUTH_STATE_PATH))
         page = context.new_page()
 

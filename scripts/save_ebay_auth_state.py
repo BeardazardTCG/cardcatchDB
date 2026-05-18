@@ -19,7 +19,10 @@ def main() -> None:
     print("After login is complete and Seller Research is visible, press Enter here to save auth state.")
 
     with sync_playwright() as playwright:
-        browser = playwright.chromium.launch(headless=False)
+        browser = playwright.chromium.launch(
+            channel="chrome",
+            headless=False,
+        )
         context = browser.new_context()
         page = context.new_page()
         page.goto(RESEARCH_URL, wait_until="domcontentloaded")
