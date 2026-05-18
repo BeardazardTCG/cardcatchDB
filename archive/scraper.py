@@ -17,6 +17,21 @@ HEADERS = {
     "Accept-Language": "en-GB,en;q=0.9"
 }
 
+CHALLENGE_MARKERS = (
+    "/splashui/challenge",
+    "pardon our interruption",
+    "captcha",
+    "automated access",
+    "verify yourself",
+    "robot check",
+)
+
+
+def detect_ebay_challenge(resp):
+    final_url = (getattr(resp, "url", "") or "").lower()
+    html = (getattr(resp, "text", "") or "").lower()
+    return any(marker in final_url or marker in html for marker in CHALLENGE_MARKERS)
+
 def clean_price(text):
     try:
         return float(re.sub(r"[^\d.]", "", text))
@@ -69,6 +84,9 @@ def parse_ebay_sold_page(query, max_items=120):
 
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
+        if detect_ebay_challenge(resp):
+            print("⛔ Sold request hit eBay challenge/block page")
+            return {"url": url, "final_url": resp.url, "raw": [], "filtered": [], "blocked_challenge": True}
         if "Expensive keywords" in resp.text or "can't be greater than" in resp.text:
             raise Exception("⚠️ eBay blocked this query due to keyword limits or item cap.")
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -77,7 +95,7 @@ def parse_ebay_sold_page(query, max_items=120):
 
     except Exception as e:
         print("❌ Sold scrape error:", e)
-        return {"url": url, "raw": [], "filtered": []}
+        return {"url": url, "raw": [], "filtered": [], "blocked_challenge": False, "parse_error": str(e)}
 
     ninety_days_ago = datetime.utcnow().date() - timedelta(days=90)
 
@@ -128,8 +146,10 @@ def parse_ebay_sold_page(query, max_items=120):
     print(f"✅ Sold listings parsed: {len(results_raw)} raw | {len(results_filtered)} filtered")
     return {
         "url": url,
+        "final_url": resp.url,
         "raw": results_raw,
-        "filtered": results_filtered
+        "filtered": results_filtered,
+        "blocked_challenge": False
     }
 
 def parse_ebay_active_page(query, max_items=120):
@@ -143,6 +163,9 @@ def parse_ebay_active_page(query, max_items=120):
 
     try:
         resp = requests.get(url, headers=HEADERS, timeout=12)
+        if detect_ebay_challenge(resp):
+            print("⛔ Active request hit eBay challenge/block page")
+            return {"url": url, "final_url": resp.url, "raw": [], "filtered": [], "blocked_challenge": True}
         if "Expensive keywords" in resp.text or "can't be greater than" in resp.text:
             raise Exception("⚠️ eBay blocked this query due to keyword limits or item cap.")
         soup = BeautifulSoup(resp.text, "html.parser")
@@ -151,7 +174,7 @@ def parse_ebay_active_page(query, max_items=120):
 
     except Exception as e:
         print("❌ Active scrape error:", e)
-        return {"url": url, "raw": [], "filtered": []}
+        return {"url": url, "raw": [], "filtered": [], "blocked_challenge": False, "parse_error": str(e)}
 
     for item in items:
         if len(results_raw) >= max_items:
@@ -196,6 +219,8 @@ def parse_ebay_active_page(query, max_items=120):
     print(f"✅ Active listings parsed: {len(results_raw)} raw | {len(results_filtered)} filtered")
     return {
         "url": url,
+        "final_url": resp.url,
         "raw": results_raw,
-        "filtered": results_filtered
+        "filtered": results_filtered,
+        "blocked_challenge": False
     }
