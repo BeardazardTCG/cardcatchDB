@@ -29,8 +29,21 @@ LISTING_SELECTORS = [".s-item", ".srp-results .s-item"]
 PRICE_SELECTORS = [".s-item__price", "span.s-item__price"]
 
 
-def detect_reason(status_code, html, listing_count, raw_count, filtered_count):
+def detect_reason(status_code, final_url, title, html, listing_count, raw_count, filtered_count, parser_blocked=False):
     lower = html.lower()
+    final_url_lower = (final_url or "").lower()
+    title_lower = (title or "").lower()
+    challenge_markers = [
+        "/splashui/challenge",
+        "pardon our interruption",
+        "captcha",
+        "automated access",
+        "verify yourself",
+        "robot check",
+    ]
+    is_challenge = parser_blocked or any(m in final_url_lower or m in title_lower or m in lower for m in challenge_markers)
+    if is_challenge:
+        return "blocked/captcha/challenge"
     if "request_error" in lower and ("403" in lower or "proxyerror" in lower or "forbidden" in lower):
         return "blocked/captcha/403"
     if status_code in (403, 429) or "captcha" in lower or "robot" in lower or "puzzle" in lower:
@@ -68,8 +81,10 @@ def diagnose_path(query, sold):
     parsed = parse_ebay_sold_page(query, max_items=30) if sold else parse_ebay_active_page(query, max_items=30)
     raw_count = len(parsed.get("raw", []))
     filtered_count = len(parsed.get("filtered", []))
+    parser_blocked = bool(parsed.get("blocked_challenge"))
+    has_splashui_challenge = "/splashui/challenge" in (final_url or "").lower()
 
-    reason = detect_reason(status_code, html, listing_count, raw_count, filtered_count)
+    reason = detect_reason(status_code, final_url, title, html, listing_count, raw_count, filtered_count, parser_blocked=parser_blocked)
 
     label = "SOLD" if sold else "ACTIVE"
     print(f"\n--- {label} ---")
@@ -78,11 +93,14 @@ def diagnose_path(query, sold):
     print(f"HTTP status code: {status_code}")
     print(f"response length: {len(html)}")
     print(f"page title: {title}")
+    print(f"final_url contains /splashui/challenge: {has_splashui_challenge}")
     print(f"first 300 chars: {html_head}")
     print(f"listing container count: {listing_count}")
     print(f"price selector count: {price_count}")
     print(f"parsed raw results: {raw_count}")
     print(f"parsed filtered results: {filtered_count}")
+    print(f"parser blocked/challenge signal: {parser_blocked}")
+    print(f"diagnosis: {reason}")
     if raw_count == 0 or filtered_count == 0:
         print(f"no results reason: {reason}")
 
@@ -91,6 +109,7 @@ def diagnose_path(query, sold):
         "listing_count": listing_count,
         "raw_count": raw_count,
         "filtered_count": filtered_count,
+        "blocked_challenge": parser_blocked or has_splashui_challenge,
         "reason": reason,
     }
 
@@ -98,6 +117,8 @@ def diagnose_path(query, sold):
 def likely_diagnosis(results):
     reasons = [r["reason"] for r in results]
     statuses = [r["status"] for r in results]
+    if any(r.get("blocked_challenge") for r in results) or any(r == "blocked/captcha/challenge" for r in reasons):
+        return "blocked/captcha/challenge"
     if any(code in (403, 429) for code in statuses) or any(r == "blocked/captcha/403" for r in reasons):
         return "blocked/captcha/403"
     if any(r == "selector mismatch" for r in reasons):

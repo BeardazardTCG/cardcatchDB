@@ -39,6 +39,9 @@ RUN_STATS = {
     "raw_active_inserts": 0,
     "raw_sold_debug_inserts": 0,
     "null_sold_count": 0,
+    "blocked_challenge_count": 0,
+    "filtered_out_count": 0,
+    "genuine_empty_count": 0,
     "exceptions_count": 0,
 }
 
@@ -55,10 +58,15 @@ async def scrape_card(unique_id, query, tier):
             sold_raw = sold_result.get("raw", [])
             sold_filtered = sold_result.get("filtered", [])
             search_url = sold_result.get("url", "")
+            sold_blocked = bool(sold_result.get("blocked_challenge"))
 
             print(f"🔍 Sold raw: {len(sold_raw)} | Filtered: {len(sold_filtered)}")
-            if not sold_raw and not sold_filtered:
-                print(f"⚠️ No sold listings returned at all — possible eBay block or scrape fail for {unique_id}")
+            if sold_blocked:
+                RUN_STATS["blocked_challenge_count"] += 1
+                print(f"⛔ Sold fetch blocked/challenge for {unique_id} (url={sold_result.get('final_url', search_url)})")
+            elif not sold_raw and not sold_filtered:
+                RUN_STATS["genuine_empty_count"] += 1
+                print(f"ℹ️ Sold page returned genuinely empty results for {unique_id}")
 
             for item in sold_raw:
                 if not item.get("price") or not item.get("sold_date"):
@@ -102,7 +110,11 @@ async def scrape_card(unique_id, query, tier):
 
             await session.commit()
 
-            if not sold_filtered:
+            if sold_blocked:
+                print(f"⛔ Skipping ebay_sold_nulls insert for blocked/challenge sold page: {unique_id}")
+            elif not sold_filtered:
+                if sold_raw:
+                    RUN_STATS["filtered_out_count"] += 1
                 await session.execute(text("""
                     INSERT INTO ebay_sold_nulls (unique_id, query_used, search_url, reason)
                     VALUES (:uid, :query, :url, :reason)
@@ -110,7 +122,7 @@ async def scrape_card(unique_id, query, tier):
                     "uid": unique_id,
                     "query": query,
                     "url": search_url,
-                    "reason": "No filtered results"
+                    "reason": "No filtered results" if sold_raw else "No sold results"
                 })
                 RUN_STATS["null_sold_count"] += 1
                 await session.commit()
@@ -166,10 +178,15 @@ async def scrape_card(unique_id, query, tier):
             active_raw = active_result.get("raw", [])
             active_filtered = active_result.get("filtered", [])
             search_url = active_result.get("url", "")
+            active_blocked = bool(active_result.get("blocked_challenge"))
 
             print(f"🔍 Active raw: {len(active_raw)} | Filtered: {len(active_filtered)}")
-            if not active_raw and not active_filtered:
-                print(f"⚠️ No active listings returned at all — possible eBay block or scrape fail for {unique_id}")
+            if active_blocked:
+                RUN_STATS["blocked_challenge_count"] += 1
+                print(f"⛔ Active fetch blocked/challenge for {unique_id} (url={active_result.get('final_url', search_url)})")
+            elif not active_raw and not active_filtered:
+                RUN_STATS["genuine_empty_count"] += 1
+                print(f"ℹ️ Active page returned genuinely empty results for {unique_id}")
 
             prices = []
             for item in active_raw:
@@ -261,6 +278,9 @@ async def run_dual_scraper():
     print(f"raw active inserts: {RUN_STATS['raw_active_inserts']}")
     print(f"raw sold/debug inserts: {RUN_STATS['raw_sold_debug_inserts']}")
     print(f"null sold count: {RUN_STATS['null_sold_count']}")
+    print(f"blocked/challenge fetch count: {RUN_STATS['blocked_challenge_count']}")
+    print(f"filtered out count: {RUN_STATS['filtered_out_count']}")
+    print(f"genuine empty count: {RUN_STATS['genuine_empty_count']}")
     print(f"exceptions count: {RUN_STATS['exceptions_count']}")
     print("✅ scrape_ebay_dual.py finished")
 
