@@ -124,9 +124,17 @@ def slugify(value: str | None) -> str | None:
 
 
 def parse_iso_date(value: str | None) -> date | None:
-    if not value:
+    if not value or not isinstance(value, str):
         return None
-    return date.fromisoformat(value)
+
+    normalized = value.strip().replace("/", "-")
+    if not normalized:
+        return None
+
+    try:
+        return date.fromisoformat(normalized)
+    except ValueError:
+        return None
 
 
 def compact_json(value: Any) -> str | None:
