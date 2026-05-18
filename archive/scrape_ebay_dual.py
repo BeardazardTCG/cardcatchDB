@@ -32,8 +32,19 @@ CARD_DELAY = 0.75
 
 print("\n🟢 scrape_ebay_dual.py started (cards_due.json mode)")
 
+RUN_STATS = {
+    "cards_attempted": 0,
+    "sold_inserts": 0,
+    "active_inserts": 0,
+    "raw_active_inserts": 0,
+    "raw_sold_debug_inserts": 0,
+    "null_sold_count": 0,
+    "exceptions_count": 0,
+}
+
 # === Main scrape function per card ===
 async def scrape_card(unique_id, query, tier):
+    RUN_STATS["cards_attempted"] += 1
     async with async_session() as session:
         print(f"\n🃏 {unique_id} | {query} | Tier {tier}")
         sold_success, active_success = False, False
@@ -87,6 +98,7 @@ async def scrape_card(unique_id, query, tier):
                     "included": included,
                     "reason": reason_excluded
                 })
+                RUN_STATS["raw_sold_debug_inserts"] += 1
 
             await session.commit()
 
@@ -100,6 +112,7 @@ async def scrape_card(unique_id, query, tier):
                     "url": search_url,
                     "reason": "No filtered results"
                 })
+                RUN_STATS["null_sold_count"] += 1
                 await session.commit()
             else:
                 grouped_by_date = defaultdict(list)
@@ -138,10 +151,12 @@ async def scrape_card(unique_id, query, tier):
                         "query": query,
                         "urls": urls
                     })
+                    RUN_STATS["sold_inserts"] += 1
                 await session.commit()
             sold_success = True
 
         except Exception as e:
+            RUN_STATS["exceptions_count"] += 1
             print(f"❌ Sold error for {unique_id}: {e}")
             traceback.print_exc()
 
@@ -173,6 +188,7 @@ async def scrape_card(unique_id, query, tier):
                     "condition": item["condition"],
                     "holo": item["holo_type"]
                 })
+                RUN_STATS["raw_active_inserts"] += 1
                 prices.append(item.get("price"))
             await session.commit()
 
@@ -206,16 +222,19 @@ async def scrape_card(unique_id, query, tier):
                         "url": search_url,
                         "low": best
                     })
+                    RUN_STATS["active_inserts"] += 1
                     await session.commit()
                 else:
                     print(f"⚠️ No usable active prices for {unique_id} → skipping activedailypricelog insert")
             except Exception as e:
+                RUN_STATS["exceptions_count"] += 1
                 print(f"❌ Error filtering active prices for {unique_id}: {e}")
                 traceback.print_exc()
 
             active_success = True
 
         except Exception as e:
+            RUN_STATS["exceptions_count"] += 1
             print(f"❌ Active error for {unique_id}: {e}")
             traceback.print_exc()
 
@@ -235,6 +254,14 @@ async def run_dual_scraper():
     sem = asyncio.Semaphore(CONCURRENT_LIMIT)
     tasks = [run_card_with_semaphore(c["unique_id"], c["query"], c["tier"], sem) for c in cards]
     await asyncio.gather(*tasks)
+    print("\n===== FINAL RUN SUMMARY =====")
+    print(f"cards attempted: {RUN_STATS['cards_attempted']}")
+    print(f"sold inserts: {RUN_STATS['sold_inserts']}")
+    print(f"active inserts: {RUN_STATS['active_inserts']}")
+    print(f"raw active inserts: {RUN_STATS['raw_active_inserts']}")
+    print(f"raw sold/debug inserts: {RUN_STATS['raw_sold_debug_inserts']}")
+    print(f"null sold count: {RUN_STATS['null_sold_count']}")
+    print(f"exceptions count: {RUN_STATS['exceptions_count']}")
     print("✅ scrape_ebay_dual.py finished")
 
 async def run_card_with_semaphore(uid, q, t, sem):
